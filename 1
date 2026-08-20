@@ -74,10 +74,17 @@ _G.fpsConnection=nil
 _G.lastSpace=false
 _G.targetStrafeTarget=nil
 _G.targetStrafeAngle=0
+_G.direction=1
 
 task.spawn(function()
 	pcall(function()
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/2"))()
+	end)
+end)
+
+task.spawn(function()
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/3"))()
 	end)
 end)
 
@@ -972,118 +979,6 @@ local function updateNoclip()
 	setToggle(nTr,nK,en,true)
 end
 
-local function applySpeed()
-	if _G.speedEnabled and humanoid then humanoid.WalkSpeed=_G.currentSpeed
-	elseif humanoid then humanoid.WalkSpeed=16 end
-end
-
-local function applyJump()
-	if _G.jumpEnabled and humanoid then humanoid.JumpPower=_G.currentJump
-	elseif humanoid then humanoid.JumpPower=50 end
-end
-
-local function setNoclip(s)
-	if not character then return end
-	for _,p in pairs(character:GetDescendants()) do
-		if p:IsA("BasePart") then p.CanCollide=not s end
-	end
-end
-
-local function stopFlight()
-	_G.flying=false
-	if _G.bodyVelocity then _G.bodyVelocity:Destroy() _G.bodyVelocity=nil end
-	if _G.bodyGyro then _G.bodyGyro:Destroy() _G.bodyGyro=nil end
-	if humanoid then humanoid.PlatformStand=false end
-	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
-	setNoclip(false)
-	updateNoclip()
-end
-
-local function startFlight()
-	if _G.flying or not root then return end
-	_G.flying=true
-	_G.bodyVelocity=Instance.new("BodyVelocity")
-	_G.bodyVelocity.MaxForce=Vector3.new(math.huge,math.huge,math.huge)
-	_G.bodyVelocity.Velocity=Vector3.zero
-	_G.bodyVelocity.Parent=root
-	_G.bodyGyro=Instance.new("BodyGyro")
-	_G.bodyGyro.MaxTorque=Vector3.new(math.huge,math.huge,math.huge)
-	_G.bodyGyro.P=10000
-	_G.bodyGyro.Parent=root
-	humanoid.PlatformStand=true
-	if _G.noclipEnabled then
-		setNoclip(true)
-		_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
-	end
-	updateNoclip()
-end
-
-local function applyFlight()
-	if _G.flightEnabled then startFlight() else stopFlight() end
-end
-
-local function startAirwalk()
-	if _G.airwalkPlatform then return end
-	_G.airwalkY=root.Position.Y-3
-	_G.airwalkPlatform=Instance.new("Part")
-	_G.airwalkPlatform.Size=Vector3.new(6,1,6)
-	_G.airwalkPlatform.Transparency=1
-	_G.airwalkPlatform.CanCollide=true
-	_G.airwalkPlatform.Anchored=true
-	_G.airwalkPlatform.Parent=workspace
-end
-
-local function stopAirwalk()
-	if _G.airwalkPlatform then _G.airwalkPlatform:Destroy() _G.airwalkPlatform=nil end
-end
-
-local function updateSpeed(v)
-	_G.currentSpeed=_G.minSpeed+(_G.maxSpeed-_G.minSpeed)*v
-	spT.Text="Speed: "..math.floor(_G.currentSpeed+0.5)
-	applySpeed()
-end
-
-local function updateJump(v)
-	_G.currentJump=_G.minJump+(_G.maxJump-_G.minJump)*v
-	jT.Text="Jump: "..math.floor(_G.currentJump+0.5)
-	applyJump()
-end
-
-local function updateFlight(v)
-	_G.currentFlight=_G.minFlight+(_G.maxFlight-_G.minFlight)*v
-	fT.Text="Flight: "..math.floor(_G.currentFlight+0.5)
-end
-
-local function updateStrafe(v)
-	_G.currentStrafe=_G.minStrafe+(_G.maxStrafe-_G.minStrafe)*v
-	stT.Text="Strafe: "..math.floor(_G.currentStrafe+0.5)
-end
-
-local function updateSmooth(v)
-	_G.currentSmoothness=_G.minSmooth+(_G.maxSmooth-_G.minSmooth)*v
-	smT.Text="Speed: "..string.format("%.2f",_G.currentSmoothness)
-end
-
-local function updateRange(v)
-	_G.currentRange=_G.minRange+(_G.maxRange-_G.minRange)*v
-	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
-end
-
-local function updateTSDist(v)
-	_G.targetStrafeDistance=_G.minTDistance+(_G.maxTDistance-_G.minTDistance)*v
-	tsDistT.Text="Distance: "..math.floor(_G.targetStrafeDistance+0.5)
-end
-
-local function updateTSpeed(v)
-	_G.targetStrafeSpeed=_G.minTSpeed+(_G.maxTSpeed-_G.minTSpeed)*v
-	tsSpeedT.Text="Speed: "..math.floor(_G.targetStrafeSpeed+0.5)
-end
-
-local function updateTRange(v)
-	_G.targetStrafeRange=_G.minTRange+(_G.maxTRange-_G.minTRange)*v
-	tsRangeT.Text="Radius: "..math.floor(_G.targetStrafeRange+0.5)
-end
-
 local function updateSlider(f,h,v)
 	f.Size=UDim2.new(v,0,1,0)
 	h.Position=UDim2.new(v,-8,0.5,-8)
@@ -1093,38 +988,24 @@ local function toggleSpeed()
 	_G.speedEnabled=not _G.speedEnabled
 	setToggle(spTr,spK,_G.speedEnabled,true)
 	setColors(_G.speedEnabled,spT,spS,spF,spH)
-	applySpeed()
 end
 
 local function toggleJump()
 	_G.jumpEnabled=not _G.jumpEnabled
 	setToggle(jTr,jK,_G.jumpEnabled,true)
 	setColors(_G.jumpEnabled,jT,jS,jF,jH)
-	applyJump()
 end
 
 local function toggleFlight()
 	_G.flightEnabled=not _G.flightEnabled
 	setToggle(fTr,fK,_G.flightEnabled,true)
 	setColors(_G.flightEnabled,fT,fS,fF,fH)
-	applyFlight()
 end
 
 local function toggleNoclip()
 	if not _G.flightEnabled then return end
 	_G.noclipEnabled=not _G.noclipEnabled
 	updateNoclip()
-	if _G.noclipEnabled then
-		if _G.flying then
-			setNoclip(true)
-			if not _G.noclipConnection then
-				_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
-			end
-		end
-	else
-		if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
-		setNoclip(false)
-	end
 end
 
 local function toggleStrafe()
@@ -1137,7 +1018,6 @@ local function toggleAirwalk()
 	_G.airwalkEnabled=not _G.airwalkEnabled
 	setToggle(awTr,awK,_G.airwalkEnabled,true)
 	setColors(_G.airwalkEnabled,awT,nil,nil,nil)
-	if _G.airwalkEnabled then startAirwalk() else stopAirwalk() end
 end
 
 local function toggleClickTp()
@@ -1369,8 +1249,8 @@ end
 hideBtn.MouseButton1Click:Connect(function() setMinimized(not _G.isHidden) end)
 
 closeBtn.MouseButton1Click:Connect(function()
-	stopFlight()
-	stopAirwalk()
+	if _G.stopFlightFunc then _G.stopFlightFunc() end
+	if _G.stopAirwalkFunc then _G.stopAirwalkFunc() end
 	if _G.fpsConnection then _G.fpsConnection:Disconnect() end
 	mouse.Icon=""
 	sg:Destroy()
@@ -1381,7 +1261,8 @@ local function updateSpeedFromInput(i)
 	if s<=0 then return end
 	local v=math.clamp(i.Position.X-spS.AbsolutePosition.X,0,s)/s
 	updateSlider(spF,spH,v)
-	updateSpeed(v)
+	_G.currentSpeed=_G.minSpeed+(_G.maxSpeed-_G.minSpeed)*v
+	spT.Text="Speed: "..math.floor(_G.currentSpeed+0.5)
 end
 
 local function updateJumpFromInput(i)
@@ -1389,7 +1270,8 @@ local function updateJumpFromInput(i)
 	if s<=0 then return end
 	local v=math.clamp(i.Position.X-jS.AbsolutePosition.X,0,s)/s
 	updateSlider(jF,jH,v)
-	updateJump(v)
+	_G.currentJump=_G.minJump+(_G.maxJump-_G.minJump)*v
+	jT.Text="Jump: "..math.floor(_G.currentJump+0.5)
 end
 
 local function updateFlightFromInput(i)
@@ -1397,7 +1279,8 @@ local function updateFlightFromInput(i)
 	if s<=0 then return end
 	local v=math.clamp(i.Position.X-fS.AbsolutePosition.X,0,s)/s
 	updateSlider(fF,fH,v)
-	updateFlight(v)
+	_G.currentFlight=_G.minFlight+(_G.maxFlight-_G.minFlight)*v
+	fT.Text="Flight: "..math.floor(_G.currentFlight+0.5)
 end
 
 local function updateStrafeFromInput(i)
@@ -1405,7 +1288,8 @@ local function updateStrafeFromInput(i)
 	if s<=0 then return end
 	local v=math.clamp(i.Position.X-stS.AbsolutePosition.X,0,s)/s
 	updateSlider(stF,stH,v)
-	updateStrafe(v)
+	_G.currentStrafe=_G.minStrafe+(_G.maxStrafe-_G.minStrafe)*v
+	stT.Text="Strafe: "..math.floor(_G.currentStrafe+0.5)
 end
 
 local function updateSmoothFromInput(i)
@@ -1413,7 +1297,8 @@ local function updateSmoothFromInput(i)
 	if s<=0 then return end
 	local v=math.clamp(i.Position.X-smS.AbsolutePosition.X,0,s)/s
 	updateSlider(smF,smH,v)
-	updateSmooth(v)
+	_G.currentSmoothness=_G.minSmooth+(_G.maxSmooth-_G.minSmooth)*v
+	smT.Text="Speed: "..string.format("%.2f",_G.currentSmoothness)
 end
 
 local function updateRangeFromInput(i)
@@ -1421,7 +1306,8 @@ local function updateRangeFromInput(i)
 	if s<=0 then return end
 	local v=math.clamp(i.Position.X-rS.AbsolutePosition.X,0,s)/s
 	updateSlider(rF,rH,v)
-	updateRange(v)
+	_G.currentRange=_G.minRange+(_G.maxRange-_G.minRange)*v
+	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
 end
 
 local function updateTSDistFromInput(i)
@@ -1429,7 +1315,8 @@ local function updateTSDistFromInput(i)
 	if s<=0 then return end
 	local v=math.clamp(i.Position.X-tsDistS.AbsolutePosition.X,0,s)/s
 	updateSlider(tsDistF,tsDistH,v)
-	updateTSDist(v)
+	_G.targetStrafeDistance=_G.minTDistance+(_G.maxTDistance-_G.minTDistance)*v
+	tsDistT.Text="Distance: "..math.floor(_G.targetStrafeDistance+0.5)
 end
 
 local function updateTSpeedFromInput(i)
@@ -1437,7 +1324,8 @@ local function updateTSpeedFromInput(i)
 	if s<=0 then return end
 	local v=math.clamp(i.Position.X-tsSpeedS.AbsolutePosition.X,0,s)/s
 	updateSlider(tsSpeedF,tsSpeedH,v)
-	updateTSpeed(v)
+	_G.targetStrafeSpeed=_G.minTSpeed+(_G.maxTSpeed-_G.minTSpeed)*v
+	tsSpeedT.Text="Speed: "..math.floor(_G.targetStrafeSpeed+0.5)
 end
 
 local function updateTRangeFromInput(i)
@@ -1445,7 +1333,8 @@ local function updateTRangeFromInput(i)
 	if s<=0 then return end
 	local v=math.clamp(i.Position.X-tsRangeS.AbsolutePosition.X,0,s)/s
 	updateSlider(tsRangeF,tsRangeH,v)
-	updateTRange(v)
+	_G.targetStrafeRange=_G.minTRange+(_G.maxTRange-_G.minTRange)*v
+	tsRangeT.Text="Radius: "..math.floor(_G.targetStrafeRange+0.5)
 end
 
 local function startDrag(f,u)
@@ -1535,8 +1424,8 @@ player.CharacterAdded:Connect(function(c)
 	character=c
 	humanoid=character:WaitForChild("Humanoid")
 	root=character:WaitForChild("HumanoidRootPart")
-	stopFlight()
-	stopAirwalk()
+	if _G.stopFlightFunc then _G.stopFlightFunc() end
+	if _G.stopAirwalkFunc then _G.stopAirwalkFunc() end
 	_G.speedEnabled=false
 	_G.jumpEnabled=false
 	_G.flightEnabled=false
@@ -1613,6 +1502,4 @@ player.CharacterAdded:Connect(function(c)
 	tsModeB.Text="Circle"
 	tsModeT.Text="Mode: Circle"
 	setTSColors(false)
-	applySpeed()
-	applyJump()
 end)
