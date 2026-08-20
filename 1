@@ -25,6 +25,7 @@ _G.targetStrafeSpeed=20
 _G.targetStrafeRange=10
 _G.targetStrafeDistance=50
 _G.targetStrafeMode="Circle"
+_G.targetStrafeDir=1
 
 _G.currentSpeed=16
 _G.currentJump=50
@@ -53,7 +54,7 @@ _G.minFlight,_G.maxFlight=0,200
 _G.minStrafe,_G.maxStrafe=0,100
 _G.minSmooth,_G.maxSmooth=0.01,1
 _G.minRange,_G.maxRange=10,1000
-_G.minTSpeed,_G.maxTSpeed=5,100
+_G.minTSpeed,_G.maxTSpeed=1,50
 _G.minTRange,_G.maxTRange=3,30
 _G.minTDistance,_G.maxTDistance=10,200
 
@@ -227,7 +228,7 @@ local mc=Instance.new("ScrollingFrame")
 mc.Size=UDim2.new(1,0,0,420)
 mc.Position=UDim2.new(0,0,0,40)
 mc.BackgroundTransparency=1
-mc.CanvasSize=UDim2.new(0,0,0,600)
+mc.CanvasSize=UDim2.new(0,0,0,470)
 mc.ScrollBarThickness=6
 mc.ScrollBarImageColor3=Color3.new(0.3,0.3,0.3)
 mc.Parent=mf
@@ -446,7 +447,7 @@ local miscC=Instance.new("ScrollingFrame")
 miscC.Size=UDim2.new(1,0,0,420)
 miscC.Position=UDim2.new(0,0,0,40)
 miscC.BackgroundTransparency=1
-miscC.CanvasSize=UDim2.new(0,0,0,650)
+miscC.CanvasSize=UDim2.new(0,0,0,560)
 miscC.ScrollBarThickness=6
 miscC.ScrollBarImageColor3=Color3.new(0.3,0.3,0.3)
 miscC.Visible=false
@@ -1455,6 +1456,7 @@ player.CharacterAdded:Connect(function(c)
 	_G.targetStrafeRange=10
 	_G.targetStrafeDistance=50
 	_G.targetStrafeMode="Circle"
+	_G.targetStrafeDir=1
 	setToggle(spTr,spK,false,false)
 	setToggle(jTr,jK,false,false)
 	setToggle(fTr,fK,false,false)
