@@ -12,6 +12,7 @@ local Players = game:GetService("Players")
 
 -- Ждем загрузки первого скрипта
 repeat wait(0.1) until _G.speedEnabled ~= nil
+wait(0.5) -- Дополнительная задержка для создания GUI
 
 -- ===== ФУНКЦИИ ПОЛЕТА =====
 local function setNoclip(state)
@@ -257,3 +258,7 @@ player.CharacterAdded:Connect(function(newChar)
     _G.stopFlightFunc()
     _G.stopAirwalkFunc()
 end)
+
+-- Отладка
+print("Aimbot logic loaded successfully!")
+print("_G.aimbotEnabled:", _G.aimbotEnabled)
