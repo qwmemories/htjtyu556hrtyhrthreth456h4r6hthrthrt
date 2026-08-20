@@ -779,47 +779,83 @@ _G.scrollDragging=false
 _G.scrollDragStartY=0
 _G.scrollDragStartCanvas=0
 
+-- Custom scroll settings.
+-- The native Roblox wheel is disabled so scrolling stays slow and predictable.
+local SCROLL_STEP=24
+local SCROLL_SMOOTHNESS=0.12
+
+local scrollTarget=0
+local scrollCurrent=0
+
 local function activeContent()
 	return _G.currentCategory=="movement" and mc or miscC
 end
 
 local function contentBottom(content)
 	local bottom=0
+
 	for _,obj in ipairs(content:GetChildren()) do
 		if obj:IsA("GuiObject") and obj.Visible then
 			local y=obj.Position.Y.Offset+obj.AbsoluteSize.Y
-			if y>bottom then bottom=y end
+			if y>bottom then
+				bottom=y
+			end
 		end
 	end
+
 	return bottom
 end
 
-local function updateCanvasAndBar()
+local function isMouseOverViewport()
+	local p=UIS:GetMouseLocation()
+	local pos=contentViewport.AbsolutePosition
+	local size=contentViewport.AbsoluteSize
+
+	return p.X>=pos.X
+		and p.X<=pos.X+size.X
+		and p.Y>=pos.Y
+		and p.Y<=pos.Y+size.Y
+end
+
+local function calculateScroll()
 	local content=activeContent()
 	local viewportH=contentViewport.AbsoluteSize.Y
 	local bottom=contentBottom(content)
 
-	-- Set CanvasSize only when refreshing the content, not every RenderStepped.
-	-- Rewriting CanvasSize every frame can make Roblox snap CanvasPosition.
-	contentViewport.CanvasSize=UDim2.new(0,0,0,bottom)
+	-- Canvas is never smaller than the visible viewport.
+	local canvasHeight=math.max(bottom,viewportH)
+	contentViewport.CanvasSize=UDim2.new(0,0,0,canvasHeight)
 
+	-- The absolute bottom of the last visible module determines the limit.
 	local maxScroll=math.max(0,bottom-viewportH)
 	_G.scrollMax=maxScroll
 
-	if maxScroll<=0 or _G.isHidden or _G.isAnimating or not mf.Visible then
+	return bottom,viewportH,maxScroll
+end
+
+local function updateScrollBar()
+	if _G.isHidden or _G.isAnimating or not mf.Visible then
 		scrollTrack.Visible=false
 		scrollThumb.Visible=false
-		if contentViewport.CanvasPosition.Y~=0 then
-			contentViewport.CanvasPosition=Vector2.new(0,0)
-		end
 		return
 	end
 
-	-- Only clamp if Roblox somehow reports a value outside the legal range.
-	local y=math.clamp(contentViewport.CanvasPosition.Y,0,maxScroll)
-	if math.abs(y-contentViewport.CanvasPosition.Y)>0.01 then
-		contentViewport.CanvasPosition=Vector2.new(0,y)
+	local bottom,viewportH,maxScroll=calculateScroll()
+
+	if maxScroll<=0 then
+		scrollTarget=0
+		scrollCurrent=0
+		contentViewport.CanvasPosition=Vector2.new(0,0)
+
+		scrollTrack.Visible=false
+		scrollThumb.Visible=false
+		return
 	end
+
+	scrollTarget=math.clamp(scrollTarget,0,maxScroll)
+	scrollCurrent=math.clamp(scrollCurrent,0,maxScroll)
+
+	contentViewport.CanvasPosition=Vector2.new(0,scrollCurrent)
 
 	scrollTrack.Visible=true
 	scrollThumb.Visible=true
@@ -830,54 +866,104 @@ local function updateCanvasAndBar()
 		36,
 		trackH
 	)
+
 	scrollThumb.Size=UDim2.new(1,0,0,thumbH)
 
 	local travel=math.max(0,trackH-thumbH)
-	local ratio=maxScroll>0 and (y/maxScroll) or 0
+	local ratio=maxScroll>0 and scrollCurrent/maxScroll or 0
+
 	scrollThumb.Position=UDim2.new(
 		0,0,0,
 		travel*math.clamp(ratio,0,1)
 	)
 end
 
--- Refresh only after layout/category/visibility changes.
-local function refreshScroll()
-	local content=activeContent()
-	local bottom=contentBottom(content)
-	local viewportH=contentViewport.AbsoluteSize.Y
+local function refreshScroll(resetPosition)
+	local _,_,maxScroll=calculateScroll()
 
-	contentViewport.CanvasSize=UDim2.new(0,0,0,bottom)
-	_G.scrollMax=math.max(0,bottom-viewportH)
+	if resetPosition then
+		scrollTarget=0
+		scrollCurrent=0
+	else
+		scrollTarget=math.clamp(scrollTarget,0,maxScroll)
+		scrollCurrent=math.clamp(scrollCurrent,0,maxScroll)
+	end
 
-	-- Start the selected category at the top.
-	contentViewport.CanvasPosition=Vector2.new(0,0)
-
-	updateCanvasAndBar()
+	contentViewport.CanvasPosition=Vector2.new(0,scrollCurrent)
+	updateScrollBar()
 end
 
--- Native ScrollingFrame handles the mouse wheel itself.
--- We only synchronize the custom scrollbar with CanvasPosition.
+-- Native ScrollingFrame scrolling is disabled.
+-- This prevents Roblox's very fast default mouse-wheel movement.
+contentViewport.ScrollingEnabled=false
+
+-- Slow, smooth mouse-wheel scrolling.
+UIS.InputChanged:Connect(function(input)
+	if input.UserInputType~=Enum.UserInputType.MouseWheel then
+		return
+	end
+
+	if _G.isHidden or _G.isAnimating or not mf.Visible then
+		return
+	end
+
+	if not isMouseOverViewport() then
+		return
+	end
+
+	local _,_,maxScroll=calculateScroll()
+
+	if maxScroll<=0 then
+		scrollTarget=0
+		scrollCurrent=0
+		return
+	end
+
+	-- Positive Z means wheel up, negative means wheel down.
+	scrollTarget=scrollTarget-(input.Position.Z*SCROLL_STEP)
+	scrollTarget=math.clamp(scrollTarget,0,maxScroll)
+end)
+
+-- Drag the custom scrollbar thumb.
 scrollThumb.InputBegan:Connect(function(input)
+	if _G.isHidden or _G.isAnimating then
+		return
+	end
+
 	if input.UserInputType==Enum.UserInputType.MouseButton1 then
 		_G.scrollDragging=true
 		_G.scrollDragStartY=input.Position.Y
-		_G.scrollDragStartCanvas=contentViewport.CanvasPosition.Y
+		_G.scrollDragStartCanvas=scrollCurrent
 	end
 end)
 
 UIS.InputChanged:Connect(function(input)
-	if _G.scrollDragging and input.UserInputType==Enum.UserInputType.MouseMovement then
-		local trackH=scrollTrack.AbsoluteSize.Y
-		local thumbH=scrollThumb.AbsoluteSize.Y
-		local travel=math.max(1,trackH-thumbH)
-		local delta=input.Position.Y-_G.scrollDragStartY
-
-		local target=_G.scrollDragStartCanvas+(delta/travel)*_G.scrollMax
-		contentViewport.CanvasPosition=Vector2.new(
-			0,
-			math.clamp(target,0,_G.scrollMax)
-		)
+	if not _G.scrollDragging then
+		return
 	end
+
+	if input.UserInputType~=Enum.UserInputType.MouseMovement then
+		return
+	end
+
+	if not scrollTrack.Visible then
+		return
+	end
+
+	local trackH=scrollTrack.AbsoluteSize.Y
+	local thumbH=scrollThumb.AbsoluteSize.Y
+	local travel=math.max(1,trackH-thumbH)
+	local delta=input.Position.Y-_G.scrollDragStartY
+
+	local target=
+		_G.scrollDragStartCanvas+
+		(delta/travel)*_G.scrollMax
+
+	scrollTarget=math.clamp(target,0,_G.scrollMax)
+	scrollCurrent=scrollTarget
+
+	contentViewport.CanvasPosition=Vector2.new(0,scrollCurrent)
+	updateScrollBar()
 end)
 
 UIS.InputEnded:Connect(function(input)
@@ -886,58 +972,45 @@ UIS.InputEnded:Connect(function(input)
 	end
 end)
 
-local function refreshScroll()
-	contentViewport.CanvasPosition=Vector2.new(0,0)
-	updateCanvasAndBar()
-end
-
-task.defer(refreshScroll)
-
+-- One RenderStepped loop owns the smooth scroll movement.
 RS.RenderStepped:Connect(function()
 	if _G.isHidden or _G.isAnimating or not mf.Visible then
 		scrollTrack.Visible=false
 		scrollThumb.Visible=false
-		contentViewport.ScrollingEnabled=false
 		return
 	end
 
-	contentViewport.ScrollingEnabled=true
+	local _,_,maxScroll=calculateScroll()
 
-	-- Do NOT touch CanvasSize here.
-	-- Roblox owns CanvasPosition while the user scrolls.
-	local maxScroll=_G.scrollMax
 	if maxScroll<=0 then
+		scrollTarget=0
+		scrollCurrent=0
+		contentViewport.CanvasPosition=Vector2.new(0,0)
 		scrollTrack.Visible=false
 		scrollThumb.Visible=false
 		return
 	end
 
-	local y=math.clamp(contentViewport.CanvasPosition.Y,0,maxScroll)
+	scrollTarget=math.clamp(scrollTarget,0,maxScroll)
 
-	-- Only correct impossible overscroll; otherwise leave CanvasPosition alone.
-	if math.abs(y-contentViewport.CanvasPosition.Y)>0.01 then
-		contentViewport.CanvasPosition=Vector2.new(0,y)
+	-- Smooth interpolation makes the wheel much less sharp.
+	scrollCurrent=scrollCurrent+
+		(scrollTarget-scrollCurrent)*SCROLL_SMOOTHNESS
+
+	if math.abs(scrollCurrent-scrollTarget)<0.1 then
+		scrollCurrent=scrollTarget
 	end
 
-	scrollTrack.Visible=true
-	scrollThumb.Visible=true
+	-- Final hard limit: it is impossible to scroll beyond the last module.
+	scrollCurrent=math.clamp(scrollCurrent,0,maxScroll)
 
-	local viewportH=contentViewport.AbsoluteSize.Y
-	local bottom=math.max(viewportH,contentViewport.CanvasSize.Y.Offset)
-	local trackH=scrollTrack.AbsoluteSize.Y
-	local thumbH=math.clamp(
-		trackH*(viewportH/bottom),
-		36,
-		trackH
-	)
-	scrollThumb.Size=UDim2.new(1,0,0,thumbH)
+	contentViewport.CanvasPosition=Vector2.new(0,scrollCurrent)
+	updateScrollBar()
+end)
 
-	local travel=math.max(0,trackH-thumbH)
-	local ratio=y/maxScroll
-	scrollThumb.Position=UDim2.new(
-		0,0,0,
-		travel*math.clamp(ratio,0,1)
-	)
+task.defer(function()
+	task.wait()
+	refreshScroll(true)
 end)
 
 local function setToggle(t,k,on,anim)
@@ -1302,11 +1375,16 @@ end)
 
 local function switchCat(c)
 	if _G.currentCategory==c then return end
+
 	_G.currentCategory=c
+	scrollTarget=0
+	scrollCurrent=0
 	contentViewport.CanvasPosition=Vector2.new(0,0)
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
+
 	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+
 	if c=="movement" then
 		TS:Create(movL,inf,{TextTransparency=0}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
@@ -1318,7 +1396,11 @@ local function switchCat(c)
 		mc.Visible=false
 		miscC.Visible=true
 	end
-	task.defer(refreshScroll)
+
+	task.defer(function()
+		task.wait()
+		refreshScroll(true)
+	end)
 end
 
 movL.MouseButton1Click:Connect(function() switchCat("movement") end)
@@ -1365,7 +1447,7 @@ local function setVisible(s)
 	catBar.Visible=s
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
-	contentViewport.ScrollingEnabled=s
+	contentViewport.ScrollingEnabled=false
 end
 
 local function startFps()
@@ -1389,11 +1471,16 @@ local function setMinimized(s)
 	_G.isAnimating=true
 	_G.isHidden=s
 
+	-- Scrollbar disappears for the whole duration of the UI animation.
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
 	contentViewport.ScrollingEnabled=false
 
-	local ts=s and UDim2.new(0,350,0,30) or UDim2.new(0,350,0,570)
+	-- The normal UI is slightly shorter so there is no large empty gap below it.
+	local ts=s
+		and UDim2.new(0,350,0,30)
+		or UDim2.new(0,350,0,530)
+
 	local tw=TS:Create(
 		mf,
 		TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
@@ -1403,6 +1490,7 @@ local function setMinimized(s)
 	if s then
 		setVisible(false)
 		startFps()
+
 		TS:Create(
 			fpsLabel,
 			TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
@@ -1421,16 +1509,20 @@ local function setMinimized(s)
 	tw.Completed:Connect(function()
 		if not s then
 			setVisible(true)
-			contentViewport.ScrollingEnabled=true
-			refreshScroll()
-
-			if _G.fpsConnection then
-				_G.fpsConnection:Disconnect()
-				_G.fpsConnection=nil
-			end
+			-- Recalculate after the animation so the scrollbar appears
+			-- only when the current category actually needs it.
+			refreshScroll(true)
+		else
+			scrollTrack.Visible=false
+			scrollThumb.Visible=false
 		end
 
 		_G.isAnimating=false
+
+		if s and _G.fpsConnection then
+			_G.fpsConnection:Disconnect()
+			_G.fpsConnection=nil
+		end
 	end)
 end
 
@@ -1555,6 +1647,8 @@ UIS.InputEnded:Connect(function(i)
 end)
 
 player.CharacterAdded:Connect(function(c)
+	scrollTarget=0
+	scrollCurrent=0
 	_G.scrollOffset=0
 	_G.scrollTarget=0
 	character=c
