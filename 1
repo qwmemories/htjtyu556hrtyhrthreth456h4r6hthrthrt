@@ -72,7 +72,7 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,350,0,570)
+mf.Size=UDim2.new(0,350,0,530)
 mf.Position=UDim2.new(0.5,-175,0.5,-285)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
@@ -768,32 +768,64 @@ _G.scrollDragging=false
 _G.scrollDragStart=0
 _G.scrollStartOffset=0
 
--- Медленный ручной скролл.
--- 6 px за один тик колеса + ограниченная скорость движения.
+-- Маленький шаг колеса + мягкое догоняющее движение.
 local SCROLL_STEP=6
-local SCROLL_SPEED=2.5
+local SCROLL_SMOOTH=0.16
 local MIN_THUMB_HEIGHT=44
 
+-- Возвращает реальную высоту видимого контента категории.
+-- Поэтому если в будущем добавишь новый модуль ниже существующих,
+-- область прокрутки автоматически увеличится.
+local function getCategoryContentHeight(container)
+	local bottom=0
+
+	for _,obj in ipairs(container:GetDescendants()) do
+		if obj:IsA("GuiObject") and obj.Visible then
+			local top=obj.Position.Y.Offset
+			local height=obj.Size.Y.Offset
+			local bottomPos=top+height
+
+			if bottomPos>bottom then
+				bottom=bottomPos
+			end
+		end
+	end
+
+	return bottom
+end
+
+local function getCurrentContentHeight()
+	if _G.currentCategory=="movement" then
+		return getCategoryContentHeight(mc)
+	else
+		return getCategoryContentHeight(miscC)
+	end
+end
+
 local function getScrollMax()
-	return math.max(
-		0,
-		mc.AbsoluteSize.Y-contentViewport.AbsoluteSize.Y
-	)
+	local viewportHeight=contentViewport.AbsoluteSize.Y
+	local contentHeight=getCurrentContentHeight()
+
+	return math.max(0,contentHeight-viewportHeight)
 end
 
 local function updateScrollBar()
 	local viewportHeight=contentViewport.AbsoluteSize.Y
-	local contentHeight=mc.AbsoluteSize.Y
+	local contentHeight=getCurrentContentHeight()
 	local trackHeight=scrollTrack.AbsoluteSize.Y
 
 	local maxOffset=math.max(0,contentHeight-viewportHeight)
 	_G.scrollMax=maxOffset
 
+	-- Если контента хватает целиком — скролл полностью отключён.
 	if maxOffset<=0 or trackHeight<=0 then
 		scrollThumb.Size=UDim2.new(1,0,1,0)
 		scrollThumb.Position=UDim2.new(0,0,0,0)
+		scrollTrack.Visible=false
 		return
 	end
+
+	scrollTrack.Visible=true
 
 	local thumbHeight=math.clamp(
 		trackHeight*(viewportHeight/contentHeight),
@@ -820,8 +852,11 @@ local function applyScroll()
 
 	local y=-math.floor(_G.scrollOffset+0.5)
 
-	mc.Position=UDim2.new(0,0,0,y)
-	miscC.Position=UDim2.new(0,0,0,y)
+	if _G.currentCategory=="movement" then
+		mc.Position=UDim2.new(0,0,0,y)
+	else
+		miscC.Position=UDim2.new(0,0,0,y)
+	end
 
 	updateScrollBar()
 end
@@ -829,6 +864,10 @@ end
 local function resetScroll()
 	_G.scrollOffset=0
 	_G.scrollTarget=0
+
+	mc.Position=UDim2.new(0,0,0,0)
+	miscC.Position=UDim2.new(0,0,0,0)
+
 	applyScroll()
 end
 
@@ -836,9 +875,6 @@ task.defer(function()
 	resetScroll()
 end)
 
--- Колесо только меняет цель на маленький шаг.
--- Само движение выполняется отдельно с фиксированной скоростью,
--- поэтому даже быстрое прокручивание мыши не телепортирует GUI.
 UIS.InputChanged:Connect(function(i)
 	if i.UserInputType==Enum.UserInputType.MouseWheel then
 		local p=i.Position
@@ -848,9 +884,13 @@ UIS.InputChanged:Connect(function(i)
 		if p.X>=vpPos.X and p.X<=vpPos.X+vpSize.X
 			and p.Y>=vpPos.Y and p.Y<=vpPos.Y+vpSize.Y then
 
-			setScrollTarget(
-				_G.scrollTarget-(i.Position.Z*SCROLL_STEP)
-			)
+			-- Если текущая категория не требует прокрутки,
+			-- колесо вообще ничего не делает.
+			if _G.scrollMax>0 then
+				setScrollTarget(
+					_G.scrollTarget-(i.Position.Z*SCROLL_STEP)
+				)
+			end
 		end
 
 	elseif i.UserInputType==Enum.UserInputType.MouseMovement
@@ -871,6 +911,8 @@ scrollThumb.InputBegan:Connect(function(i)
 	if i.UserInputType==Enum.UserInputType.MouseButton1
 		or i.UserInputType==Enum.UserInputType.Touch then
 
+		if _G.scrollMax<=0 then return end
+
 		_G.scrollDragging=true
 		_G.scrollDragStart=i.Position.Y
 		_G.scrollStartOffset=_G.scrollOffset
@@ -884,14 +926,28 @@ UIS.InputEnded:Connect(function(i)
 	end
 end)
 
--- Движение с фиксированной скоростью вместо Lerp.
--- Благодаря этому скролл физически не может мгновенно прыгнуть.
 RS.RenderStepped:Connect(function()
+	-- Пересчитываем размер контента постоянно.
+	-- Это позволяет добавлять новые GuiObject-модули позже
+	-- без ручного изменения scrollMax.
+	local newMax=getScrollMax()
+
+	if newMax~=_G.scrollMax then
+		_G.scrollMax=newMax
+		_G.scrollOffset=math.clamp(_G.scrollOffset,0,newMax)
+		_G.scrollTarget=math.clamp(_G.scrollTarget,0,newMax)
+	end
+
 	local delta=_G.scrollTarget-_G.scrollOffset
 
 	if math.abs(delta)>0.01 then
-		local step=math.min(math.abs(delta),SCROLL_SPEED)
-		_G.scrollOffset=_G.scrollOffset+math.sign(delta)*step
+		-- Плавный easing вместо резкого перемещения.
+		_G.scrollOffset=_G.scrollOffset+delta*SCROLL_SMOOTH
+
+		if math.abs(_G.scrollTarget-_G.scrollOffset)<0.05 then
+			_G.scrollOffset=_G.scrollTarget
+		end
+
 		applyScroll()
 	else
 		_G.scrollOffset=_G.scrollTarget
@@ -1259,24 +1315,113 @@ UIS.InputEnded:Connect(function(i)
 	if i.KeyCode==Enum.KeyCode.Space then _G.lastSpace=false end
 end)
 
+local categoryFadeToken=0
+
+local function collectTextObjects(container)
+	local result={}
+
+	for _,obj in ipairs(container:GetDescendants()) do
+		if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+			table.insert(result,obj)
+		end
+	end
+
+	return result
+end
+
+local function fadeOutCategory(container,token)
+	for _,obj in ipairs(collectTextObjects(container)) do
+		if obj.Parent and token==categoryFadeToken then
+			TS:Create(
+				obj,
+				TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+				{TextTransparency=1}
+			):Play()
+		end
+	end
+end
+
+local function fadeInCategory(container,token)
+	local objects=collectTextObjects(container)
+
+	for _,obj in ipairs(objects) do
+		if obj.Parent then
+			local targetTransparency=obj.TextTransparency
+			obj:SetAttribute("CategoryTargetTransparency",targetTransparency)
+			obj.TextTransparency=1
+		end
+	end
+
+	container.Visible=true
+
+	for _,obj in ipairs(objects) do
+		if obj.Parent and token==categoryFadeToken then
+			local target=obj:GetAttribute("CategoryTargetTransparency") or 0
+
+			TS:Create(
+				obj,
+				TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+				{TextTransparency=target}
+			):Play()
+		end
+	end
+end
+
 local function switchCat(c)
 	if _G.currentCategory==c then return end
+
+	categoryFadeToken=categoryFadeToken+1
+	local token=categoryFadeToken
+	local oldCategory=_G.currentCategory
+
 	_G.currentCategory=c
 	_G.scrollOffset=0
 	_G.scrollTarget=0
-	applyScroll()
-	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+
+	local inf=TweenInfo.new(
+		0.3,
+		Enum.EasingStyle.Quad,
+		Enum.EasingDirection.Out
+	)
+
+	-- Анимация самих названий вкладок.
 	if c=="movement" then
 		TS:Create(movL,inf,{TextTransparency=0}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
-		miscC.Visible=false
-		mc.Visible=true
 	else
 		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0}):Play()
-		mc.Visible=false
-		miscC.Visible=true
 	end
+
+	local oldContainer=(oldCategory=="movement") and mc or miscC
+	local newContainer=(c=="movement") and mc or miscC
+
+	-- Старую категорию плавно скрываем.
+	fadeOutCategory(oldContainer,token)
+
+	-- Через 0.3 сек убираем старую и показываем новую.
+	task.delay(0.3,function()
+		if token~=categoryFadeToken then return end
+
+		mc.Visible=false
+		miscC.Visible=false
+
+		mc.Position=UDim2.new(0,0,0,0)
+		miscC.Position=UDim2.new(0,0,0,0)
+
+		_G.scrollOffset=0
+		_G.scrollTarget=0
+
+		-- Сначала новая категория невидима по тексту,
+		-- затем плавно проявляется.
+		fadeInCategory(newContainer,token)
+
+		task.defer(function()
+			if token==categoryFadeToken then
+				applyScroll()
+			end
+		end)
+	end)
 end
 
 movL.MouseButton1Click:Connect(function() switchCat("movement") end)
@@ -1321,7 +1466,12 @@ local function setVisible(s)
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
 	catBar.Visible=s
-	scrollTrack.Visible=s
+
+	if s then
+		applyScroll()
+	else
+		scrollTrack.Visible=false
+	end
 end
 
 local function startFps()
@@ -1343,7 +1493,7 @@ local function setMinimized(s)
 	if _G.isAnimating then return end
 	_G.isAnimating=true
 	_G.isHidden=s
-	local ts=s and UDim2.new(0,350,0,30) or UDim2.new(0,350,0,570)
+	local ts=s and UDim2.new(0,350,0,30) or UDim2.new(0,350,0,530)
 	local tw=TS:Create(mf,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=ts})
 	if s then
 		setVisible(false)
