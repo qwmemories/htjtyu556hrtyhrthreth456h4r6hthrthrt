@@ -790,8 +790,8 @@ local function activeContent()
 		return mc
 	elseif _G.currentCategory=="misc" then
 		return miscC
-	elseif _G.currentCategory=="bind" and _G.bindContent then
-		return _G.bindContent
+	elseif _G.currentCategory=="keybind" and _G.keybindContent then
+		return _G.keybindContent
 	end
 	return mc
 end
@@ -1350,7 +1350,7 @@ end)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
-	if _G.bindCapturing then return end
+	if _G.keybindCapturing then return end
 	if i.KeyCode==Enum.KeyCode.Space and humanoid and not _G.lastSpace then
 		_G.lastSpace=true
 		if _G.jumpEnabled then
@@ -1386,19 +1386,19 @@ local function switchCat(c)
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
 		mc.Visible=true
 		miscC.Visible=false
-		if _G.bindContent then hideBindObjects() end
+		if _G.keybindContent then _G.keybindContent.Visible=false end
 	elseif c=="misc" then
 		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0}):Play()
 		mc.Visible=false
 		miscC.Visible=true
-		if _G.bindContent then hideBindObjects() end
-	elseif c=="bind" and _G.bindContent then
+		if _G.keybindContent then _G.keybindContent.Visible=false end
+	elseif c=="keybind" and _G.keybindContent then
 		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
 		mc.Visible=false
 		miscC.Visible=false
-		_G.bindContent.Visible=true
+		_G.keybindContent.Visible=true
 	end
 
 	task.defer(function()
@@ -1445,36 +1445,11 @@ RS.RenderStepped:Connect(function()
 	end
 end)
 
-local function hideBindObjects()
-	if _G.bindContent then
-		_G.bindContent.Visible=false
-		for _,v in pairs(_G.bindContent:GetDescendants()) do
-			if v:IsA("GuiObject") then
-				v.Visible=false
-			end
-		end
-	end
-end
-
-local function showBindObjects()
-	if _G.bindContent then
-		for _,v in pairs(_G.bindContent:GetDescendants()) do
-			if v:IsA("GuiObject") then
-				v.Visible=true
-			end
-		end
-		_G.bindContent.Visible=true
-	end
-end
-
 local function setVisible(s)
-	if not s then hideBindObjects() end
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
-	if s and _G.currentCategory=="bind" and not _G.isHidden then
-		showBindObjects()
-	else
-		hideBindObjects()
+	if _G.keybindContent then
+		_G.keybindContent.Visible=s and _G.currentCategory=="keybind"
 	end
 	catBar.Visible=s
 	scrollTrack.Visible=false
@@ -1502,7 +1477,6 @@ local function setMinimized(s)
 
 	_G.isAnimating=true
 	_G.isHidden=s
-	if s then hideBindObjects() end
 
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
