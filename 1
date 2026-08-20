@@ -1519,10 +1519,6 @@ local function setMinimized(s)
 
 		_G.isAnimating=false
 
-		if s and _G.fpsConnection then
-			_G.fpsConnection:Disconnect()
-			_G.fpsConnection=nil
-		end
 	end)
 end
 
