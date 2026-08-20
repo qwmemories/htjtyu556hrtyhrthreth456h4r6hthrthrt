@@ -72,7 +72,7 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,350,0,570)
+mf.Size=UDim2.new(0,350,0,530)
 mf.Position=UDim2.new(0.5,-175,0.5,-285)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
@@ -779,8 +779,6 @@ _G.scrollDragging=false
 _G.scrollDragStartY=0
 _G.scrollDragStartCanvas=0
 
--- Custom scroll settings.
--- The native Roblox wheel is disabled so scrolling stays slow and predictable.
 local SCROLL_STEP=24
 local SCROLL_SMOOTHNESS=0.12
 
@@ -788,7 +786,14 @@ local scrollTarget=0
 local scrollCurrent=0
 
 local function activeContent()
-	return _G.currentCategory=="movement" and mc or miscC
+	if _G.currentCategory=="movement" then
+		return mc
+	elseif _G.currentCategory=="misc" then
+		return miscC
+	elseif _G.currentCategory=="keybind" and _G.keybindContent then
+		return _G.keybindContent
+	end
+	return mc
 end
 
 local function contentBottom(content)
@@ -822,11 +827,9 @@ local function calculateScroll()
 	local viewportH=contentViewport.AbsoluteSize.Y
 	local bottom=contentBottom(content)
 
-	-- Canvas is never smaller than the visible viewport.
 	local canvasHeight=math.max(bottom,viewportH)
 	contentViewport.CanvasSize=UDim2.new(0,0,0,canvasHeight)
 
-	-- The absolute bottom of the last visible module determines the limit.
 	local maxScroll=math.max(0,bottom-viewportH)
 	_G.scrollMax=maxScroll
 
@@ -893,11 +896,8 @@ local function refreshScroll(resetPosition)
 	updateScrollBar()
 end
 
--- Native ScrollingFrame scrolling is disabled.
--- This prevents Roblox's very fast default mouse-wheel movement.
 contentViewport.ScrollingEnabled=false
 
--- Slow, smooth mouse-wheel scrolling.
 UIS.InputChanged:Connect(function(input)
 	if input.UserInputType~=Enum.UserInputType.MouseWheel then
 		return
@@ -919,12 +919,10 @@ UIS.InputChanged:Connect(function(input)
 		return
 	end
 
-	-- Positive Z means wheel up, negative means wheel down.
 	scrollTarget=scrollTarget-(input.Position.Z*SCROLL_STEP)
 	scrollTarget=math.clamp(scrollTarget,0,maxScroll)
 end)
 
--- Drag the custom scrollbar thumb.
 scrollThumb.InputBegan:Connect(function(input)
 	if _G.isHidden or _G.isAnimating then
 		return
@@ -972,7 +970,6 @@ UIS.InputEnded:Connect(function(input)
 	end
 end)
 
--- One RenderStepped loop owns the smooth scroll movement.
 RS.RenderStepped:Connect(function()
 	if _G.isHidden or _G.isAnimating or not mf.Visible then
 		scrollTrack.Visible=false
@@ -993,7 +990,6 @@ RS.RenderStepped:Connect(function()
 
 	scrollTarget=math.clamp(scrollTarget,0,maxScroll)
 
-	-- Smooth interpolation makes the wheel much less sharp.
 	scrollCurrent=scrollCurrent+
 		(scrollTarget-scrollCurrent)*SCROLL_SMOOTHNESS
 
@@ -1001,7 +997,6 @@ RS.RenderStepped:Connect(function()
 		scrollCurrent=scrollTarget
 	end
 
-	-- Final hard limit: it is impossible to scroll beyond the last module.
 	scrollCurrent=math.clamp(scrollCurrent,0,maxScroll)
 
 	contentViewport.CanvasPosition=Vector2.new(0,scrollCurrent)
@@ -1355,6 +1350,7 @@ end)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
+	if _G.keybindCapturing then return end
 	if i.KeyCode==Enum.KeyCode.Space and humanoid and not _G.lastSpace then
 		_G.lastSpace=true
 		if _G.jumpEnabled then
@@ -1388,13 +1384,21 @@ local function switchCat(c)
 	if c=="movement" then
 		TS:Create(movL,inf,{TextTransparency=0}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
-		miscC.Visible=false
 		mc.Visible=true
-	else
+		miscC.Visible=false
+		if _G.keybindContent then _G.keybindContent.Visible=false end
+	elseif c=="misc" then
 		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0}):Play()
 		mc.Visible=false
 		miscC.Visible=true
+		if _G.keybindContent then _G.keybindContent.Visible=false end
+	elseif c=="keybind" and _G.keybindContent then
+		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
+		mc.Visible=false
+		miscC.Visible=false
+		_G.keybindContent.Visible=true
 	end
 
 	task.defer(function()
@@ -1444,6 +1448,9 @@ end)
 local function setVisible(s)
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
+	if _G.keybindContent then
+		_G.keybindContent.Visible=s and _G.currentCategory=="keybind"
+	end
 	catBar.Visible=s
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
@@ -1471,12 +1478,10 @@ local function setMinimized(s)
 	_G.isAnimating=true
 	_G.isHidden=s
 
-	-- Scrollbar disappears for the whole duration of the UI animation.
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
 	contentViewport.ScrollingEnabled=false
 
-	-- The normal UI is slightly shorter so there is no large empty gap below it.
 	local ts=s
 		and UDim2.new(0,350,0,30)
 		or UDim2.new(0,350,0,530)
@@ -1509,8 +1514,6 @@ local function setMinimized(s)
 	tw.Completed:Connect(function()
 		if not s then
 			setVisible(true)
-			-- Recalculate after the animation so the scrollbar appears
-			-- only when the current category actually needs it.
 			refreshScroll(true)
 		else
 			scrollTrack.Visible=false
@@ -1641,6 +1644,35 @@ UIS.InputEnded:Connect(function(i)
 		_G.isSliding=false
 	end
 end)
+
+_G.UIRefs={
+	player=player,
+	mf=mf,
+	contentViewport=contentViewport,
+	catBar=catBar,
+	scrollTrack=scrollTrack,
+	scrollThumb=scrollThumb,
+	movL=movL,
+	miscL=miscL,
+	mc=mc,
+	miscC=miscC,
+	setMinimized=setMinimized,
+	switchCat=switchCat
+}
+_G.ModuleActions={
+	Speed=toggleSpeed,
+	Jump=toggleJump,
+	Flight=toggleFlight,
+	Noclip=toggleNoclip,
+	Strafe=toggleStrafe,
+	Airwalk=toggleAirwalk,
+	ClickTP=toggleClickTp,
+	AirJump=toggleAirJump,
+	Aimbot=toggleAimbot,
+	TargetLock=toggleTargetLock,
+	WallsCheck=toggleWallsCheck
+}
+_G.UIReady=true
 
 player.CharacterAdded:Connect(function(c)
 	scrollTarget=0
