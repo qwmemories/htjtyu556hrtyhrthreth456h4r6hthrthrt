@@ -195,11 +195,19 @@ local function ass(s,h)
 	return ss,hs
 end
 
-local contentViewport=Instance.new("Frame")
+local contentViewport=Instance.new("ScrollingFrame")
 contentViewport.Size=UDim2.new(0,258,0,460)
 contentViewport.Position=UDim2.new(0,90,0,35)
 contentViewport.BackgroundTransparency=1
+contentViewport.BorderSizePixel=0
 contentViewport.ClipsDescendants=true
+contentViewport.Active=true
+contentViewport.ScrollingEnabled=true
+contentViewport.ScrollingDirection=Enum.ScrollingDirection.Y
+contentViewport.ElasticBehavior=Enum.ElasticBehavior.Never
+contentViewport.ScrollBarThickness=0
+contentViewport.CanvasSize=UDim2.new(0,0,0,0)
+contentViewport.CanvasPosition=Vector2.new(0,0)
 contentViewport.Parent=mf
 
 local mc=Instance.new("Frame")
@@ -757,30 +765,25 @@ scrollTrack.Parent=mf
 Instance.new("UICorner",scrollTrack).CornerRadius=UDim.new(1,0)
 
 local scrollThumb=Instance.new("Frame")
-scrollThumb.Size=UDim2.new(1,0,0,100)
+scrollThumb.Size=UDim2.new(1,0,1,0)
 scrollThumb.Position=UDim2.new(0,0,0,0)
 scrollThumb.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 scrollThumb.BorderSizePixel=0
-scrollThumb.Visible=false
 scrollThumb.Active=true
+scrollThumb.Visible=false
 scrollThumb.Parent=scrollTrack
 Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
 
-_G.scrollOffset=0
-_G.scrollTarget=0
 _G.scrollMax=0
 _G.scrollDragging=false
 _G.scrollDragStartY=0
-_G.scrollDragStartOffset=0
+_G.scrollDragStartCanvas=0
 
-local SCROLL_STEP=4
-local SCROLL_LERP=0.08
-
-local function getActiveContent()
+local function activeContent()
 	return _G.currentCategory=="movement" and mc or miscC
 end
 
-local function getContentBottom(content)
+local function contentBottom(content)
 	local bottom=0
 	for _,obj in ipairs(content:GetChildren()) do
 		if obj:IsA("GuiObject") and obj.Visible then
@@ -791,24 +794,28 @@ local function getContentBottom(content)
 	return bottom
 end
 
-local function updateScrollMetrics()
-	local content=getActiveContent()
+local function updateCanvasAndBar()
+	local content=activeContent()
 	local viewportH=contentViewport.AbsoluteSize.Y
-	local bottom=getContentBottom(content)
+	local bottom=contentBottom(content)
 
-	-- The only valid scroll range is the amount by which the last
-	-- visible object extends below the viewport.
-	_G.scrollMax=math.max(0,bottom-viewportH)
+	-- Canvas is exactly as tall as the last real GUI object.
+	-- There is no artificial 560/450 pixel tail.
+	contentViewport.CanvasSize=UDim2.new(0,0,0,bottom)
 
-	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
-	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
+	local maxScroll=math.max(0,bottom-viewportH)
+	_G.scrollMax=maxScroll
 
-	if _G.scrollMax<=0 or _G.isHidden or _G.isAnimating or not mf.Visible then
+	-- Hard-stop CanvasPosition at the exact end.
+	local y=math.clamp(contentViewport.CanvasPosition.Y,0,maxScroll)
+	if math.abs(y-contentViewport.CanvasPosition.Y)>0.01 then
+		contentViewport.CanvasPosition=Vector2.new(0,y)
+	end
+
+	if maxScroll<=0 or _G.isHidden or _G.isAnimating or not mf.Visible then
 		scrollTrack.Visible=false
 		scrollThumb.Visible=false
-		_G.scrollOffset=0
-		_G.scrollTarget=0
-		content.Position=UDim2.new(0,0,0,0)
+		contentViewport.CanvasPosition=Vector2.new(0,0)
 		return
 	end
 
@@ -820,60 +827,41 @@ local function updateScrollMetrics()
 	scrollThumb.Size=UDim2.new(1,0,0,thumbH)
 
 	local travel=math.max(0,trackH-thumbH)
-	local ratio=(_G.scrollMax>0) and (_G.scrollOffset/_G.scrollMax) or 0
+	local ratio=y/maxScroll
 	scrollThumb.Position=UDim2.new(0,0,0,travel*math.clamp(ratio,0,1))
 end
 
-local function applyScroll()
-	local content=getActiveContent()
-
-	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
-	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
-
-	content.Position=UDim2.new(0,0,-math.floor(_G.scrollOffset+0.5),0)
-end
-
-local function refreshScroll()
-	updateScrollMetrics()
-	applyScroll()
-	updateScrollMetrics()
-end
-
-UIS.InputChanged:Connect(function(input)
-	if input.UserInputType==Enum.UserInputType.MouseWheel then
-		if _G.isHidden or _G.isAnimating or not mf.Visible then return end
-
-		-- MouseWheel Position is the wheel delta, NOT the mouse cursor position.
-		-- Do not test X/Y here.
-		local z=input.Position.Z
-		if z==0 or _G.scrollMax<=0 then return end
-
-		-- Fixed tiny step: one wheel event can never jump farther than 4 px.
-		_G.scrollTarget=math.clamp(
-			_G.scrollTarget-math.sign(z)*SCROLL_STEP,
-			0,
-			_G.scrollMax
-		)
-
-	elseif input.UserInputType==Enum.UserInputType.MouseMovement and _G.scrollDragging then
-		local trackH=scrollTrack.AbsoluteSize.Y
-		local thumbH=scrollThumb.AbsoluteSize.Y
-		local travel=math.max(1,trackH-thumbH)
-		local delta=input.Position.Y-_G.scrollDragStartY
-
-		_G.scrollTarget=math.clamp(
-			_G.scrollDragStartOffset+(delta/travel)*_G.scrollMax,
-			0,
-			_G.scrollMax
-		)
+-- Native ScrollingFrame handles the mouse wheel itself.
+-- We only synchronize the custom scrollbar with CanvasPosition.
+contentViewport:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+	if _G.isHidden or _G.isAnimating or not mf.Visible then
+		scrollTrack.Visible=false
+		scrollThumb.Visible=false
+		return
 	end
+	updateCanvasAndBar()
 end)
 
 scrollThumb.InputBegan:Connect(function(input)
 	if input.UserInputType==Enum.UserInputType.MouseButton1 then
 		_G.scrollDragging=true
 		_G.scrollDragStartY=input.Position.Y
-		_G.scrollDragStartOffset=_G.scrollTarget
+		_G.scrollDragStartCanvas=contentViewport.CanvasPosition.Y
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if _G.scrollDragging and input.UserInputType==Enum.UserInputType.MouseMovement then
+		local trackH=scrollTrack.AbsoluteSize.Y
+		local thumbH=scrollThumb.AbsoluteSize.Y
+		local travel=math.max(1,trackH-thumbH)
+		local delta=input.Position.Y-_G.scrollDragStartY
+
+		local target=_G.scrollDragStartCanvas+(delta/travel)*_G.scrollMax
+		contentViewport.CanvasPosition=Vector2.new(
+			0,
+			math.clamp(target,0,_G.scrollMax)
+		)
 	end
 end)
 
@@ -883,28 +871,23 @@ UIS.InputEnded:Connect(function(input)
 	end
 end)
 
+local function refreshScroll()
+	contentViewport.CanvasPosition=Vector2.new(0,0)
+	updateCanvasAndBar()
+end
+
+task.defer(refreshScroll)
+
 RS.RenderStepped:Connect(function()
 	if _G.isHidden or _G.isAnimating or not mf.Visible then
 		scrollTrack.Visible=false
 		scrollThumb.Visible=false
+		contentViewport.ScrollingEnabled=false
 		return
 	end
 
-	updateScrollMetrics()
-
-	local delta=_G.scrollTarget-_G.scrollOffset
-	if math.abs(delta)>0.05 then
-		_G.scrollOffset=_G.scrollOffset+delta*SCROLL_LERP
-	else
-		_G.scrollOffset=_G.scrollTarget
-	end
-
-	-- Final hard clamp every frame.
-	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
-	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
-
-	applyScroll()
-	updateScrollMetrics()
+	contentViewport.ScrollingEnabled=true
+	updateCanvasAndBar()
 end)
 
 local function setToggle(t,k,on,anim)
@@ -1270,8 +1253,7 @@ end)
 local function switchCat(c)
 	if _G.currentCategory==c then return end
 	_G.currentCategory=c
-	_G.scrollOffset=0
-	_G.scrollTarget=0
+	contentViewport.CanvasPosition=Vector2.new(0,0)
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
 	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
@@ -1286,11 +1268,7 @@ local function switchCat(c)
 		mc.Visible=false
 		miscC.Visible=true
 	end
-	task.defer(function()
-		if not _G.isHidden and not _G.isAnimating then
-			refreshScroll()
-		end
-	end)
+	task.defer(refreshScroll)
 end
 
 movL.MouseButton1Click:Connect(function() switchCat("movement") end)
@@ -1337,6 +1315,7 @@ local function setVisible(s)
 	catBar.Visible=s
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
+	contentViewport.ScrollingEnabled=s
 end
 
 local function startFps()
@@ -1362,6 +1341,7 @@ local function setMinimized(s)
 
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
+	contentViewport.ScrollingEnabled=false
 
 	local ts=s and UDim2.new(0,350,0,30) or UDim2.new(0,350,0,570)
 	local tw=TS:Create(
@@ -1389,11 +1369,9 @@ local function setMinimized(s)
 	tw:Play()
 
 	tw.Completed:Connect(function()
-		_G.isAnimating=false
-
 		if not s then
 			setVisible(true)
-			-- Only after the opening animation has finished.
+			contentViewport.ScrollingEnabled=true
 			refreshScroll()
 
 			if _G.fpsConnection then
@@ -1401,6 +1379,8 @@ local function setMinimized(s)
 				_G.fpsConnection=nil
 			end
 		end
+
+		_G.isAnimating=false
 	end)
 end
 
