@@ -72,8 +72,8 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,260,0,570)
-mf.Position=UDim2.new(0.5,-130,0.5,-285)
+mf.Size=UDim2.new(0,300,0,520)
+mf.Position=UDim2.new(0.5,-150,0.5,-260)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
 mf.Active=true
@@ -196,7 +196,7 @@ local function ass(s,h)
 end
 
 local mc=Instance.new("Frame")
-mc.Size=UDim2.new(1,0,0,450)
+mc.Size=UDim2.new(1,0,0,400)
 mc.Position=UDim2.new(0,0,0,30)
 mc.BackgroundTransparency=1
 mc.Parent=mf
@@ -241,14 +241,14 @@ local spSS,spHS=ass(spS,spH)
 
 local sep1=Instance.new("Frame")
 sep1.Size=UDim2.new(0.9,0,0,1)
-sep1.Position=UDim2.new(0.05,0,0,58)
+sep1.Position=UDim2.new(0.05,0,0,52)
 sep1.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep1.BorderSizePixel=0
 sep1.Parent=mc
 
 local jT=Instance.new("TextLabel")
 jT.Size=UDim2.new(0.5,0,0,25)
-jT.Position=UDim2.new(0,10,0,68)
+jT.Position=UDim2.new(0,10,0,62)
 jT.BackgroundTransparency=1
 jT.Text="Jump: 50"
 jT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -257,11 +257,11 @@ jT.Font=Enum.Font.Gotham
 jT.TextXAlignment=Enum.TextXAlignment.Left
 jT.Parent=mc
 
-local jTr,jK,jSt,jCl=ct(mc,UDim2.new(0.75,0,0,70))
+local jTr,jK,jSt,jCl=ct(mc,UDim2.new(0.75,0,0,64))
 
 local jS=Instance.new("Frame")
 jS.Size=UDim2.new(0.85,0,0,8)
-jS.Position=UDim2.new(0.075,0,0,100)
+jS.Position=UDim2.new(0.075,0,0,94)
 jS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
 jS.BorderSizePixel=0
 jS.Parent=mc
@@ -286,14 +286,14 @@ local jSS,jHS=ass(jS,jH)
 
 local sep2=Instance.new("Frame")
 sep2.Size=UDim2.new(0.9,0,0,1)
-sep2.Position=UDim2.new(0.05,0,0,124)
+sep2.Position=UDim2.new(0.05,0,0,114)
 sep2.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep2.BorderSizePixel=0
 sep2.Parent=mc
 
 local fT=Instance.new("TextLabel")
 fT.Size=UDim2.new(0.5,0,0,25)
-fT.Position=UDim2.new(0,10,0,134)
+fT.Position=UDim2.new(0,10,0,124)
 fT.BackgroundTransparency=1
 fT.Text="Flight: 50"
 fT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -302,11 +302,11 @@ fT.Font=Enum.Font.Gotham
 fT.TextXAlignment=Enum.TextXAlignment.Left
 fT.Parent=mc
 
-local fTr,fK,fSt,fCl=ct(mc,UDim2.new(0.75,0,0,136))
+local fTr,fK,fSt,fCl=ct(mc,UDim2.new(0.75,0,0,126))
 
 local fS=Instance.new("Frame")
 fS.Size=UDim2.new(0.85,0,0,8)
-fS.Position=UDim2.new(0.075,0,0,166)
+fS.Position=UDim2.new(0.075,0,0,156)
 fS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
 fS.BorderSizePixel=0
 fS.Parent=mc
@@ -331,7 +331,7 @@ local fSS,fHS=ass(fS,fH)
 
 local nT=Instance.new("TextLabel")
 nT.Size=UDim2.new(0.5,0,0,25)
-nT.Position=UDim2.new(0,10,0,190)
+nT.Position=UDim2.new(0,10,0,180)
 nT.BackgroundTransparency=1
 nT.Text="Noclip"
 nT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -340,18 +340,18 @@ nT.Font=Enum.Font.Gotham
 nT.TextXAlignment=Enum.TextXAlignment.Left
 nT.Parent=mc
 
-local nTr,nK,nSt,nCl=ct(mc,UDim2.new(0.75,0,0,192))
+local nTr,nK,nSt,nCl=ct(mc,UDim2.new(0.75,0,0,182))
 
 local sep3=Instance.new("Frame")
 sep3.Size=UDim2.new(0.9,0,0,1)
-sep3.Position=UDim2.new(0.05,0,0,222)
+sep3.Position=UDim2.new(0.05,0,0,210)
 sep3.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep3.BorderSizePixel=0
 sep3.Parent=mc
 
 local stT=Instance.new("TextLabel")
 stT.Size=UDim2.new(0.5,0,0,25)
-stT.Position=UDim2.new(0,10,0,232)
+stT.Position=UDim2.new(0,10,0,220)
 stT.BackgroundTransparency=1
 stT.Text="Strafe: 0"
 stT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -360,11 +360,11 @@ stT.Font=Enum.Font.Gotham
 stT.TextXAlignment=Enum.TextXAlignment.Left
 stT.Parent=mc
 
-local stTr,stK,stSt,stCl=ct(mc,UDim2.new(0.75,0,0,234))
+local stTr,stK,stSt,stCl=ct(mc,UDim2.new(0.75,0,0,222))
 
 local stS=Instance.new("Frame")
 stS.Size=UDim2.new(0.85,0,0,8)
-stS.Position=UDim2.new(0.075,0,0,264)
+stS.Position=UDim2.new(0.075,0,0,252)
 stS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
 stS.BorderSizePixel=0
 stS.Parent=mc
@@ -389,14 +389,14 @@ local stSS,stHS=ass(stS,stH)
 
 local sep4=Instance.new("Frame")
 sep4.Size=UDim2.new(0.9,0,0,1)
-sep4.Position=UDim2.new(0.05,0,0,288)
+sep4.Position=UDim2.new(0.05,0,0,274)
 sep4.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep4.BorderSizePixel=0
 sep4.Parent=mc
 
 local awT=Instance.new("TextLabel")
 awT.Size=UDim2.new(0.5,0,0,25)
-awT.Position=UDim2.new(0,10,0,298)
+awT.Position=UDim2.new(0,10,0,284)
 awT.BackgroundTransparency=1
 awT.Text="Airwalk"
 awT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -405,18 +405,18 @@ awT.Font=Enum.Font.Gotham
 awT.TextXAlignment=Enum.TextXAlignment.Left
 awT.Parent=mc
 
-local awTr,awK,awSt,awCl=ct(mc,UDim2.new(0.75,0,0,300))
+local awTr,awK,awSt,awCl=ct(mc,UDim2.new(0.75,0,0,286))
 
 local sep5=Instance.new("Frame")
 sep5.Size=UDim2.new(0.9,0,0,1)
-sep5.Position=UDim2.new(0.05,0,0,330)
+sep5.Position=UDim2.new(0.05,0,0,314)
 sep5.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep5.BorderSizePixel=0
 sep5.Parent=mc
 
 local cT=Instance.new("TextLabel")
 cT.Size=UDim2.new(0.5,0,0,25)
-cT.Position=UDim2.new(0,10,0,340)
+cT.Position=UDim2.new(0,10,0,324)
 cT.BackgroundTransparency=1
 cT.Text="ClickTP"
 cT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -425,18 +425,18 @@ cT.Font=Enum.Font.Gotham
 cT.TextXAlignment=Enum.TextXAlignment.Left
 cT.Parent=mc
 
-local cTr,cK,cSt,cCl=ct(mc,UDim2.new(0.75,0,0,342))
+local cTr,cK,cSt,cCl=ct(mc,UDim2.new(0.75,0,0,326))
 
 local sep6=Instance.new("Frame")
 sep6.Size=UDim2.new(0.9,0,0,1)
-sep6.Position=UDim2.new(0.05,0,0,372)
+sep6.Position=UDim2.new(0.05,0,0,354)
 sep6.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep6.BorderSizePixel=0
 sep6.Parent=mc
 
 local ajT=Instance.new("TextLabel")
 ajT.Size=UDim2.new(0.5,0,0,25)
-ajT.Position=UDim2.new(0,10,0,382)
+ajT.Position=UDim2.new(0,10,0,364)
 ajT.BackgroundTransparency=1
 ajT.Text="AirJump"
 ajT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -445,10 +445,10 @@ ajT.Font=Enum.Font.Gotham
 ajT.TextXAlignment=Enum.TextXAlignment.Left
 ajT.Parent=mc
 
-local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,384))
+local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,366))
 
 local miscC=Instance.new("Frame")
-miscC.Size=UDim2.new(1,0,0,450)
+miscC.Size=UDim2.new(1,0,0,400)
 miscC.Position=UDim2.new(0,0,0,30)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
@@ -1115,7 +1115,7 @@ local function setMinimized(s)
 	if _G.isAnimating then return end
 	_G.isAnimating=true
 	_G.isHidden=s
-	local ts=s and UDim2.new(0,260,0,30) or UDim2.new(0,260,0,570)
+	local ts=s and UDim2.new(0,300,0,30) or UDim2.new(0,300,0,520)
 	local tw=TS:Create(mf,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=ts})
 	if s then
 		setVisible(false)
