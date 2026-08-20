@@ -718,7 +718,7 @@ wcT.Parent=miscC
 local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
 
 local keybindC=Instance.new("Frame")
-keybindC.Size=UDim2.new(0,258,0,560)
+keybindC.Size=UDim2.new(0,258,0,500)
 keybindC.Position=UDim2.new(0,0,0,0)
 keybindC.BackgroundTransparency=1
 keybindC.Visible=false
@@ -728,7 +728,7 @@ local keybindTitle=Instance.new("TextLabel")
 keybindTitle.Size=UDim2.new(1,0,0,25)
 keybindTitle.Position=UDim2.new(0,10,0,2)
 keybindTitle.BackgroundTransparency=1
-keybindTitle.Text="Keybinds"
+keybindTitle.Text="Binds"
 keybindTitle.TextColor3=Color3.new(0.6,0.6,0.6)
 keybindTitle.TextSize=20
 keybindTitle.Font=Enum.Font.Gotham
@@ -854,6 +854,8 @@ local function refreshKeybindRows()
 	end
 end
 
+_G.refreshKeybindRows=refreshKeybindRows
+
 local catBar=Instance.new("Frame")
 catBar.Size=UDim2.new(0,82,1,-70)
 catBar.Position=UDim2.new(0,4,0,35)
@@ -902,7 +904,7 @@ local keybindL=Instance.new("TextButton")
 keybindL.Size=UDim2.new(1,0,0,40)
 keybindL.Position=UDim2.new(0,0,0,118)
 keybindL.BackgroundTransparency=1
-keybindL.Text="keybind"
+keybindL.Text="binds"
 keybindL.TextColor3=Color3.new(1,1,1)
 keybindL.TextTransparency=0.4
 keybindL.TextSize=14
