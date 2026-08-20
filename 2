@@ -1,6 +1,5 @@
-
 -- ============================================
--- ЧАСТЬ 2: MISC + AIMBOT LOGIC
+-- ЧАСТЬ 2: MISC + AIMBOT LOGIC (FIXED)
 -- ============================================
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -16,245 +15,245 @@ repeat wait(0.1) until _G.speedEnabled ~= nil
 
 -- ===== ФУНКЦИИ ПОЛЕТА =====
 local function setNoclip(state)
-	if not character then return end
-	for _, part in pairs(character:GetDescendants()) do
-		if part:IsA("BasePart") then 
-			part.CanCollide = not state 
-		end
-	end
+    if not character then return end
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = not state
+        end
+    end
 end
 
 function _G.startFlightFunc()
-	if _G.flying or not root then return end
-	_G.flying = true
-	_G.bodyVelocity = Instance.new("BodyVelocity")
-	_G.bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-	_G.bodyVelocity.Velocity = Vector3.zero
-	_G.bodyVelocity.Parent = root
-	_G.bodyGyro = Instance.new("BodyGyro")
-	_G.bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-	_G.bodyGyro.P = 10000
-	_G.bodyGyro.Parent = root
-	humanoid.PlatformStand = true
-	if _G.noclipEnabled then
-		setNoclip(true)
-		_G.noclipConnection = RunService.Stepped:Connect(function() setNoclip(true) end)
-	end
+    if _G.flying or not root then return end
+    _G.flying = true
+    _G.bodyVelocity = Instance.new("BodyVelocity")
+    _G.bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    _G.bodyVelocity.Velocity = Vector3.zero
+    _G.bodyVelocity.Parent = root
+    _G.bodyGyro = Instance.new("BodyGyro")
+    _G.bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    _G.bodyGyro.P = 10000
+    _G.bodyGyro.Parent = root
+    humanoid.PlatformStand = true
+    if _G.noclipEnabled then
+        setNoclip(true)
+        _G.noclipConnection = RunService.Stepped:Connect(function() setNoclip(true) end)
+    end
 end
 
 function _G.stopFlightFunc()
-	_G.flying = false
-	if _G.bodyVelocity then _G.bodyVelocity:Destroy() _G.bodyVelocity = nil end
-	if _G.bodyGyro then _G.bodyGyro:Destroy() _G.bodyGyro = nil end
-	if humanoid then humanoid.PlatformStand = false end
-	if _G.noclipConnection then 
-		_G.noclipConnection:Disconnect() 
-		_G.noclipConnection = nil 
-	end
-	setNoclip(false)
+    _G.flying = false
+    if _G.bodyVelocity then _G.bodyVelocity:Destroy() _G.bodyVelocity = nil end
+    if _G.bodyGyro then _G.bodyGyro:Destroy() _G.bodyGyro = nil end
+    if humanoid then humanoid.PlatformStand = false end
+    if _G.noclipConnection then
+        _G.noclipConnection:Disconnect()
+        _G.noclipConnection = nil
+    end
+    setNoclip(false)
 end
 
 function _G.enableNoclipFunc()
-	if _G.flying then
-		setNoclip(true)
-		if not _G.noclipConnection then
-			_G.noclipConnection = RunService.Stepped:Connect(function() setNoclip(true) end)
-		end
-	end
+    if _G.flying then
+        setNoclip(true)
+        if not _G.noclipConnection then
+            _G.noclipConnection = RunService.Stepped:Connect(function() setNoclip(true) end)
+        end
+    end
 end
 
 function _G.disableNoclipFunc()
-	if _G.noclipConnection then 
-		_G.noclipConnection:Disconnect() 
-		_G.noclipConnection = nil 
-	end
-	setNoclip(false)
+    if _G.noclipConnection then
+        _G.noclipConnection:Disconnect()
+        _G.noclipConnection = nil
+    end
+    setNoclip(false)
 end
 
 -- ===== ФУНКЦИИ AIRWALK =====
 function _G.startAirwalkFunc()
-	if _G.airwalkPlatform then return end
-	_G.airwalkY = root.Position.Y - 3
-	_G.airwalkPlatform = Instance.new("Part")
-	_G.airwalkPlatform.Size = Vector3.new(6, 1, 6)
-	_G.airwalkPlatform.Transparency = 1
-	_G.airwalkPlatform.CanCollide = true
-	_G.airwalkPlatform.Anchored = true
-	_G.airwalkPlatform.Parent = workspace
+    if _G.airwalkPlatform then return end
+    _G.airwalkY = root.Position.Y - 3
+    _G.airwalkPlatform = Instance.new("Part")
+    _G.airwalkPlatform.Size = Vector3.new(6, 1, 6)
+    _G.airwalkPlatform.Transparency = 1
+    _G.airwalkPlatform.CanCollide = true
+    _G.airwalkPlatform.Anchored = true
+    _G.airwalkPlatform.Parent = workspace
 end
 
 function _G.stopAirwalkFunc()
-	if _G.airwalkPlatform then 
-		_G.airwalkPlatform:Destroy() 
-		_G.airwalkPlatform = nil 
-	end
+    if _G.airwalkPlatform then
+        _G.airwalkPlatform:Destroy()
+        _G.airwalkPlatform = nil
+    end
 end
 
 -- ===== AIMBOT ЛОГИКА =====
 local function moveMouse(deltaX, deltaY)
-	if deltaX == 0 and deltaY == 0 then return end
-	local currentPos = UserInputService:GetMouseLocation()
-	local newX = currentPos.X + deltaX
-	local newY = currentPos.Y + deltaY
-	mouse.Move(newX, newY)
+    if deltaX == 0 and deltaY == 0 then return end
+    local currentPos = UserInputService:GetMouseLocation()
+    local newX = currentPos.X + deltaX
+    local newY = currentPos.Y + deltaY
+    mouse.Move(newX, newY)
 end
 
 local function getTargets()
-	local targets = {}
-	for _, plr in pairs(Players:GetPlayers()) do
-		if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Head") then
-			local humanoidCheck = plr.Character:FindFirstChild("Humanoid")
-			if humanoidCheck and humanoidCheck.Health > 0 then
-				table.insert(targets, plr)
-			end
-		end
-	end
-	return targets
+    local targets = {}
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Head") then
+            local humanoidCheck = plr.Character:FindFirstChild("Humanoid")
+            if humanoidCheck and humanoidCheck.Health > 0 then
+                table.insert(targets, plr)
+            end
+        end
+    end
+    return targets
 end
 
 local function selectTarget(targets)
-	if #targets == 0 then return nil end
+    if #targets == 0 then return nil end
 
-	if _G.sortMode == "Distance" then
-		table.sort(targets, function(a, b)
-			local distA = (a.Character.HumanoidRootPart.Position - root.Position).Magnitude
-			local distB = (b.Character.HumanoidRootPart.Position - root.Position).Magnitude
-			return distA < distB
-		end)
-		return targets[1]
-	elseif _G.sortMode == "Cursor" then
-		local mousePos = UserInputService:GetMouseLocation()
-		table.sort(targets, function(a, b)
-			local posA, onA = workspace.CurrentCamera:WorldToViewportPoint(a.Character.Head.Position)
-			local posB, onB = workspace.CurrentCamera:WorldToViewportPoint(b.Character.Head.Position)
-			if not onA then return false end
-			if not onB then return true end
-			local distA = (Vector2.new(posA.X, posA.Y) - mousePos).Magnitude
-			local distB = (Vector2.new(posB.X, posB.Y) - mousePos).Magnitude
-			return distA < distB
-		end)
-		return targets[1]
-	end
-	return targets[1]
+    if _G.sortMode == "Distance" then
+        table.sort(targets, function(a, b)
+            local distA = (a.Character.HumanoidRootPart.Position - root.Position).Magnitude
+            local distB = (b.Character.HumanoidRootPart.Position - root.Position).Magnitude
+            return distA < distB
+        end)
+        return targets[1]
+    elseif _G.sortMode == "Cursor" then
+        local mousePos = UserInputService:GetMouseLocation()
+        table.sort(targets, function(a, b)
+            local posA, onA = workspace.CurrentCamera:WorldToViewportPoint(a.Character.Head.Position)
+            local posB, onB = workspace.CurrentCamera:WorldToViewportPoint(b.Character.Head.Position)
+            if not onA then return false end
+            if not onB then return true end
+            local distA = (Vector2.new(posA.X, posA.Y) - mousePos).Magnitude
+            local distB = (Vector2.new(posB.X, posB.Y) - mousePos).Magnitude
+            return distA < distB
+        end)
+        return targets[1]
+    end
+    return targets[1]
 end
 
 local function isVisible(targetHead)
-	if not _G.wallsCheckEnabled then return true end
-	local origin = workspace.CurrentCamera.CFrame.Position
-	local direction = (targetHead.Position - origin)
-	local ray = workspace:Raycast(origin, direction)
-	if ray and ray.Instance then
-		local hitChar = ray.Instance:FindFirstAncestorOfClass("Model")
-		return hitChar and hitChar:FindFirstChild("Humanoid") ~= nil
-	end
-	return true
+    if not _G.wallsCheckEnabled then return true end
+    local origin = workspace.CurrentCamera.CFrame.Position
+    local direction = (targetHead.Position - origin)
+    local ray = workspace:Raycast(origin, direction)
+    if ray and ray.Instance then
+        local hitChar = ray.Instance:FindFirstAncestorOfClass("Model")
+        return hitChar and hitChar:FindFirstChild("Humanoid") ~= nil
+    end
+    return true
 end
 
 local function aimAtTarget(target)
-	if not target or not target.Character then return end
-	local head = target.Character.Head
-	if not head then return end
+    if not target or not target.Character then return end
+    local head = target.Character.Head
+    if not head then return end
 
-	local distance = (head.Position - root.Position).Magnitude
-	if distance > _G.currentRange then return end
+    local distance = (head.Position - root.Position).Magnitude
+    if distance > _G.currentRange then return end
 
-	if not isVisible(head) then return end
+    if not isVisible(head) then return end
 
-	local cam = workspace.CurrentCamera
-	local headPos, onScreen = cam:WorldToViewportPoint(head.Position)
-	if not onScreen then return end
+    local cam = workspace.CurrentCamera
+    local headPos, onScreen = cam:WorldToViewportPoint(head.Position)
+    if not onScreen then return end
 
-	if _G.aimMode == "Center" then
-		local centerX = cam.ViewportSize.X / 2
-		local centerY = cam.ViewportSize.Y / 2
-		local offsetX = headPos.X - centerX
-		local offsetY = headPos.Y - centerY
-		if _G.currentSmoothness > 0 then
-			moveMouse(offsetX * _G.currentSmoothness, offsetY * _G.currentSmoothness)
-		else
-			moveMouse(offsetX, offsetY)
-		end
-	elseif _G.aimMode == "Cursor" then
-		local mousePos = UserInputService:GetMouseLocation()
-		local offsetX = headPos.X - mousePos.X
-		local offsetY = headPos.Y - mousePos.Y
-		if _G.currentSmoothness > 0 then
-			moveMouse(offsetX * _G.currentSmoothness, offsetY * _G.currentSmoothness)
-		else
-			moveMouse(offsetX, offsetY)
-		end
-	end
+    if _G.aimMode == "Center" then
+        local centerX = cam.ViewportSize.X / 2
+        local centerY = cam.ViewportSize.Y / 2
+        local offsetX = headPos.X - centerX
+        local offsetY = headPos.Y - centerY
+        if _G.currentSmoothness > 0 then
+            moveMouse(offsetX * _G.currentSmoothness, offsetY * _G.currentSmoothness)
+        else
+            moveMouse(offsetX, offsetY)
+        end
+    elseif _G.aimMode == "Cursor" then
+        local mousePos = UserInputService:GetMouseLocation()
+        local offsetX = headPos.X - mousePos.X
+        local offsetY = headPos.Y - mousePos.Y
+        if _G.currentSmoothness > 0 then
+            moveMouse(offsetX * _G.currentSmoothness, offsetY * _G.currentSmoothness)
+        else
+            moveMouse(offsetX, offsetY)
+        end
+    end
 end
 
 -- ===== ОСНОВНОЙ ЦИКЛ =====
 RunService.RenderStepped:Connect(function()
-	-- Flight
-	if _G.flying and _G.bodyVelocity and _G.bodyGyro and root then
-		local cam = workspace.CurrentCamera
-		local move = Vector3.zero
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move += Vector3.new(0, -1, 0) end
-		if move.Magnitude > 0 then move = move.Unit * _G.currentFlight end
-		_G.bodyVelocity.Velocity = move
-		_G.bodyGyro.CFrame = cam.CFrame
-	end
+    -- Flight
+    if _G.flying and _G.bodyVelocity and _G.bodyGyro and root then
+        local cam = workspace.CurrentCamera
+        local move = Vector3.zero
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move += Vector3.new(0, -1, 0) end
+        if move.Magnitude > 0 then move = move.Unit * _G.currentFlight end
+        _G.bodyVelocity.Velocity = move
+        _G.bodyGyro.CFrame = cam.CFrame
+    end
 
-	-- Aimbot
-	if _G.aimbotEnabled then
-		local targets = getTargets()
-		local target = nil
+    -- Aimbot
+    if _G.aimbotEnabled then
+        local targets = getTargets()
+        local target = nil
 
-		if _G.targetLockEnabled and _G.lockedTarget and _G.lockedTarget.Character and _G.lockedTarget.Character:FindFirstChild("Head") then
-			local dist = (_G.lockedTarget.Character.Head.Position - root.Position).Magnitude
-			if dist <= _G.currentRange then
-				target = _G.lockedTarget
-			else
-				_G.lockedTarget = nil
-			end
-		end
+        if _G.targetLockEnabled and _G.lockedTarget and _G.lockedTarget.Character and _G.lockedTarget.Character:FindFirstChild("Head") then
+            local dist = (_G.lockedTarget.Character.Head.Position - root.Position).Magnitude
+            if dist <= _G.currentRange then
+                target = _G.lockedTarget
+            else
+                _G.lockedTarget = nil
+            end
+        end
 
-		if not target then
-			target = selectTarget(targets)
-			if _G.targetLockEnabled and target then
-				_G.lockedTarget = target
-			end
-		end
+        if not target then
+            target = selectTarget(targets)
+            if _G.targetLockEnabled and target then
+                _G.lockedTarget = target
+            end
+        end
 
-		if target then
-			aimAtTarget(target)
-		end
-	end
+        if target then
+            aimAtTarget(target)
+        end
+    end
 end)
 
 -- ===== STRAFE =====
 RunService.Heartbeat:Connect(function()
-	if _G.strafeEnabled and _G.currentStrafe > 0 and root and humanoid and not _G.flying then
-		local moveDir = humanoid.MoveDirection
-		local speed = humanoid.WalkSpeed
-		local desired = moveDir * speed
-		local vel = root.AssemblyLinearVelocity
-		local strength = _G.currentStrafe / 100
-		root.AssemblyLinearVelocity = Vector3.new(
-			vel.X + (desired.X - vel.X) * strength,
-			vel.Y,
-			vel.Z + (desired.Z - vel.Z) * strength
-		)
-	end
-	if _G.airwalkEnabled and _G.airwalkPlatform and root then
-		_G.airwalkPlatform.CFrame = CFrame.new(root.Position.X, _G.airwalkY, root.Position.Z)
-	end
+    if _G.strafeEnabled and _G.currentStrafe > 0 and root and humanoid and not _G.flying then
+        local moveDir = humanoid.MoveDirection
+        local speed = humanoid.WalkSpeed
+        local desired = moveDir * speed
+        local vel = root.AssemblyLinearVelocity
+        local strength = _G.currentStrafe / 100
+        root.AssemblyLinearVelocity = Vector3.new(
+            vel.X + (desired.X - vel.X) * strength,
+            vel.Y,
+            vel.Z + (desired.Z - vel.Z) * strength
+        )
+    end
+    if _G.airwalkEnabled and _G.airwalkPlatform and root then
+        _G.airwalkPlatform.CFrame = CFrame.new(root.Position.X, _G.airwalkY, root.Position.Z)
+    end
 end)
 
 -- ===== ПЕРЕРОЖДЕНИЕ =====
 player.CharacterAdded:Connect(function(newChar)
-	character = newChar
-	humanoid = character:WaitForChild("Humanoid")
-	root = character:WaitForChild("HumanoidRootPart")
-	
-	_G.stopFlightFunc()
-	_G.stopAirwalkFunc()
+    character = newChar
+    humanoid = character:WaitForChild("Humanoid")
+    root = character:WaitForChild("HumanoidRootPart")
+
+    _G.stopFlightFunc()
+    _G.stopAirwalkFunc()
 end)
