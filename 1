@@ -1468,9 +1468,10 @@ local function showBindObjects()
 end
 
 local function setVisible(s)
+	if not s then hideBindObjects() end
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
-	if s and _G.currentCategory=="bind" then
+	if s and _G.currentCategory=="bind" and not _G.isHidden then
 		showBindObjects()
 	else
 		hideBindObjects()
