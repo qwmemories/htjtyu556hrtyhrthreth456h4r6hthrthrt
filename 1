@@ -23,8 +23,8 @@ _G.aimTarget="Head"
 _G.targetStrafeEnabled=false
 _G.targetStrafeSpeed=20
 _G.targetStrafeRange=10
+_G.targetStrafeDistance=50
 _G.targetStrafeMode="Circle"
-_G.targetStrafeDirection=1
 
 _G.currentSpeed=16
 _G.currentJump=50
@@ -44,6 +44,8 @@ _G.startPos=nil
 _G.targetPos=nil
 _G.currentCategory="movement"
 _G.lockedTarget=nil
+_G.targetStrafeTarget=nil
+_G.targetStrafeAngle=0
 
 _G.minSpeed,_G.maxSpeed=0,200
 _G.minJump,_G.maxJump=0,200
@@ -53,6 +55,7 @@ _G.minSmooth,_G.maxSmooth=0.01,1
 _G.minRange,_G.maxRange=10,1000
 _G.minTSpeed,_G.maxTSpeed=5,100
 _G.minTRange,_G.maxTRange=3,30
+_G.minTDistance,_G.maxTDistance=10,200
 
 _G.draggingSpeed=false
 _G.draggingJump=false
@@ -62,6 +65,7 @@ _G.draggingSmooth=false
 _G.draggingRange=false
 _G.draggingTSpeed=false
 _G.draggingTRange=false
+_G.draggingTDistance=false
 _G.flying=false
 _G.bodyVelocity=nil
 _G.bodyGyro=nil
@@ -70,8 +74,6 @@ _G.airwalkPlatform=nil
 _G.airwalkY=0
 _G.fpsConnection=nil
 _G.lastSpace=false
-_G.targetStrafeTarget=nil
-_G.targetStrafeAngle=0
 
 task.spawn(function()
 	pcall(function()
@@ -83,8 +85,8 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,260,0,570)
-mf.Position=UDim2.new(0.5,-130,0.5,-285)
+mf.Size=UDim2.new(0,300,0,590)
+mf.Position=UDim2.new(0.5,-150,0.5,-295)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
 mf.Active=true
@@ -98,8 +100,8 @@ ms.Thickness=1.5
 ms.Parent=mf
 
 local title=Instance.new("TextLabel")
-title.Size=UDim2.new(0,80,0,25)
-title.Position=UDim2.new(0,10,0,0)
+title.Size=UDim2.new(0,100,0,30)
+title.Position=UDim2.new(0,10,0,5)
 title.BackgroundTransparency=1
 title.Text="script"
 title.TextColor3=Color3.new(1,1,1)
@@ -109,8 +111,8 @@ title.TextXAlignment=Enum.TextXAlignment.Left
 title.Parent=mf
 
 local fpsLabel=Instance.new("TextLabel")
-fpsLabel.Size=UDim2.new(0,100,0,25)
-fpsLabel.Position=UDim2.new(0,90,0,0)
+fpsLabel.Size=UDim2.new(0,100,0,30)
+fpsLabel.Position=UDim2.new(0,110,0,5)
 fpsLabel.BackgroundTransparency=1
 fpsLabel.Text="fps 0"
 fpsLabel.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -122,7 +124,7 @@ fpsLabel.Parent=mf
 
 local hideBtn=Instance.new("TextButton")
 hideBtn.Size=UDim2.new(0,22,0,22)
-hideBtn.Position=UDim2.new(1,-52,0,4)
+hideBtn.Position=UDim2.new(1,-52,0,8)
 hideBtn.BackgroundColor3=Color3.new(0.15,0.15,0.15)
 hideBtn.BackgroundTransparency=0.04
 hideBtn.Text="−"
@@ -142,7 +144,7 @@ hideSt.Parent=hideBtn
 
 local closeBtn=Instance.new("TextButton")
 closeBtn.Size=UDim2.new(0,22,0,22)
-closeBtn.Position=UDim2.new(1,-28,0,4)
+closeBtn.Position=UDim2.new(1,-28,0,8)
 closeBtn.BackgroundColor3=Color3.new(0.15,0.15,0.15)
 closeBtn.BackgroundTransparency=0.04
 closeBtn.Text="×"
@@ -208,7 +210,7 @@ end
 
 local mc=Instance.new("ScrollingFrame")
 mc.Size=UDim2.new(1,0,0,420)
-mc.Position=UDim2.new(0,0,0,30)
+mc.Position=UDim2.new(0,0,0,40)
 mc.BackgroundTransparency=1
 mc.CanvasSize=UDim2.new(0,0,0,600)
 mc.ScrollBarThickness=6
@@ -443,9 +445,9 @@ local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,384))
 
 local miscC=Instance.new("ScrollingFrame")
 miscC.Size=UDim2.new(1,0,0,420)
-miscC.Position=UDim2.new(0,0,0,30)
+miscC.Position=UDim2.new(0,0,0,40)
 miscC.BackgroundTransparency=1
-miscC.CanvasSize=UDim2.new(0,0,0,600)
+miscC.CanvasSize=UDim2.new(0,0,0,650)
 miscC.ScrollBarThickness=6
 miscC.ScrollBarImageColor3=Color3.new(0.3,0.3,0.3)
 miscC.Visible=false
@@ -536,9 +538,11 @@ Instance.new("UICorner",rH).CornerRadius=UDim.new(0,8)
 
 local rSS,rHS=ass(rS,rH)
 
+addSep(miscC,158)
+
 local targT=Instance.new("TextLabel")
 targT.Size=UDim2.new(0.5,0,0,25)
-targT.Position=UDim2.new(0,10,0,158)
+targT.Position=UDim2.new(0,10,0,168)
 targT.BackgroundTransparency=1
 targT.Text="Target: Head"
 targT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -549,7 +553,7 @@ targT.Parent=miscC
 
 local targB=Instance.new("TextButton")
 targB.Size=UDim2.new(0.35,0,0,22)
-targB.Position=UDim2.new(0.6,0,0,159)
+targB.Position=UDim2.new(0.6,0,0,169)
 targB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
 targB.BackgroundTransparency=0.04
 targB.Text="Head"
@@ -569,7 +573,7 @@ targSt.Parent=targB
 
 local sortT=Instance.new("TextLabel")
 sortT.Size=UDim2.new(0.5,0,0,25)
-sortT.Position=UDim2.new(0,10,0,190)
+sortT.Position=UDim2.new(0,10,0,200)
 sortT.BackgroundTransparency=1
 sortT.Text="Sort: Distance"
 sortT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -580,7 +584,7 @@ sortT.Parent=miscC
 
 local sortB=Instance.new("TextButton")
 sortB.Size=UDim2.new(0.35,0,0,22)
-sortB.Position=UDim2.new(0.6,0,0,191)
+sortB.Position=UDim2.new(0.6,0,0,201)
 sortB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
 sortB.BackgroundTransparency=0.04
 sortB.Text="Distance"
@@ -600,7 +604,7 @@ sortSt.Parent=sortB
 
 local modeT=Instance.new("TextLabel")
 modeT.Size=UDim2.new(0.5,0,0,25)
-modeT.Position=UDim2.new(0,10,0,222)
+modeT.Position=UDim2.new(0,10,0,232)
 modeT.BackgroundTransparency=1
 modeT.Text="Mode: Center"
 modeT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -611,7 +615,7 @@ modeT.Parent=miscC
 
 local modeB=Instance.new("TextButton")
 modeB.Size=UDim2.new(0.35,0,0,22)
-modeB.Position=UDim2.new(0.6,0,0,223)
+modeB.Position=UDim2.new(0.6,0,0,233)
 modeB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
 modeB.BackgroundTransparency=0.04
 modeB.Text="Center"
@@ -629,9 +633,11 @@ modeSt.Thickness=1.5
 modeSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 modeSt.Parent=modeB
 
+addSep(miscC,264)
+
 local tlT=Instance.new("TextLabel")
 tlT.Size=UDim2.new(0.5,0,0,25)
-tlT.Position=UDim2.new(0,10,0,258)
+tlT.Position=UDim2.new(0,10,0,274)
 tlT.BackgroundTransparency=1
 tlT.Text="TargetLock"
 tlT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -640,11 +646,11 @@ tlT.Font=Enum.Font.Gotham
 tlT.TextXAlignment=Enum.TextXAlignment.Left
 tlT.Parent=miscC
 
-local tlTr,tlK,tlSt,tlCl=ct(miscC,UDim2.new(0.75,0,0,260))
+local tlTr,tlK,tlSt,tlCl=ct(miscC,UDim2.new(0.75,0,0,276))
 
 local wcT=Instance.new("TextLabel")
 wcT.Size=UDim2.new(0.5,0,0,25)
-wcT.Position=UDim2.new(0,10,0,296)
+wcT.Position=UDim2.new(0,10,0,312)
 wcT.BackgroundTransparency=1
 wcT.Text="WallsCheck"
 wcT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -653,13 +659,13 @@ wcT.Font=Enum.Font.Gotham
 wcT.TextXAlignment=Enum.TextXAlignment.Left
 wcT.Parent=miscC
 
-local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
+local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,314))
 
-addSep(miscC,334)
+addSep(miscC,350)
 
 local tsT=Instance.new("TextLabel")
 tsT.Size=UDim2.new(0.5,0,0,25)
-tsT.Position=UDim2.new(0,10,0,344)
+tsT.Position=UDim2.new(0,10,0,360)
 tsT.BackgroundTransparency=1
 tsT.Text="TargetStrafe"
 tsT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -668,11 +674,11 @@ tsT.Font=Enum.Font.Gotham
 tsT.TextXAlignment=Enum.TextXAlignment.Left
 tsT.Parent=miscC
 
-local tsTr,tsK,tsSt,tsCl=ct(miscC,UDim2.new(0.75,0,0,346))
+local tsTr,tsK,tsSt,tsCl=ct(miscC,UDim2.new(0.75,0,0,362))
 
 local tsSpeedT=Instance.new("TextLabel")
 tsSpeedT.Size=UDim2.new(0.5,0,0,25)
-tsSpeedT.Position=UDim2.new(0,10,0,384)
+tsSpeedT.Position=UDim2.new(0,10,0,400)
 tsSpeedT.BackgroundTransparency=1
 tsSpeedT.Text="Speed: 20"
 tsSpeedT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -683,7 +689,7 @@ tsSpeedT.Parent=miscC
 
 local tsSpeedS=Instance.new("Frame")
 tsSpeedS.Size=UDim2.new(0.85,0,0,8)
-tsSpeedS.Position=UDim2.new(0.075,0,0,414)
+tsSpeedS.Position=UDim2.new(0.075,0,0,430)
 tsSpeedS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
 tsSpeedS.BorderSizePixel=0
 tsSpeedS.Parent=miscC
@@ -708,9 +714,9 @@ local tsSpeedSS,tsSpeedHS=ass(tsSpeedS,tsSpeedH)
 
 local tsRangeT=Instance.new("TextLabel")
 tsRangeT.Size=UDim2.new(0.5,0,0,25)
-tsRangeT.Position=UDim2.new(0,10,0,444)
+tsRangeT.Position=UDim2.new(0,10,0,460)
 tsRangeT.BackgroundTransparency=1
-tsRangeT.Text="Range: 10"
+tsRangeT.Text="Radius: 10"
 tsRangeT.TextColor3=Color3.new(0.6,0.6,0.6)
 tsRangeT.TextSize=18
 tsRangeT.Font=Enum.Font.Gotham
@@ -719,7 +725,7 @@ tsRangeT.Parent=miscC
 
 local tsRangeS=Instance.new("Frame")
 tsRangeS.Size=UDim2.new(0.85,0,0,8)
-tsRangeS.Position=UDim2.new(0.075,0,0,474)
+tsRangeS.Position=UDim2.new(0.075,0,0,490)
 tsRangeS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
 tsRangeS.BorderSizePixel=0
 tsRangeS.Parent=miscC
@@ -742,9 +748,45 @@ Instance.new("UICorner",tsRangeH).CornerRadius=UDim.new(0,8)
 
 local tsRangeSS,tsRangeHS=ass(tsRangeS,tsRangeH)
 
+local tsDistT=Instance.new("TextLabel")
+tsDistT.Size=UDim2.new(0.5,0,0,25)
+tsDistT.Position=UDim2.new(0,10,0,520)
+tsDistT.BackgroundTransparency=1
+tsDistT.Text="Distance: 50"
+tsDistT.TextColor3=Color3.new(0.6,0.6,0.6)
+tsDistT.TextSize=18
+tsDistT.Font=Enum.Font.Gotham
+tsDistT.TextXAlignment=Enum.TextXAlignment.Left
+tsDistT.Parent=miscC
+
+local tsDistS=Instance.new("Frame")
+tsDistS.Size=UDim2.new(0.85,0,0,8)
+tsDistS.Position=UDim2.new(0.075,0,0,550)
+tsDistS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
+tsDistS.BorderSizePixel=0
+tsDistS.Parent=miscC
+Instance.new("UICorner",tsDistS).CornerRadius=UDim.new(0,4)
+
+local tsDistF=Instance.new("Frame")
+tsDistF.Size=UDim2.new(0.5,0,1,0)
+tsDistF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
+tsDistF.BorderSizePixel=0
+tsDistF.Parent=tsDistS
+Instance.new("UICorner",tsDistF).CornerRadius=UDim.new(0,4)
+
+local tsDistH=Instance.new("Frame")
+tsDistH.Size=UDim2.new(0,16,0,16)
+tsDistH.Position=UDim2.new(0.5,-8,0.5,-8)
+tsDistH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
+tsDistH.BorderSizePixel=0
+tsDistH.Parent=tsDistS
+Instance.new("UICorner",tsDistH).CornerRadius=UDim.new(0,8)
+
+local tsDistSS,tsDistHS=ass(tsDistS,tsDistH)
+
 local tsModeT=Instance.new("TextLabel")
 tsModeT.Size=UDim2.new(0.5,0,0,25)
-tsModeT.Position=UDim2.new(0,10,0,504)
+tsModeT.Position=UDim2.new(0,10,0,580)
 tsModeT.BackgroundTransparency=1
 tsModeT.Text="Mode: Circle"
 tsModeT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -755,7 +797,7 @@ tsModeT.Parent=miscC
 
 local tsModeB=Instance.new("TextButton")
 tsModeB.Size=UDim2.new(0.35,0,0,22)
-tsModeB.Position=UDim2.new(0.6,0,0,505)
+tsModeB.Position=UDim2.new(0.6,0,0,581)
 tsModeB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
 tsModeB.BackgroundTransparency=0.04
 tsModeB.Text="Circle"
@@ -772,37 +814,6 @@ tsModeSt.Transparency=1
 tsModeSt.Thickness=1.5
 tsModeSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 tsModeSt.Parent=tsModeB
-
-local tsDirT=Instance.new("TextLabel")
-tsDirT.Size=UDim2.new(0.5,0,0,25)
-tsDirT.Position=UDim2.new(0,10,0,536)
-tsDirT.BackgroundTransparency=1
-tsDirT.Text="Direction: Right"
-tsDirT.TextColor3=Color3.new(0.6,0.6,0.6)
-tsDirT.TextSize=18
-tsDirT.Font=Enum.Font.Gotham
-tsDirT.TextXAlignment=Enum.TextXAlignment.Left
-tsDirT.Parent=miscC
-
-local tsDirB=Instance.new("TextButton")
-tsDirB.Size=UDim2.new(0.35,0,0,22)
-tsDirB.Position=UDim2.new(0.6,0,0,537)
-tsDirB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-tsDirB.BackgroundTransparency=0.04
-tsDirB.Text="Right"
-tsDirB.TextColor3=Color3.new(1,1,1)
-tsDirB.TextSize=14
-tsDirB.Font=Enum.Font.Gotham
-tsDirB.AutoButtonColor=false
-tsDirB.Parent=miscC
-Instance.new("UICorner",tsDirB).CornerRadius=UDim.new(0,5)
-
-local tsDirSt=Instance.new("UIStroke")
-tsDirSt.Color=Color3.fromRGB(160,160,160)
-tsDirSt.Transparency=1
-tsDirSt.Thickness=1.5
-tsDirSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
-tsDirSt.Parent=tsDirB
 
 local catBar=Instance.new("Frame")
 catBar.Size=UDim2.new(1,0,0,35)
@@ -897,8 +908,9 @@ hover(tsSpeedS,tsSpeedSS)
 hover(tsSpeedH,tsSpeedHS)
 hover(tsRangeS,tsRangeSS)
 hover(tsRangeH,tsRangeHS)
+hover(tsDistS,tsDistSS)
+hover(tsDistH,tsDistHS)
 hover(tsModeB,tsModeSt)
-hover(tsDirB,tsDirSt)
 
 local function setColors(en,label,slider,fill,handle)
 	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
@@ -932,12 +944,10 @@ local function setTSColors(en)
 	setColors(en,tsT,nil,nil,nil)
 	setColors(en,tsSpeedT,tsSpeedS,tsSpeedF,tsSpeedH)
 	setColors(en,tsRangeT,tsRangeS,tsRangeF,tsRangeH)
+	setColors(en,tsDistT,tsDistS,tsDistF,tsDistH)
 	setColors(en,tsModeT,nil,nil,nil)
-	setColors(en,tsDirT,nil,nil,nil)
 	tsModeB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	tsDirB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
 	tsModeB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
-	tsDirB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
 end
 
 local function updateNoclip()
@@ -1050,7 +1060,12 @@ end
 
 local function updateTRange(v)
 	_G.targetStrafeRange=_G.minTRange+(_G.maxTRange-_G.minTRange)*v
-	tsRangeT.Text="Range: "..math.floor(_G.targetStrafeRange+0.5)
+	tsRangeT.Text="Radius: "..math.floor(_G.targetStrafeRange+0.5)
+end
+
+local function updateTDistance(v)
+	_G.targetStrafeDistance=_G.minTDistance+(_G.maxTDistance-_G.minTDistance)*v
+	tsDistT.Text="Distance: "..math.floor(_G.targetStrafeDistance+0.5)
 end
 
 local function updateSlider(f,h,v)
@@ -1201,18 +1216,6 @@ local function cycleTSMode()
 	end
 end
 
-local function cycleTSDir()
-	if _G.targetStrafeDirection==1 then
-		_G.targetStrafeDirection=-1
-		tsDirB.Text="Left"
-		tsDirT.Text="Direction: Left"
-	else
-		_G.targetStrafeDirection=1
-		tsDirB.Text="Right"
-		tsDirT.Text="Direction: Right"
-	end
-end
-
 spCl.MouseButton1Click:Connect(toggleSpeed)
 jCl.MouseButton1Click:Connect(toggleJump)
 fCl.MouseButton1Click:Connect(toggleFlight)
@@ -1229,7 +1232,6 @@ targB.MouseButton1Click:Connect(cycleTarget)
 sortB.MouseButton1Click:Connect(cycleSort)
 modeB.MouseButton1Click:Connect(cycleMode)
 tsModeB.MouseButton1Click:Connect(cycleTSMode)
-tsDirB.MouseButton1Click:Connect(cycleTSDir)
 
 mouse.Button1Down:Connect(function()
 	if _G.clickTpEnabled and root and mouse.Hit then
@@ -1329,7 +1331,7 @@ local function setMinimized(s)
 	if _G.isAnimating then return end
 	_G.isAnimating=true
 	_G.isHidden=s
-	local ts=s and UDim2.new(0,260,0,30) or UDim2.new(0,260,0,570)
+	local ts=s and UDim2.new(0,300,0,35) or UDim2.new(0,300,0,590)
 	local tw=TS:Create(mf,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=ts})
 	if s then
 		setVisible(false)
@@ -1422,6 +1424,14 @@ local function updateTRangeFromInput(i)
 	updateTRange(v)
 end
 
+local function updateTDistanceFromInput(i)
+	local s=tsDistS.AbsoluteSize.X
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-tsDistS.AbsolutePosition.X,0,s)/s
+	updateSlider(tsDistF,tsDistH,v)
+	updateTDistance(v)
+end
+
 local function startDrag(f,u)
 	return function(i)
 		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
@@ -1434,7 +1444,8 @@ local function startDrag(f,u)
 			elseif f=="sm" then _G.draggingSmooth=true
 			elseif f=="r" then _G.draggingRange=true
 			elseif f=="ts" then _G.draggingTSpeed=true
-			elseif f=="tr" then _G.draggingTRange=true end
+			elseif f=="tr" then _G.draggingTRange=true
+			elseif f=="td" then _G.draggingTDistance=true end
 			u(i)
 		end
 	end
@@ -1456,10 +1467,11 @@ tsSpeedS.InputBegan:Connect(startDrag("ts",updateTSpeedFromInput))
 tsSpeedH.InputBegan:Connect(startDrag("ts",updateTSpeedFromInput))
 tsRangeS.InputBegan:Connect(startDrag("tr",updateTRangeFromInput))
 tsRangeH.InputBegan:Connect(startDrag("tr",updateTRangeFromInput))
+tsDistS.InputBegan:Connect(startDrag("td",updateTDistanceFromInput))
+tsDistH.InputBegan:Connect(startDrag("td",updateTDistanceFromInput))
 
 UIS.InputChanged:Connect(function(i)
-	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateSpeedFromInput(i)
+	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then		updateSpeedFromInput(i)
 	end
 	if _G.draggingJump and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
 		updateJumpFromInput(i)
@@ -1482,6 +1494,9 @@ UIS.InputChanged:Connect(function(i)
 	if _G.draggingTRange and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
 		updateTRangeFromInput(i)
 	end
+	if _G.draggingTDistance and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+		updateTDistanceFromInput(i)
+	end
 end)
 
 UIS.InputEnded:Connect(function(i)
@@ -1494,6 +1509,7 @@ UIS.InputEnded:Connect(function(i)
 		_G.draggingRange=false
 		_G.draggingTSpeed=false
 		_G.draggingTRange=false
+		_G.draggingTDistance=false
 		_G.isSliding=false
 	end
 end)
@@ -1530,8 +1546,8 @@ player.CharacterAdded:Connect(function(c)
 	_G.aimTarget="Head"
 	_G.targetStrafeSpeed=20
 	_G.targetStrafeRange=10
+	_G.targetStrafeDistance=50
 	_G.targetStrafeMode="Circle"
-	_G.targetStrafeDirection=1
 	setToggle(spTr,spK,false,false)
 	setToggle(jTr,jK,false,false)
 	setToggle(fTr,fK,false,false)
@@ -1574,11 +1590,11 @@ player.CharacterAdded:Connect(function(c)
 	updateSlider(tsSpeedF,tsSpeedH,0.2)
 	tsSpeedT.Text="Speed: 20"
 	updateSlider(tsRangeF,tsRangeH,0.3)
-	tsRangeT.Text="Range: 10"
+	tsRangeT.Text="Radius: 10"
+	updateSlider(tsDistF,tsDistH,0.5)
+	tsDistT.Text="Distance: 50"
 	tsModeB.Text="Circle"
 	tsModeT.Text="Mode: Circle"
-	tsDirB.Text="Right"
-	tsDirT.Text="Direction: Right"
 	setTSColors(false)
 	applySpeed()
 	applyJump()
