@@ -22,7 +22,7 @@ _G.wallsCheckEnabled=false
 _G.aimTarget="Head"
 
 _G.currentSpeed=16
-_G.currentJump=50
+_G.currentJumpStrengthStrength=50
 _G.currentFlight=50
 _G.currentStrafe=0
 _G.currentSmoothness=0.15
@@ -196,7 +196,7 @@ local function ass(s,h)
 end
 
 local mc=Instance.new("Frame")
-mc.Size=UDim2.new(1,0,0,450)
+mc.Size=UDim2.new(1,0,0,520)
 mc.Position=UDim2.new(0,0,0,30)
 mc.BackgroundTransparency=1
 mc.Parent=mf
@@ -205,7 +205,7 @@ local spT=Instance.new("TextLabel")
 spT.Size=UDim2.new(0.5,0,0,25)
 spT.Position=UDim2.new(0,10,0,2)
 spT.BackgroundTransparency=1
-spT.Text="Speed: 16"
+spT.Text="Speed"
 spT.TextColor3=Color3.new(0.6,0.6,0.6)
 spT.TextSize=20
 spT.Font=Enum.Font.Gotham
@@ -214,16 +214,27 @@ spT.Parent=mc
 
 local spTr,spK,spSt,spCl=ct(mc,UDim2.new(0.75,0,0,4))
 
+local spVT=Instance.new("TextLabel")
+spVT.Size=UDim2.new(0.5,0,0,25)
+spVT.Position=UDim2.new(0,10,0,34)
+spVT.BackgroundTransparency=1
+spVT.Text="Value: 16"
+spVT.TextColor3=Color3.new(0.6,0.6,0.6)
+spVT.TextSize=18
+spVT.Font=Enum.Font.Gotham
+spVT.TextXAlignment=Enum.TextXAlignment.Left
+spVT.Parent=mc
+
 local spS=Instance.new("Frame")
 spS.Size=UDim2.new(0.85,0,0,8)
-spS.Position=UDim2.new(0.075,0,0,34)
+spS.Position=UDim2.new(0.075,0,0,64)
 spS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
 spS.BorderSizePixel=0
 spS.Parent=mc
 Instance.new("UICorner",spS).CornerRadius=UDim.new(0,4)
 
 local spF=Instance.new("Frame")
-spF.Size=UDim2.new(0.5,0,1,0)
+spF.Size=UDim2.new(0.08,0,1,0)
 spF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spF.BorderSizePixel=0
 spF.Parent=spS
@@ -231,7 +242,7 @@ Instance.new("UICorner",spF).CornerRadius=UDim.new(0,4)
 
 local spH=Instance.new("Frame")
 spH.Size=UDim2.new(0,16,0,16)
-spH.Position=UDim2.new(0.5,-8,0.5,-8)
+spH.Position=UDim2.new(0.08,-8,0.5,-8)
 spH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spH.BorderSizePixel=0
 spH.Parent=spS
@@ -241,34 +252,45 @@ local spSS,spHS=ass(spS,spH)
 
 local sep1=Instance.new("Frame")
 sep1.Size=UDim2.new(0.9,0,0,1)
-sep1.Position=UDim2.new(0.05,0,0,58)
+sep1.Position=UDim2.new(0.05,0,0,86)
 sep1.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep1.BorderSizePixel=0
 sep1.Parent=mc
 
 local jT=Instance.new("TextLabel")
 jT.Size=UDim2.new(0.5,0,0,25)
-jT.Position=UDim2.new(0,10,0,68)
+jT.Position=UDim2.new(0,10,0,96)
 jT.BackgroundTransparency=1
-jT.Text="Jump: 50"
+jT.Text="Jump"
 jT.TextColor3=Color3.new(0.6,0.6,0.6)
 jT.TextSize=20
 jT.Font=Enum.Font.Gotham
 jT.TextXAlignment=Enum.TextXAlignment.Left
 jT.Parent=mc
 
-local jTr,jK,jSt,jCl=ct(mc,UDim2.new(0.75,0,0,70))
+local jTr,jK,jSt,jCl=ct(mc,UDim2.new(0.75,0,0,98))
+
+local jST=Instance.new("TextLabel")
+jST.Size=UDim2.new(0.5,0,0,25)
+jST.Position=UDim2.new(0,10,0,128)
+jST.BackgroundTransparency=1
+jST.Text="Strength: 50"
+jST.TextColor3=Color3.new(0.6,0.6,0.6)
+jST.TextSize=18
+jST.Font=Enum.Font.Gotham
+jST.TextXAlignment=Enum.TextXAlignment.Left
+jST.Parent=mc
 
 local jS=Instance.new("Frame")
 jS.Size=UDim2.new(0.85,0,0,8)
-jS.Position=UDim2.new(0.075,0,0,100)
+jS.Position=UDim2.new(0.075,0,0,158)
 jS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
 jS.BorderSizePixel=0
 jS.Parent=mc
 Instance.new("UICorner",jS).CornerRadius=UDim.new(0,4)
 
 local jF=Instance.new("Frame")
-jF.Size=UDim2.new(0.5,0,1,0)
+jF.Size=UDim2.new(0.25,0,1,0)
 jF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jF.BorderSizePixel=0
 jF.Parent=jS
@@ -276,7 +298,7 @@ Instance.new("UICorner",jF).CornerRadius=UDim.new(0,4)
 
 local jH=Instance.new("Frame")
 jH.Size=UDim2.new(0,16,0,16)
-jH.Position=UDim2.new(0.5,-8,0.5,-8)
+jH.Position=UDim2.new(0.25,-8,0.5,-8)
 jH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jH.BorderSizePixel=0
 jH.Parent=jS
@@ -286,34 +308,45 @@ local jSS,jHS=ass(jS,jH)
 
 local sep2=Instance.new("Frame")
 sep2.Size=UDim2.new(0.9,0,0,1)
-sep2.Position=UDim2.new(0.05,0,0,124)
+sep2.Position=UDim2.new(0.05,0,0,180)
 sep2.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep2.BorderSizePixel=0
 sep2.Parent=mc
 
 local fT=Instance.new("TextLabel")
 fT.Size=UDim2.new(0.5,0,0,25)
-fT.Position=UDim2.new(0,10,0,134)
+fT.Position=UDim2.new(0,10,0,190)
 fT.BackgroundTransparency=1
-fT.Text="Flight: 50"
+fT.Text="Flight"
 fT.TextColor3=Color3.new(0.6,0.6,0.6)
 fT.TextSize=20
 fT.Font=Enum.Font.Gotham
 fT.TextXAlignment=Enum.TextXAlignment.Left
 fT.Parent=mc
 
-local fTr,fK,fSt,fCl=ct(mc,UDim2.new(0.75,0,0,136))
+local fTr,fK,fSt,fCl=ct(mc,UDim2.new(0.75,0,0,192))
+
+local fST=Instance.new("TextLabel")
+fST.Size=UDim2.new(0.5,0,0,25)
+fST.Position=UDim2.new(0,10,0,224)
+fST.BackgroundTransparency=1
+fST.Text="Speed: 50"
+fST.TextColor3=Color3.new(0.6,0.6,0.6)
+fST.TextSize=18
+fST.Font=Enum.Font.Gotham
+fST.TextXAlignment=Enum.TextXAlignment.Left
+fST.Parent=mc
 
 local fS=Instance.new("Frame")
 fS.Size=UDim2.new(0.85,0,0,8)
-fS.Position=UDim2.new(0.075,0,0,166)
+fS.Position=UDim2.new(0.075,0,0,254)
 fS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
 fS.BorderSizePixel=0
 fS.Parent=mc
 Instance.new("UICorner",fS).CornerRadius=UDim.new(0,4)
 
 local fF=Instance.new("Frame")
-fF.Size=UDim2.new(0.5,0,1,0)
+fF.Size=UDim2.new(0.25,0,1,0)
 fF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fF.BorderSizePixel=0
 fF.Parent=fS
@@ -321,7 +354,7 @@ Instance.new("UICorner",fF).CornerRadius=UDim.new(0,4)
 
 local fH=Instance.new("Frame")
 fH.Size=UDim2.new(0,16,0,16)
-fH.Position=UDim2.new(0.5,-8,0.5,-8)
+fH.Position=UDim2.new(0.25,-8,0.5,-8)
 fH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fH.BorderSizePixel=0
 fH.Parent=fS
@@ -331,7 +364,7 @@ local fSS,fHS=ass(fS,fH)
 
 local nT=Instance.new("TextLabel")
 nT.Size=UDim2.new(0.5,0,0,25)
-nT.Position=UDim2.new(0,10,0,190)
+nT.Position=UDim2.new(0,10,0,282)
 nT.BackgroundTransparency=1
 nT.Text="Noclip"
 nT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -340,18 +373,18 @@ nT.Font=Enum.Font.Gotham
 nT.TextXAlignment=Enum.TextXAlignment.Left
 nT.Parent=mc
 
-local nTr,nK,nSt,nCl=ct(mc,UDim2.new(0.75,0,0,192))
+local nTr,nK,nSt,nCl=ct(mc,UDim2.new(0.75,0,0,284))
 
 local sep3=Instance.new("Frame")
 sep3.Size=UDim2.new(0.9,0,0,1)
-sep3.Position=UDim2.new(0.05,0,0,222)
+sep3.Position=UDim2.new(0.05,0,0,314)
 sep3.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep3.BorderSizePixel=0
 sep3.Parent=mc
 
 local stT=Instance.new("TextLabel")
 stT.Size=UDim2.new(0.5,0,0,25)
-stT.Position=UDim2.new(0,10,0,232)
+stT.Position=UDim2.new(0,10,0,324)
 stT.BackgroundTransparency=1
 stT.Text="Strafe: 0"
 stT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -360,11 +393,11 @@ stT.Font=Enum.Font.Gotham
 stT.TextXAlignment=Enum.TextXAlignment.Left
 stT.Parent=mc
 
-local stTr,stK,stSt,stCl=ct(mc,UDim2.new(0.75,0,0,234))
+local stTr,stK,stSt,stCl=ct(mc,UDim2.new(0.75,0,0,326))
 
 local stS=Instance.new("Frame")
 stS.Size=UDim2.new(0.85,0,0,8)
-stS.Position=UDim2.new(0.075,0,0,264)
+stS.Position=UDim2.new(0.075,0,0,356)
 stS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
 stS.BorderSizePixel=0
 stS.Parent=mc
@@ -389,14 +422,14 @@ local stSS,stHS=ass(stS,stH)
 
 local sep4=Instance.new("Frame")
 sep4.Size=UDim2.new(0.9,0,0,1)
-sep4.Position=UDim2.new(0.05,0,0,288)
+sep4.Position=UDim2.new(0.05,0,0,380)
 sep4.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep4.BorderSizePixel=0
 sep4.Parent=mc
 
 local awT=Instance.new("TextLabel")
 awT.Size=UDim2.new(0.5,0,0,25)
-awT.Position=UDim2.new(0,10,0,298)
+awT.Position=UDim2.new(0,10,0,390)
 awT.BackgroundTransparency=1
 awT.Text="Airwalk"
 awT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -405,18 +438,18 @@ awT.Font=Enum.Font.Gotham
 awT.TextXAlignment=Enum.TextXAlignment.Left
 awT.Parent=mc
 
-local awTr,awK,awSt,awCl=ct(mc,UDim2.new(0.75,0,0,300))
+local awTr,awK,awSt,awCl=ct(mc,UDim2.new(0.75,0,0,392))
 
 local sep5=Instance.new("Frame")
 sep5.Size=UDim2.new(0.9,0,0,1)
-sep5.Position=UDim2.new(0.05,0,0,330)
+sep5.Position=UDim2.new(0.05,0,0,422)
 sep5.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep5.BorderSizePixel=0
 sep5.Parent=mc
 
 local cT=Instance.new("TextLabel")
 cT.Size=UDim2.new(0.5,0,0,25)
-cT.Position=UDim2.new(0,10,0,340)
+cT.Position=UDim2.new(0,10,0,432)
 cT.BackgroundTransparency=1
 cT.Text="ClickTP"
 cT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -425,18 +458,18 @@ cT.Font=Enum.Font.Gotham
 cT.TextXAlignment=Enum.TextXAlignment.Left
 cT.Parent=mc
 
-local cTr,cK,cSt,cCl=ct(mc,UDim2.new(0.75,0,0,342))
+local cTr,cK,cSt,cCl=ct(mc,UDim2.new(0.75,0,0,434))
 
 local sep6=Instance.new("Frame")
 sep6.Size=UDim2.new(0.9,0,0,1)
-sep6.Position=UDim2.new(0.05,0,0,372)
+sep6.Position=UDim2.new(0.05,0,0,464)
 sep6.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep6.BorderSizePixel=0
 sep6.Parent=mc
 
 local ajT=Instance.new("TextLabel")
 ajT.Size=UDim2.new(0.5,0,0,25)
-ajT.Position=UDim2.new(0,10,0,382)
+ajT.Position=UDim2.new(0,10,0,474)
 ajT.BackgroundTransparency=1
 ajT.Text="AirJump"
 ajT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -445,7 +478,7 @@ ajT.Font=Enum.Font.Gotham
 ajT.TextXAlignment=Enum.TextXAlignment.Left
 ajT.Parent=mc
 
-local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,384))
+local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,476))
 
 local miscC=Instance.new("Frame")
 miscC.Size=UDim2.new(1,0,0,450)
@@ -720,8 +753,14 @@ end
 hover(hideBtn,hideSt)
 hover(closeBtn,closeSt)
 hover(spTr,spSt)
+hover(spS,spSS)
+hover(spH,spHS)
 hover(jTr,jSt)
+hover(jS,jSS)
+hover(jH,jHS)
 hover(fTr,fSt)
+hover(fS,fSS)
+hover(fH,fHS)
 hover(nTr,nSt)
 hover(stTr,stSt)
 hover(awTr,awSt)
@@ -730,12 +769,6 @@ hover(ajTr,ajSt)
 hover(aimTr,aimSt)
 hover(tlTr,tlSt)
 hover(wcTr,wcSt)
-hover(spS,spSS)
-hover(spH,spHS)
-hover(jS,jSS)
-hover(jH,jHS)
-hover(fS,fSS)
-hover(fH,fHS)
 hover(stS,stSS)
 hover(stH,stHS)
 hover(smS,smSS)
@@ -786,8 +819,7 @@ local function applySpeed()
 end
 
 local function applyJump()
-	if _G.jumpEnabled and humanoid then humanoid.JumpPower=_G.currentJump
-	elseif humanoid then humanoid.JumpPower=50 end
+	if humanoid then humanoid.JumpPower=50 end
 end
 
 local function setNoclip(s)
@@ -852,14 +884,13 @@ local function updateSpeed(v)
 end
 
 local function updateJump(v)
-	_G.currentJump=_G.minJump+(_G.maxJump-_G.minJump)*v
-	jT.Text="Jump: "..math.floor(_G.currentJump+0.5)
-	applyJump()
+	_G.currentJumpStrengthStrength=_G.minJump+(_G.maxJump-_G.minJump)*v
+	jST.Text="Strength: "..math.floor(_G.currentJumpStrengthStrength+0.5)
 end
 
 local function updateFlight(v)
 	_G.currentFlight=_G.minFlight+(_G.maxFlight-_G.minFlight)*v
-	fT.Text="Flight: "..math.floor(_G.currentFlight+0.5)
+	fST.Text="Speed: "..math.floor(_G.currentFlight+0.5)
 end
 
 local function updateStrafe(v)
@@ -885,21 +916,24 @@ end
 local function toggleSpeed()
 	_G.speedEnabled=not _G.speedEnabled
 	setToggle(spTr,spK,_G.speedEnabled,true)
-	setColors(_G.speedEnabled,spT,spS,spF,spH)
+	setColors(_G.speedEnabled,spT,nil,nil,nil)
+	setColors(_G.speedEnabled,spVT,spS,spF,spH)
 	applySpeed()
 end
 
 local function toggleJump()
 	_G.jumpEnabled=not _G.jumpEnabled
 	setToggle(jTr,jK,_G.jumpEnabled,true)
-	setColors(_G.jumpEnabled,jT,jS,jF,jH)
+	setColors(_G.jumpEnabled,jT,nil,nil,nil)
+	setColors(_G.jumpEnabled,jST,jS,jF,jH)
 	applyJump()
 end
 
 local function toggleFlight()
 	_G.flightEnabled=not _G.flightEnabled
 	setToggle(fTr,fK,_G.flightEnabled,true)
-	setColors(_G.flightEnabled,fT,fS,fF,fH)
+	setColors(_G.flightEnabled,fT,nil,nil,nil)
+	setColors(_G.flightEnabled,fST,fS,fF,fH)
 	applyFlight()
 end
 
@@ -1025,9 +1059,17 @@ end)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
-	if i.KeyCode==Enum.KeyCode.Space and _G.airJumpEnabled and humanoid and not _G.lastSpace then
+	if i.KeyCode==Enum.KeyCode.Space and humanoid and not _G.lastSpace then
 		_G.lastSpace=true
-		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		if _G.jumpEnabled then
+			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			if root then
+				local v=root.AssemblyLinearVelocity
+				root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y+_G.currentJumpStrengthStrength,v.Z)
+			end
+		elseif _G.airJumpEnabled then
+			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
 	end
 end)
 
@@ -1274,7 +1316,7 @@ player.CharacterAdded:Connect(function(c)
 	_G.lockedTarget=nil
 	mouse.Icon=""
 	_G.currentSpeed=16
-	_G.currentJump=50
+	_G.currentJumpStrengthStrength=50
 	_G.currentFlight=50
 	_G.currentStrafe=0
 	_G.currentSmoothness=0.15
@@ -1293,15 +1335,20 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(aimTr,aimK,false,false)
 	setToggle(tlTr,tlK,false,false)
 	setToggle(wcTr,wcK,false,false)
-	updateSlider(spF,spH,0.5)
-	spT.Text="Speed: 16"
-	setColors(false,spT,spS,spF,spH)
-	updateSlider(jF,jH,0.5)
-	jT.Text="Jump: 50"
-	setColors(false,jT,jS,jF,jH)
-	updateSlider(fF,fH,0.5)
-	fT.Text="Flight: 50"
-	setColors(false,fT,fS,fF,fH)
+	updateSlider(spF,spH,0.08)
+	spT.Text="Speed"
+	spVT.Text="Value: 16"
+	setColors(false,spT,nil,nil,nil)
+	setColors(false,spVT,spS,spF,spH)
+	updateSlider(jF,jH,0.25)
+	jT.Text="Jump"
+	setColors(false,jT,nil,nil,nil)
+	setColors(false,jST,jS,jF,jH)
+	updateSlider(fF,fH,0.25)
+	fT.Text="Flight"
+	fST.Text="Speed: 50"
+	setColors(false,fT,nil,nil,nil)
+	setColors(false,fST,fS,fF,fH)
 	updateNoclip()
 	updateSlider(stF,stH,0)
 	stT.Text="Strafe: 0"
