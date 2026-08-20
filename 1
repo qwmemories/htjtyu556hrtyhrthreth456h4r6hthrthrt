@@ -40,9 +40,9 @@ _G.targetPos=nil
 _G.currentCategory="movement"
 _G.lockedTarget=nil
 
-_G.minSpeed,_G.maxSpeed=0,200
-_G.minJump,_G.maxJump=0,200
-_G.minFlight,_G.maxFlight=0,200
+_G.minSpeed,_G.maxSpeed=0,500
+_G.minJump,_G.maxJump=0,500
+_G.minFlight,_G.maxFlight=0,500
 _G.minStrafe,_G.maxStrafe=0,100
 _G.minSmooth,_G.maxSmooth=0.01,1
 _G.minRange,_G.maxRange=10,1000
@@ -197,7 +197,7 @@ end
 
 local mc=Instance.new("Frame")
 mc.Size=UDim2.new(0,258,0,520)
-mc.Position=UDim2.new(0,0,0,30)
+mc.Position=UDim2.new(0,86,0,30)
 mc.BackgroundTransparency=1
 mc.Parent=mf
 
@@ -234,7 +234,7 @@ spS.Parent=mc
 Instance.new("UICorner",spS).CornerRadius=UDim.new(0,4)
 
 local spF=Instance.new("Frame")
-spF.Size=UDim2.new(0,0,1,0)
+spF.Size=UDim2.new(0.5,0,1,0)
 spF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spF.BorderSizePixel=0
 spF.Parent=spS
@@ -242,7 +242,7 @@ Instance.new("UICorner",spF).CornerRadius=UDim.new(0,4)
 
 local spH=Instance.new("Frame")
 spH.Size=UDim2.new(0,16,0,16)
-spH.Position=UDim2.new(0,8,0.5,-8)
+spH.Position=UDim2.new(0.5,-8,0.5,-8)
 spH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spH.BorderSizePixel=0
 spH.Parent=spS
@@ -290,7 +290,7 @@ jS.Parent=mc
 Instance.new("UICorner",jS).CornerRadius=UDim.new(0,4)
 
 local jF=Instance.new("Frame")
-jF.Size=UDim2.new(0,0,1,0)
+jF.Size=UDim2.new(0.5,0,1,0)
 jF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jF.BorderSizePixel=0
 jF.Parent=jS
@@ -298,7 +298,7 @@ Instance.new("UICorner",jF).CornerRadius=UDim.new(0,4)
 
 local jH=Instance.new("Frame")
 jH.Size=UDim2.new(0,16,0,16)
-jH.Position=UDim2.new(0,8,0.5,-8)
+jH.Position=UDim2.new(0.5,-8,0.5,-8)
 jH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jH.BorderSizePixel=0
 jH.Parent=jS
@@ -346,7 +346,7 @@ fS.Parent=mc
 Instance.new("UICorner",fS).CornerRadius=UDim.new(0,4)
 
 local fF=Instance.new("Frame")
-fF.Size=UDim2.new(0,0,1,0)
+fF.Size=UDim2.new(0.5,0,1,0)
 fF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fF.BorderSizePixel=0
 fF.Parent=fS
@@ -354,7 +354,7 @@ Instance.new("UICorner",fF).CornerRadius=UDim.new(0,4)
 
 local fH=Instance.new("Frame")
 fH.Size=UDim2.new(0,16,0,16)
-fH.Position=UDim2.new(0,8,0.5,-8)
+fH.Position=UDim2.new(0.5,-8,0.5,-8)
 fH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fH.BorderSizePixel=0
 fH.Parent=fS
@@ -423,7 +423,7 @@ Instance.new("UICorner",stF).CornerRadius=UDim.new(0,4)
 
 local stH=Instance.new("Frame")
 stH.Size=UDim2.new(0,16,0,16)
-stH.Position=UDim2.new(0,8,0.5,-8)
+stH.Position=UDim2.new(0,-8,0.5,-8)
 stH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 stH.BorderSizePixel=0
 stH.Parent=stS
@@ -493,7 +493,7 @@ local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
 
 local miscC=Instance.new("Frame")
 miscC.Size=UDim2.new(0,258,0,450)
-miscC.Position=UDim2.new(0,0,0,30)
+miscC.Position=UDim2.new(0,86,0,30)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
 miscC.Parent=mf
@@ -703,41 +703,102 @@ wcT.Parent=miscC
 local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
 
 local catBar=Instance.new("Frame")
-catBar.Size=UDim2.new(0,52,1,-70)
-catBar.Position=UDim2.new(1,-54,0,35)
+catBar.Size=UDim2.new(0,82,1,-70)
+catBar.Position=UDim2.new(0,4,0,35)
 catBar.BackgroundTransparency=1
 catBar.Parent=mf
 
 local movL=Instance.new("TextButton")
-movL.Size=UDim2.new(1,0,0,40)
+movL.Size=UDim2.new(1,0,0,42)
 movL.Position=UDim2.new(0,0,0,8)
 movL.BackgroundTransparency=1
 movL.Text="movement"
 movL.TextColor3=Color3.new(1,1,1)
 movL.TextTransparency=0
-movL.TextSize=12
+movL.TextSize=14
 movL.Font=Enum.Font.GothamBold
 movL.TextWrapped=true
 movL.Parent=catBar
 
 local catSep=Instance.new("Frame")
-catSep.Size=UDim2.new(0,28,0,1)
-catSep.Position=UDim2.new(0.5,-14,0,52)
+catSep.Size=UDim2.new(0,48,0,1)
+catSep.Position=UDim2.new(0.5,-24,0,54)
 catSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 catSep.BorderSizePixel=0
 catSep.Parent=catBar
 
 local miscL=Instance.new("TextButton")
-miscL.Size=UDim2.new(1,0,0,40)
-miscL.Position=UDim2.new(0,0,0,60)
+miscL.Size=UDim2.new(1,0,0,42)
+miscL.Position=UDim2.new(0,0,0,64)
 miscL.BackgroundTransparency=1
 miscL.Text="misc"
 miscL.TextColor3=Color3.new(1,1,1)
 miscL.TextTransparency=0.4
-miscL.TextSize=12
+miscL.TextSize=14
 miscL.Font=Enum.Font.GothamBold
 miscL.TextWrapped=true
 miscL.Parent=catBar
+
+
+local scrollOffset=0
+local scrollTarget=0
+local scrollMax=0
+local scrollStep=45
+
+local scrollBar=Instance.new("Frame")
+scrollBar.Size=UDim2.new(0,7,0,420)
+scrollBar.Position=UDim2.new(1,-11,0,70)
+scrollBar.BackgroundColor3=Color3.new(0.16,0.16,0.16)
+scrollBar.BackgroundTransparency=0.25
+scrollBar.BorderSizePixel=0
+scrollBar.Parent=mf
+Instance.new("UICorner",scrollBar).CornerRadius=UDim.new(1,0)
+
+local scrollThumb=Instance.new("Frame")
+scrollThumb.Size=UDim2.new(1,70,0,1)
+scrollThumb.Position=UDim2.new(0,-32,0,0)
+scrollThumb.BackgroundColor3=Color3.new(0.6,0.6,0.6)
+scrollThumb.BorderSizePixel=0
+scrollThumb.Parent=scrollBar
+Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
+
+local function updateScrollBounds()
+\tscrollMax=math.max(0,520-380)
+\tif scrollMax<=0 then
+\t\tscrollTarget=0
+\t\tscrollOffset=0
+\tend
+end
+
+local function applyScroll()
+\tlocal y=-scrollOffset
+\tmc.Position=UDim2.new(0,86,0,30+y)
+\tmiscC.Position=UDim2.new(0,86,0,30+y)
+\tif scrollMax>0 then
+\t\tlocal ratio=scrollOffset/scrollMax
+\t\tscrollThumb.Position=UDim2.new(0,-32,ratio*(scrollBar.AbsoluteSize.Y-scrollThumb.AbsoluteSize.Y),0)
+\telse
+\t\tscrollThumb.Position=UDim2.new(0,-32,0,0)
+\tend
+end
+
+UIS.InputChanged:Connect(function(i)
+\tif i.UserInputType==Enum.UserInputType.MouseWheel then
+\t\tscrollTarget=math.clamp(scrollTarget-i.Position.Z*scrollStep,0,scrollMax)
+\tend
+end)
+
+RS.RenderStepped:Connect(function()
+\tif math.abs(scrollOffset-scrollTarget)>0.05 then
+\t\tscrollOffset=scrollOffset+(scrollTarget-scrollOffset)*0.18
+\t\tapplyScroll()
+\tend
+end)
+
+task.defer(function()
+\tupdateScrollBounds()
+\tapplyScroll()
+end)
 
 local function setToggle(t,k,on,anim)
 	local pos=on and UDim2.new(1,-20,0.5,-9) or UDim2.new(0,2,0.5,-9)
@@ -930,13 +991,8 @@ local function updateRange(v)
 end
 
 local function updateSlider(f,h,v)
-	v=math.clamp(v,0,1)
-	local track=h.Parent
-	local width=track.AbsoluteSize.X
-	if width<=16 then return end
-	local x=8+(width-16)*v
-	f.Size=UDim2.new(0,x,1,0)
-	h.Position=UDim2.new(0,x,0.5,-8)
+	f.Size=UDim2.new(v,0,1,0)
+	h.Position=UDim2.new(v,-8,0.5,-8)
 end
 
 local function toggleSpeed()
@@ -1215,48 +1271,48 @@ end)
 
 local function updateSpeedFromInput(i)
 	local s=spS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-spS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-spS.AbsolutePosition.X,0,s)/s
 	updateSlider(spF,spH,v)
 	updateSpeed(v)
 end
 
 local function updateJumpFromInput(i)
 	local s=jS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-jS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-jS.AbsolutePosition.X,0,s)/s
 	updateSlider(jF,jH,v)
 	updateJump(v)
 end
 
 local function updateFlightFromInput(i)
 	local s=fS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-fS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-fS.AbsolutePosition.X,0,s)/s
 	updateSlider(fF,fH,v)
 	updateFlight(v)
 end
 
 local function updateStrafeFromInput(i)
 	local s=stS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-stS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-stS.AbsolutePosition.X,0,s)/s
 	updateSlider(stF,stH,v)
 	updateStrafe(v)
 end
 
 local function updateSmoothFromInput(i)
 	local s=smS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-smS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-smS.AbsolutePosition.X,0,s)/s
 	updateSlider(smF,smH,v)
 	updateSmooth(v)
 end
 
 local function updateRangeFromInput(i)
 	local s=rS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-rS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-rS.AbsolutePosition.X,0,s)/s
 	updateSlider(rF,rH,v)
 	updateRange(v)
 end
