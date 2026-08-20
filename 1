@@ -762,14 +762,13 @@ scrollThumb.Parent=scrollTrack
 Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
 
 _G.scrollOffset=0
-_G.scrollTarget=0
 _G.scrollMax=0
 _G.scrollDragging=false
 _G.scrollDragStart=0
 _G.scrollStartOffset=0
 
 local function getContentHeight(c)
-	local bottom=0
+	local bottom=c.Size.Y.Offset
 	for _,o in ipairs(c:GetChildren()) do
 		if o:IsA("GuiObject") and o.Visible then
 			bottom=math.max(bottom,o.Position.Y.Offset+o.Size.Y.Offset)
@@ -785,15 +784,12 @@ end
 
 local function updateScrollBar()
 	_G.scrollMax=getScrollMax()
-	if _G.scrollMax<=0 then
-		scrollTrack.Visible=false
-		return
-	end
+	if _G.scrollMax<=0 then scrollTrack.Visible=false return end
 	scrollTrack.Visible=true
 	local vh=contentViewport.AbsoluteSize.Y
-	local ch=math.max(getContentHeight(_G.currentCategory=="movement" and mc or miscC),1)
+	local ch=getContentHeight(_G.currentCategory=="movement" and mc or miscC)
 	local th=scrollTrack.AbsoluteSize.Y
-	local h=math.clamp(th*vh/ch,40,th)
+	local h=math.clamp(th*vh/math.max(ch,1),40,th)
 	scrollThumb.Size=UDim2.new(1,0,0,h)
 	scrollThumb.Position=UDim2.new(0,0,0,(th-h)*math.clamp(_G.scrollOffset/_G.scrollMax,0,1))
 end
@@ -801,19 +797,13 @@ end
 local function applyScroll()
 	_G.scrollMax=getScrollMax()
 	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
-	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
-	local y=-math.floor(_G.scrollOffset+0.5)
-	if _G.currentCategory=="movement" then
-		mc.Position=UDim2.new(0,0,0,y)
-	else
-		miscC.Position=UDim2.new(0,0,0,y)
-	end
+	local y=-math.floor(_G.scrollOffset)
+	if _G.currentCategory=="movement" then mc.Position=UDim2.new(0,0,0,y) else miscC.Position=UDim2.new(0,0,0,y) end
 	updateScrollBar()
 end
 
 local function resetScroll()
 	_G.scrollOffset=0
-	_G.scrollTarget=0
 	mc.Position=UDim2.new(0,0,0,0)
 	miscC.Position=UDim2.new(0,0,0,0)
 	applyScroll()
@@ -827,15 +817,16 @@ UIS.InputChanged:Connect(function(i)
 		if p.X>=q.X and p.X<=q.X+z.X and p.Y>=q.Y and p.Y<=q.Y+z.Y then
 			local max=getScrollMax()
 			if max>0 then
-				_G.scrollTarget=math.clamp(_G.scrollTarget-i.Position.Z*8,0,max)
+				_G.scrollOffset=math.clamp(_G.scrollOffset-i.Position.Z*35,0,max)
+				applyScroll()
 			end
 		end
 	elseif i.UserInputType==Enum.UserInputType.MouseMovement and _G.scrollDragging then
 		local d=i.Position.Y-_G.scrollDragStart
 		local th=scrollTrack.AbsoluteSize.Y
 		local h=scrollThumb.AbsoluteSize.Y
-		local travel=math.max(1,th-h)
-		_G.scrollTarget=math.clamp(_G.scrollStartOffset+d/travel*_G.scrollMax,0,_G.scrollMax)
+		_G.scrollOffset=math.clamp(_G.scrollStartOffset+d/math.max(1,th-h)*_G.scrollMax,0,_G.scrollMax)
+		applyScroll()
 	end
 end)
 
@@ -851,14 +842,20 @@ UIS.InputEnded:Connect(function(i)
 	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then _G.scrollDragging=false end
 end)
 
-RS.RenderStepped:Connect(function()
-	local max=getScrollMax()
-	_G.scrollMax=max
-	_G.scrollTarget=math.clamp(_G.scrollTarget,0,max)
-	_G.scrollOffset=_G.scrollOffset+(_G.scrollTarget-_G.scrollOffset)*0.14
-	if math.abs(_G.scrollTarget-_G.scrollOffset)<0.05 then _G.scrollOffset=_G.scrollTarget end
-	applyScroll()
-end)
+local function fadeScrollbar(show)
+	if not show then
+		local t=TS:Create(scrollTrack,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency=1})
+		local k=TS:Create(scrollThumb,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency=1})
+		t:Play(); k:Play()
+		task.delay(0.2,function() scrollTrack.Visible=false end)
+	else
+		scrollTrack.Visible=true
+		scrollTrack.BackgroundTransparency=1
+		scrollThumb.BackgroundTransparency=1
+		TS:Create(scrollTrack,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency=0.25}):Play()
+		TS:Create(scrollThumb,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency=0}):Play()
+	end
+end
 
 local function setToggle(t,k,on,anim)
 	local pos=on and UDim2.new(1,-20,0.5,-9) or UDim2.new(0,2,0.5,-9)
@@ -1230,22 +1227,16 @@ local function switchCat(c)
 	local new=c=="movement" and mc or miscC
 	local dir=c=="misc" and 1 or -1
 	local h=contentViewport.AbsoluteSize.Y
-
 	_G.currentCategory=c
 	_G.scrollOffset=0
-	_G.scrollTarget=0
-
 	old.Visible=true
 	new.Visible=true
 	old.Position=UDim2.new(0,0,0,0)
 	new.Position=UDim2.new(0,0,0,dir*h)
-
 	local inf=TweenInfo.new(0.2,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
-	local a=TS:Create(old,inf,{Position=UDim2.new(0,0,0,-dir*h)})
-	local b=TS:Create(new,inf,{Position=UDim2.new(0,0,0,0)})
-	a:Play()
-	b:Play()
-
+	local ot=TS:Create(old,inf,{Position=UDim2.new(0,0,0,-dir*h)})
+	local nt=TS:Create(new,inf,{Position=UDim2.new(0,0,0,0)})
+	ot:Play(); nt:Play()
 	if c=="movement" then
 		TS:Create(movL,inf,{TextTransparency=0}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
@@ -1253,13 +1244,10 @@ local function switchCat(c)
 		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0}):Play()
 	end
-
-	b.Completed:Connect(function()
+	nt.Completed:Connect(function()
 		if token~=catToken then return end
-		mc.Visible=c=="movement"
-		miscC.Visible=c=="misc"
-		mc.Position=UDim2.new(0,0,0,0)
-		miscC.Position=UDim2.new(0,0,0,0)
+		mc.Visible=c=="movement"; miscC.Visible=c=="misc"
+		mc.Position=UDim2.new(0,0,0,0); miscC.Position=UDim2.new(0,0,0,0)
 		resetScroll()
 	end)
 end
@@ -1302,29 +1290,34 @@ RS.RenderStepped:Connect(function()
 	end
 end)
 
+local function fadeContainer(c,show)
+	for _,o in ipairs(c:GetDescendants()) do
+		local inf=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+		if o:IsA("TextLabel") or o:IsA("TextButton") or o:IsA("TextBox") then
+			local key="FadeText"
+			if o:GetAttribute(key)==nil then o:SetAttribute(key,o.TextTransparency) end
+			TS:Create(o,inf,{TextTransparency=show and o:GetAttribute(key) or 1}):Play()
+		elseif o:IsA("UIStroke") then
+			if o:GetAttribute("FadeStroke")==nil then o:SetAttribute("FadeStroke",o.Transparency) end
+			TS:Create(o,inf,{Transparency=show and o:GetAttribute("FadeStroke") or 1}):Play()
+		elseif o:IsA("Frame") and o~=c then
+			if o:GetAttribute("FadeBg")==nil then o:SetAttribute("FadeBg",o.BackgroundTransparency) end
+			TS:Create(o,inf,{BackgroundTransparency=show and o:GetAttribute("FadeBg") or 1}):Play()
+		end
+	end
+end
+
 local function setVisible(s)
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
 	catBar.Visible=s
 	if s then
 		applyScroll()
-		if _G.scrollMax>0 then
-			scrollTrack.Visible=true
-			scrollTrack.BackgroundTransparency=1
-			scrollThumb.BackgroundTransparency=1
-			local inf=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-			TS:Create(scrollTrack,inf,{BackgroundTransparency=0.25}):Play()
-			TS:Create(scrollThumb,inf,{BackgroundTransparency=0}):Play()
-		else
-			scrollTrack.Visible=false
-		end
+		fadeContainer(_G.currentCategory=="movement" and mc or miscC,true)
+		if _G.scrollMax>0 then fadeScrollbar(true) else scrollTrack.Visible=false end
 	else
-		local inf=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-		TS:Create(scrollTrack,inf,{BackgroundTransparency=1}):Play()
-		TS:Create(scrollThumb,inf,{BackgroundTransparency=1}):Play()
-		task.delay(0.2,function()
-			if not s then scrollTrack.Visible=false end
-		end)
+		fadeContainer(mc,false); fadeContainer(miscC,false)
+		fadeScrollbar(false)
 	end
 end
 
