@@ -72,8 +72,8 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,350,0,570)
-mf.Position=UDim2.new(0.5,-175,0.5,-285)
+mf.Size=UDim2.new(0,350,0,530)
+mf.Position=UDim2.new(0.5,-175,0.5,-265)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
 mf.Active=true
@@ -754,6 +754,143 @@ miscL.Font=Enum.Font.GothamBold
 miscL.TextWrapped=true
 miscL.Parent=catBar
 
+local keybindC=Instance.new("Frame")
+keybindC.Size=UDim2.new(0,258,0,0)
+keybindC.Position=UDim2.new(0,0,0,0)
+keybindC.BackgroundTransparency=1
+keybindC.Visible=false
+keybindC.Parent=contentViewport
+
+local keybindRows={}
+local keybindOrder={}
+local keybindWaiting=nil
+
+local function keybindText(key)
+	if not key then return "None" end
+	local n=key.Name
+	n=n:gsub("Left","L "):gsub("Right","R ")
+	return n
+end
+
+local function rebuildKeybindLayout()
+	for index,name in ipairs(keybindOrder) do
+		local row=keybindRows[name]
+		if row then
+			row.Position=UDim2.new(0,0,0,(index-1)*38)
+		end
+	end
+	keybindC.Size=UDim2.new(0,258,0,#keybindOrder*38)
+	if _G.currentCategory=="keybind" then
+		task.defer(function() refreshScroll(false) end)
+	end
+end
+
+local function registerKeybind(name,callback)
+	if keybindRows[name] then
+		keybindRows[name].callback=callback
+		return
+	end
+
+	table.insert(keybindOrder,name)
+
+	local row=Instance.new("Frame")
+	row.Size=UDim2.new(1,0,0,34)
+	row.BackgroundTransparency=1
+	row.Parent=keybindC
+
+	local label=Instance.new("TextLabel")
+	label.Size=UDim2.new(0,105,1,0)
+	label.Position=UDim2.new(0,8,0,0)
+	label.BackgroundTransparency=1
+	label.Text=name
+	label.TextColor3=Color3.new(0.6,0.6,0.6)
+	label.TextSize=18
+	label.Font=Enum.Font.Gotham
+	label.TextXAlignment=Enum.TextXAlignment.Left
+	label.Parent=row
+
+	local add=Instance.new("TextButton")
+	add.Size=UDim2.new(0,28,0,22)
+	add.Position=UDim2.new(0,112,0,6)
+	add.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+	add.BackgroundTransparency=0.04
+	add.Text="+"
+	add.TextColor3=Color3.new(1,1,1)
+	add.TextSize=16
+	add.Font=Enum.Font.GothamBold
+	add.AutoButtonColor=false
+	add.Parent=row
+	Instance.new("UICorner",add).CornerRadius=UDim.new(0,5)
+
+	local bind=Instance.new("TextButton")
+	bind.Size=UDim2.new(0,72,0,22)
+	bind.Position=UDim2.new(0,143,0,6)
+	bind.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+	bind.BackgroundTransparency=0.04
+	bind.Text="None"
+	bind.TextColor3=Color3.new(0.7,0.7,0.7)
+	bind.TextSize=13
+	bind.Font=Enum.Font.Gotham
+	bind.AutoButtonColor=false
+	bind.Parent=row
+	Instance.new("UICorner",bind).CornerRadius=UDim.new(0,5)
+
+	local remove=Instance.new("TextButton")
+	remove.Size=UDim2.new(0,28,0,22)
+	remove.Position=UDim2.new(0,218,0,6)
+	remove.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+	remove.BackgroundTransparency=0.04
+	remove.Text="-"
+	remove.TextColor3=Color3.new(1,1,1)
+	remove.TextSize=16
+	remove.Font=Enum.Font.GothamBold
+	remove.AutoButtonColor=false
+	remove.Parent=row
+	Instance.new("UICorner",remove).CornerRadius=UDim.new(0,5)
+
+	local data={row=row,label=label,add=add,bind=bind,remove=remove,callback=callback,key=nil}
+	keybindRows[name]=data
+
+	local function beginBind()
+		if keybindWaiting then
+			keybindWaiting.bind.Text=keybindText(keybindWaiting.key)
+		end
+		keybindWaiting=data
+		bind.Text="..."
+	end
+
+	add.MouseButton1Click:Connect(beginBind)
+	bind.MouseButton1Click:Connect(beginBind)
+	remove.MouseButton1Click:Connect(function()
+		if keybindWaiting==data then keybindWaiting=nil end
+		data.key=nil
+		bind.Text="None"
+	end)
+
+	rebuildKeybindLayout()
+end
+
+_G.addKeybind=registerKeybind
+
+local keybindL=Instance.new("TextButton")
+keybindL.Size=UDim2.new(1,0,0,40)
+keybindL.Position=UDim2.new(0,0,0,120)
+keybindL.BackgroundTransparency=1
+keybindL.Text="keybind"
+keybindL.TextColor3=Color3.new(1,1,1)
+keybindL.TextTransparency=0.4
+keybindL.TextSize=14
+keybindL.Font=Enum.Font.GothamBold
+keybindL.TextWrapped=true
+keybindL.Parent=catBar
+
+local keybindSep=Instance.new("Frame")
+keybindSep.Size=UDim2.new(0,48,0,1)
+keybindSep.Position=UDim2.new(0.5,-24,0,110)
+keybindSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
+keybindSep.BorderSizePixel=0
+keybindSep.Parent=catBar
+
 local scrollTrack=Instance.new("Frame")
 scrollTrack.Size=UDim2.new(0,6,0,460)
 scrollTrack.Position=UDim2.new(1,-10,0,35)
@@ -788,7 +925,9 @@ local scrollTarget=0
 local scrollCurrent=0
 
 local function activeContent()
-	return _G.currentCategory=="movement" and mc or miscC
+	if _G.currentCategory=="movement" then return mc end
+	if _G.currentCategory=="misc" then return miscC end
+	return keybindC
 end
 
 local function contentBottom(content)
@@ -1010,7 +1149,9 @@ end)
 
 task.defer(function()
 	task.wait()
-	refreshScroll(true)
+	task.defer(function()
+		refreshScroll(true)
+	end)
 end)
 
 local function setToggle(t,k,on,anim)
@@ -1332,6 +1473,34 @@ local function cycleMode()
 	end
 end
 
+registerKeybind("Speed",toggleSpeed)
+registerKeybind("Jump",toggleJump)
+registerKeybind("Flight",toggleFlight)
+registerKeybind("Noclip",toggleNoclip)
+registerKeybind("Strafe",toggleStrafe)
+registerKeybind("Airwalk",toggleAirwalk)
+registerKeybind("ClickTP",toggleClickTp)
+registerKeybind("AirJump",toggleAirJump)
+registerKeybind("Aimbot",toggleAimbot)
+registerKeybind("TargetLock",toggleTargetLock)
+registerKeybind("WallsCheck",toggleWallsCheck)
+
+UIS.InputBegan:Connect(function(input,processed)
+	if processed then return end
+	if keybindWaiting and input.UserInputType==Enum.UserInputType.Keyboard and input.KeyCode~=Enum.KeyCode.Unknown then
+		keybindWaiting.key=input.KeyCode
+		keybindWaiting.bind.Text=keybindText(input.KeyCode)
+		keybindWaiting=nil
+		return
+	end
+	for _,name in ipairs(keybindOrder) do
+		local data=keybindRows[name]
+		if data and data.key==input.KeyCode and data.callback then
+			data.callback()
+		end
+	end
+end)
+
 spCl.MouseButton1Click:Connect(toggleSpeed)
 jCl.MouseButton1Click:Connect(toggleJump)
 fCl.MouseButton1Click:Connect(toggleFlight)
@@ -1385,17 +1554,12 @@ local function switchCat(c)
 
 	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 
-	if c=="movement" then
-		TS:Create(movL,inf,{TextTransparency=0}):Play()
-		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
-		miscC.Visible=false
-		mc.Visible=true
-	else
-		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
-		TS:Create(miscL,inf,{TextTransparency=0}):Play()
-		mc.Visible=false
-		miscC.Visible=true
-	end
+	TS:Create(movL,inf,{TextTransparency=c=="movement" and 0 or 0.4}):Play()
+	TS:Create(miscL,inf,{TextTransparency=c=="misc" and 0 or 0.4}):Play()
+	TS:Create(keybindL,inf,{TextTransparency=c=="keybind" and 0 or 0.4}):Play()
+	mc.Visible=c=="movement"
+	miscC.Visible=c=="misc"
+	keybindC.Visible=c=="keybind"
 
 	task.defer(function()
 		task.wait()
@@ -1405,6 +1569,7 @@ end
 
 movL.MouseButton1Click:Connect(function() switchCat("movement") end)
 miscL.MouseButton1Click:Connect(function() switchCat("misc") end)
+keybindL.MouseButton1Click:Connect(function() switchCat("keybind") end)
 
 mf.InputBegan:Connect(function(i)
 	if _G.isSliding then return end
@@ -1444,6 +1609,7 @@ end)
 local function setVisible(s)
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
+	keybindC.Visible=s and _G.currentCategory=="keybind"
 	catBar.Visible=s
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
