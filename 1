@@ -72,7 +72,7 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,350,0,570)
+mf.Size=UDim2.new(0,350,0,515)
 mf.Position=UDim2.new(0.5,-175,0.5,-285)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
@@ -717,6 +717,143 @@ wcT.Parent=miscC
 
 local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
 
+local keybindC=Instance.new("Frame")
+keybindC.Size=UDim2.new(0,258,0,560)
+keybindC.Position=UDim2.new(0,0,0,0)
+keybindC.BackgroundTransparency=1
+keybindC.Visible=false
+keybindC.Parent=contentViewport
+
+local keybindTitle=Instance.new("TextLabel")
+keybindTitle.Size=UDim2.new(1,0,0,25)
+keybindTitle.Position=UDim2.new(0,10,0,2)
+keybindTitle.BackgroundTransparency=1
+keybindTitle.Text="Keybinds"
+keybindTitle.TextColor3=Color3.new(0.6,0.6,0.6)
+keybindTitle.TextSize=20
+keybindTitle.Font=Enum.Font.Gotham
+keybindTitle.TextXAlignment=Enum.TextXAlignment.Left
+keybindTitle.Parent=keybindC
+
+local keybindRows={}
+local keybindModules={
+	{name="Speed",action="Speed"},
+	{name="Jump",action="Jump"},
+	{name="Flight",action="Flight"},
+	{name="Noclip",action="Noclip"},
+	{name="Strafe",action="Strafe"},
+	{name="Airwalk",action="Airwalk"},
+	{name="ClickTP",action="ClickTP"},
+	{name="AirJump",action="AirJump"},
+	{name="Aimbot",action="Aimbot"},
+	{name="Target Lock",action="TargetLock"},
+	{name="Walls Check",action="WallsCheck"},
+}
+
+local function createKeybindRow(index,item)
+	local y=34+(index-1)*40
+	local label=Instance.new("TextLabel")
+	label.Size=UDim2.new(0,108,0,30)
+	label.Position=UDim2.new(0,10,0,y)
+	label.BackgroundTransparency=1
+	label.Text=item.name
+	label.TextColor3=Color3.new(0.6,0.6,0.6)
+	label.TextSize=17
+	label.Font=Enum.Font.Gotham
+	label.TextXAlignment=Enum.TextXAlignment.Left
+	label.Parent=keybindC
+
+	local minus=Instance.new("TextButton")
+	minus.Size=UDim2.new(0,28,0,28)
+	minus.Position=UDim2.new(0,126,0,y+1)
+	minus.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+	minus.BackgroundTransparency=0.04
+	minus.BorderSizePixel=0
+	minus.Text="-"
+	minus.TextColor3=Color3.new(1,1,1)
+	minus.TextSize=18
+	minus.Font=Enum.Font.GothamBold
+	minus.Parent=keybindC
+	Instance.new("UICorner",minus).CornerRadius=UDim.new(0,6)
+	local minusSt=Instance.new("UIStroke")
+	minusSt.Color=Color3.new(1,1,1)
+	minusSt.Transparency=1
+	minusSt.Thickness=1.5
+	minusSt.Parent=minus
+
+	local plus=Instance.new("TextButton")
+	plus.Size=UDim2.new(0,28,0,28)
+	plus.Position=UDim2.new(0,158,0,y+1)
+	plus.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+	plus.BackgroundTransparency=0.04
+	plus.BorderSizePixel=0
+	plus.Text="+"
+	plus.TextColor3=Color3.new(1,1,1)
+	plus.TextSize=18
+	plus.Font=Enum.Font.GothamBold
+	plus.Parent=keybindC
+	Instance.new("UICorner",plus).CornerRadius=UDim.new(0,6)
+	local plusSt=Instance.new("UIStroke")
+	plusSt.Color=Color3.new(1,1,1)
+	plusSt.Transparency=1
+	plusSt.Thickness=1.5
+	plusSt.Parent=plus
+
+	local key=Instance.new("TextButton")
+	key.Size=UDim2.new(0,66,0,28)
+	key.Position=UDim2.new(0,190,0,y+1)
+	key.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+	key.BackgroundTransparency=0.04
+	key.BorderSizePixel=0
+	key.Text="None"
+	key.TextColor3=Color3.new(0.6,0.6,0.6)
+	key.TextSize=14
+	key.Font=Enum.Font.Gotham
+	key.Parent=keybindC
+	Instance.new("UICorner",key).CornerRadius=UDim.new(0,6)
+	local keySt=Instance.new("UIStroke")
+	keySt.Color=Color3.new(1,1,1)
+	keySt.Transparency=1
+	keySt.Thickness=1.5
+	keySt.Parent=key
+
+	hover(plus,plusSt)
+	hover(minus,minusSt)
+	hover(key,keySt)
+
+	plus.MouseButton1Click:Connect(function()
+		if _G.keybindManager and _G.keybindManager.arm then
+			_G.keybindManager.arm(item.action)
+		end
+	end)
+	minus.MouseButton1Click:Connect(function()
+		if _G.keybindManager and _G.keybindManager.clear then
+			_G.keybindManager.clear(item.action)
+		end
+	end)
+	key.MouseButton1Click:Connect(function()
+		if _G.keybindManager and _G.keybindManager.arm then
+			_G.keybindManager.arm(item.action)
+		end
+	end)
+
+	keybindRows[item.action]={label=label,plus=plus,minus=minus,key=key,keyStroke=keySt}
+end
+
+local function refreshKeybindRows()
+	for i,item in ipairs(keybindModules) do
+		if not keybindRows[item.action] then createKeybindRow(i,item) end
+	end
+	if _G.keybindManager and _G.keybindManager.get then
+		for _,item in ipairs(keybindModules) do
+			local row=keybindRows[item.action]
+			local name=_G.keybindManager.get(item.action)
+			row.key.Text=name or "None"
+			row.key.TextColor3=name and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+		end
+	end
+end
+
 local catBar=Instance.new("Frame")
 catBar.Size=UDim2.new(0,82,1,-70)
 catBar.Position=UDim2.new(0,4,0,35)
@@ -754,6 +891,25 @@ miscL.Font=Enum.Font.GothamBold
 miscL.TextWrapped=true
 miscL.Parent=catBar
 
+local keybindSep=Instance.new("Frame")
+keybindSep.Size=UDim2.new(0,48,0,1)
+keybindSep.Position=UDim2.new(0.5,-24,0,108)
+keybindSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
+keybindSep.BorderSizePixel=0
+keybindSep.Parent=catBar
+
+local keybindL=Instance.new("TextButton")
+keybindL.Size=UDim2.new(1,0,0,40)
+keybindL.Position=UDim2.new(0,0,0,118)
+keybindL.BackgroundTransparency=1
+keybindL.Text="keybind"
+keybindL.TextColor3=Color3.new(1,1,1)
+keybindL.TextTransparency=0.4
+keybindL.TextSize=14
+keybindL.Font=Enum.Font.GothamBold
+keybindL.TextWrapped=true
+keybindL.Parent=catBar
+
 local scrollTrack=Instance.new("Frame")
 scrollTrack.Size=UDim2.new(0,6,0,460)
 scrollTrack.Position=UDim2.new(1,-10,0,35)
@@ -788,7 +944,9 @@ local scrollTarget=0
 local scrollCurrent=0
 
 local function activeContent()
-	return _G.currentCategory=="movement" and mc or miscC
+	if _G.currentCategory=="movement" then return mc end
+	if _G.currentCategory=="misc" then return miscC end
+	return keybindC
 end
 
 local function contentBottom(content)
@@ -1073,6 +1231,9 @@ hover(rH,rHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
+hover(keybindL,Instance.new("UIStroke"))
+
+refreshKeybindRows()
 
 local function setColors(en,label,slider,fill,handle)
 	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
@@ -1332,6 +1493,22 @@ local function cycleMode()
 	end
 end
 
+_G.keybindActions={
+	Speed=toggleSpeed,
+	Jump=toggleJump,
+	Flight=toggleFlight,
+	Noclip=toggleNoclip,
+	Strafe=toggleStrafe,
+	Airwalk=toggleAirwalk,
+	ClickTP=toggleClickTp,
+	AirJump=toggleAirJump,
+	Aimbot=toggleAimbot,
+	TargetLock=toggleTargetLock,
+	WallsCheck=toggleWallsCheck,
+}
+_G.keybindActionsReady=true
+if _G.keybindManager and _G.keybindManager.refreshUI then _G.keybindManager.refreshUI() end
+
 spCl.MouseButton1Click:Connect(toggleSpeed)
 jCl.MouseButton1Click:Connect(toggleJump)
 fCl.MouseButton1Click:Connect(toggleFlight)
@@ -1388,13 +1565,25 @@ local function switchCat(c)
 	if c=="movement" then
 		TS:Create(movL,inf,{TextTransparency=0}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
-		miscC.Visible=false
+		TS:Create(keybindL,inf,{TextTransparency=0.4}):Play()
 		mc.Visible=true
-	else
+		miscC.Visible=false
+		keybindC.Visible=false
+	elseif c=="misc" then
 		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0}):Play()
+		TS:Create(keybindL,inf,{TextTransparency=0.4}):Play()
 		mc.Visible=false
 		miscC.Visible=true
+		keybindC.Visible=false
+	else
+		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(keybindL,inf,{TextTransparency=0}):Play()
+		mc.Visible=false
+		miscC.Visible=false
+		keybindC.Visible=true
+		refreshKeybindRows()
 	end
 
 	task.defer(function()
@@ -1405,6 +1594,7 @@ end
 
 movL.MouseButton1Click:Connect(function() switchCat("movement") end)
 miscL.MouseButton1Click:Connect(function() switchCat("misc") end)
+keybindL.MouseButton1Click:Connect(function() switchCat("keybind") end)
 
 mf.InputBegan:Connect(function(i)
 	if _G.isSliding then return end
@@ -1444,6 +1634,7 @@ end)
 local function setVisible(s)
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
+	keybindC.Visible=s and _G.currentCategory=="keybind"
 	catBar.Visible=s
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
@@ -1479,7 +1670,7 @@ local function setMinimized(s)
 	-- The normal UI is slightly shorter so there is no large empty gap below it.
 	local ts=s
 		and UDim2.new(0,350,0,30)
-		or UDim2.new(0,350,0,530)
+		or UDim2.new(0,350,0,515)
 
 	local tw=TS:Create(
 		mf,
