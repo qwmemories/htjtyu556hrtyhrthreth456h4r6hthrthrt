@@ -130,6 +130,22 @@ local function getAimPart(target)
 	end
 end
 
+local function getTargetStrafeTarget()
+	local closest=nil
+	local shortest=math.huge
+	local rootPos=root.Position
+	for _,p in pairs(PL:GetPlayers()) do
+		if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+			local dist=(p.Character.HumanoidRootPart.Position-rootPos).Magnitude
+			if dist<shortest then
+				shortest=dist
+				closest=p
+			end
+		end
+	end
+	return closest
+end
+
 RS.RenderStepped:Connect(function()
 	if _G.flying and _G.bodyVelocity and _G.bodyGyro and root then
 		local cam=workspace.CurrentCamera
@@ -173,6 +189,40 @@ RS.RenderStepped:Connect(function()
 						end
 					end
 				end
+			end
+		end
+	end
+
+	if _G.targetStrafeEnabled then
+		if not _G.targetStrafeTarget or not _G.targetStrafeTarget.Character or not _G.targetStrafeTarget.Character:FindFirstChild("HumanoidRootPart") then
+			_G.targetStrafeTarget=getTargetStrafeTarget()
+		end
+		if _G.targetStrafeTarget and _G.targetStrafeTarget.Character and _G.targetStrafeTarget.Character:FindFirstChild("HumanoidRootPart") then
+			local targetPos=_G.targetStrafeTarget.Character.HumanoidRootPart.Position
+			local currentPos=root.Position
+			local dist=(targetPos-currentPos).Magnitude
+			if dist>_G.targetStrafeRange then
+				local dir=(targetPos-currentPos).Unit
+				local newPos=targetPos-dir*_G.targetStrafeRange
+				root.CFrame=CFrame.new(root.CFrame.Position+(newPos-currentPos)*0.5,root.CFrame.Position+(newPos-currentPos)*0.5+root.CFrame.LookVector)
+			else
+				local angle=_G.targetStrafeAngle+_G.targetStrafeDirection*_G.targetStrafeSpeed*0.01
+				local offset=Vector3.new(math.cos(angle),0,math.sin(angle))*_G.targetStrafeRange
+				if _G.targetStrafeMode=="Square" then
+					local sq=math.floor(angle/(math.pi/2))%4
+					if sq==0 then offset=Vector3.new(_G.targetStrafeRange,0,0)
+					elseif sq==1 then offset=Vector3.new(0,0,_G.targetStrafeRange)
+					elseif sq==2 then offset=Vector3.new(-_G.targetStrafeRange,0,0)
+					else offset=Vector3.new(0,0,-_G.targetStrafeRange) end
+				elseif _G.targetStrafeMode=="Triangle" then
+					local a=angle%(2*math.pi)
+					if a<math.pi*2/3 then offset=Vector3.new(_G.targetStrafeRange*math.cos(a),0,_G.targetStrafeRange*math.sin(a))
+					elseif a<math.pi*4/3 then offset=Vector3.new(_G.targetStrafeRange*math.cos(a-math.pi*2/3),0,_G.targetStrafeRange*math.sin(a-math.pi*2/3))
+					else offset=Vector3.new(_G.targetStrafeRange*math.cos(a-math.pi*4/3),0,_G.targetStrafeRange*math.sin(a-math.pi*4/3)) end
+				end
+				local newPos=targetPos+offset
+				root.CFrame=CFrame.new(newPos,newPos+root.CFrame.LookVector)
+				_G.targetStrafeAngle=angle
 			end
 		end
 	end
