@@ -13,22 +13,14 @@ wait(0.2)
 _G.keybinds=_G.keybinds or {}
 _G.keybindWaiting=nil
 
-local keyNames={
-	[Enum.KeyCode.LeftShift]="LShift",[Enum.KeyCode.RightShift]="RShift",
-	[Enum.KeyCode.LeftControl]="LCtrl",[Enum.KeyCode.RightControl]="RCtrl",
-	[Enum.KeyCode.LeftAlt]="LAlt",[Enum.KeyCode.RightAlt]="RAlt",
-	[Enum.KeyCode.Return]="Enter",[Enum.KeyCode.Backspace]="Backspace",
-	[Enum.KeyCode.CapsLock]="CapsLock",[Enum.KeyCode.Space]="Space",
-	[Enum.KeyCode.Escape]="Esc",[Enum.KeyCode.Tab]="Tab",
-}
-
 local function keyName(code)
-	return keyNames[code] or code.Name
+	if not code or code==Enum.KeyCode.Unknown then return nil end
+	return code.Name
 end
 
 local function refreshKeybindUI()
-	if _G.keybindManager and _G.keybindManager.uiRefresh then
-		_G.keybindManager.uiRefresh()
+	if _G.refreshKeybindRows then
+		pcall(_G.refreshKeybindRows)
 	end
 end
 
@@ -46,31 +38,39 @@ _G.keybindManager={
 		local code=_G.keybinds[action]
 		return code and keyName(code) or nil
 	end,
-	refresh=function() refreshKeybindUI() end,
+	refreshUI=function()
+		refreshKeybindUI()
+	end,
 }
 
 UIS.InputBegan:Connect(function(input,processed)
-	if processed then return end
-	if input.UserInputType~=Enum.UserInputType.Keyboard then return end
-	local action=_G.keybindWaiting
-	if action then
-		if input.KeyCode~=Enum.KeyCode.Unknown then
-			_G.keybinds[action]=input.KeyCode
+	if processed or input.UserInputType~=Enum.UserInputType.Keyboard then return end
+
+	if _G.keybindWaiting then
+		local action=_G.keybindWaiting
+		if input.KeyCode==Enum.KeyCode.Escape then
 			_G.keybindWaiting=nil
-			refreshKeybindUI()
+		else
+			if input.KeyCode~=Enum.KeyCode.Unknown then
+				for other,code in pairs(_G.keybinds) do
+					if other~=action and code==input.KeyCode then
+						_G.keybinds[other]=nil
+					end
+				end
+				_G.keybinds[action]=input.KeyCode
+				_G.keybindWaiting=nil
+			end
 		end
+		refreshKeybindUI()
 		return
 	end
 
-	local code=input.KeyCode
-	if code==Enum.KeyCode.Unknown then return end
-	for action,bound in pairs(_G.keybinds) do
-		if bound==code and _G.keybindActions and _G.keybindActions[action] then
+	for action,code in pairs(_G.keybinds) do
+		if code==input.KeyCode and _G.keybindActions and _G.keybindActions[action] then
 			pcall(_G.keybindActions[action])
 		end
 	end
 end)
-
 
 local function setNoclip(s)
 	if not character then return end
