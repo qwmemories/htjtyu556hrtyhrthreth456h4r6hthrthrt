@@ -203,7 +203,7 @@ contentViewport.ClipsDescendants=true
 contentViewport.Parent=mf
 
 local mc=Instance.new("Frame")
-mc.Size=UDim2.new(0,258,0,528)
+mc.Size=UDim2.new(0,258,0,560)
 mc.Position=UDim2.new(0,0,0,0)
 mc.BackgroundTransparency=1
 mc.Parent=contentViewport
@@ -757,6 +757,7 @@ Instance.new("UICorner",scrollTrack).CornerRadius=UDim.new(1,0)
 
 local scrollThumb=Instance.new("Frame")
 scrollThumb.BackgroundColor3=Color3.new(0.6,0.6,0.6)
+scrollThumb.BackgroundTransparency=0
 scrollThumb.BorderSizePixel=0
 scrollThumb.Parent=scrollTrack
 Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
@@ -767,155 +768,76 @@ _G.scrollMax=0
 _G.scrollDragging=false
 _G.scrollDragStart=0
 _G.scrollStartOffset=0
+local SCROLL_STEP=7
+local SCROLL_SMOOTH=0.13
 
--- Маленький шаг колеса + мягкое догоняющее движение.
-local SCROLL_STEP=6
-local SCROLL_SMOOTH=0.11
-local MIN_THUMB_HEIGHT=44
-local SCROLL_VELOCITY=0
-local SCROLL_FRICTION=0.78
-local SCROLL_ACCEL=0.32
-
--- Возвращает реальную высоту видимого контента категории.
--- Поэтому если в будущем добавишь новый модуль ниже существующих,
--- область прокрутки автоматически увеличится.
-local function getCategoryContentHeight(container)
+local function contentHeight(c)
 	local bottom=0
-
-	for _,obj in ipairs(container:GetDescendants()) do
-		if obj:IsA("GuiObject") and obj.Visible then
-			local top=obj.Position.Y.Offset
-			local height=obj.Size.Y.Offset
-			local bottomPos=top+height
-
-			if bottomPos>bottom then
-				bottom=bottomPos
-			end
+	for _,o in ipairs(c:GetChildren()) do
+		if o:IsA("GuiObject") and o.Visible then
+			bottom=math.max(bottom,o.Position.Y.Offset+o.Size.Y.Offset)
 		end
 	end
-
 	return bottom
 end
 
-local function getCurrentContentHeight()
-	if _G.currentCategory=="movement" then
-		return getCategoryContentHeight(mc)
-	else
-		return getCategoryContentHeight(miscC)
-	end
-end
-
-local function getScrollMax()
-	local viewportHeight=contentViewport.AbsoluteSize.Y
-	local contentHeight=getCurrentContentHeight()
-
-	return math.max(0,contentHeight-viewportHeight)
+local function currentHeight()
+	return _G.currentCategory=="movement" and contentHeight(mc) or contentHeight(miscC)
 end
 
 local function updateScrollBar()
-	local viewportHeight=contentViewport.AbsoluteSize.Y
-	local contentHeight=getCurrentContentHeight()
-	local trackHeight=scrollTrack.AbsoluteSize.Y
-
-	local maxOffset=math.max(0,contentHeight-viewportHeight)
-	_G.scrollMax=maxOffset
-
-	-- Если контента хватает целиком — скролл полностью отключён.
-	if maxOffset<=0 or trackHeight<=0 then
-		scrollThumb.Size=UDim2.new(1,0,1,0)
-		scrollThumb.Position=UDim2.new(0,0,0,0)
+	local vh=contentViewport.AbsoluteSize.Y
+	local ch=currentHeight()
+	local th=scrollTrack.AbsoluteSize.Y
+	_G.scrollMax=math.max(0,ch-vh)
+	if _G.scrollMax<=0 then
 		scrollTrack.Visible=false
 		return
 	end
-
 	scrollTrack.Visible=true
-
-	local thumbHeight=math.clamp(
-		trackHeight*(viewportHeight/contentHeight),
-		MIN_THUMB_HEIGHT,
-		trackHeight
-	)
-
-	local travel=math.max(0,trackHeight-thumbHeight)
-	local ratio=math.clamp(_G.scrollOffset/maxOffset,0,1)
-
-	scrollThumb.Size=UDim2.new(1,0,0,thumbHeight)
-	scrollThumb.Position=UDim2.new(0,0,0,travel*ratio)
-end
-
-local function setScrollTarget(v)
-	_G.scrollTarget=math.clamp(v,0,_G.scrollMax)
+	local h=math.clamp(th*(vh/math.max(ch,1)),40,th)
+	scrollThumb.Size=UDim2.new(1,0,0,h)
+	local travel=math.max(0,th-h)
+	scrollThumb.Position=UDim2.new(0,0,0,travel*math.clamp(_G.scrollOffset/_G.scrollMax,0,1))
 end
 
 local function applyScroll()
-	_G.scrollMax=getScrollMax()
-
+	_G.scrollMax=math.max(0,currentHeight()-contentViewport.AbsoluteSize.Y)
 	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
 	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
-
 	local y=-math.floor(_G.scrollOffset+0.5)
-
-	if _G.currentCategory=="movement" then
-		mc.Position=UDim2.new(0,0,0,y)
-	else
-		miscC.Position=UDim2.new(0,0,0,y)
-	end
-
+	if _G.currentCategory=="movement" then mc.Position=UDim2.new(0,0,0,y) else miscC.Position=UDim2.new(0,0,0,y) end
 	updateScrollBar()
 end
 
 local function resetScroll()
 	_G.scrollOffset=0
 	_G.scrollTarget=0
-
 	mc.Position=UDim2.new(0,0,0,0)
 	miscC.Position=UDim2.new(0,0,0,0)
-
 	applyScroll()
 end
-
-task.defer(function()
-	resetScroll()
-end)
 
 UIS.InputChanged:Connect(function(i)
 	if i.UserInputType==Enum.UserInputType.MouseWheel then
 		local p=i.Position
-		local vpPos=contentViewport.AbsolutePosition
-		local vpSize=contentViewport.AbsoluteSize
-
-		if p.X>=vpPos.X and p.X<=vpPos.X+vpSize.X
-			and p.Y>=vpPos.Y and p.Y<=vpPos.Y+vpSize.Y then
-
-			-- Если текущая категория не требует прокрутки,
-			-- колесо вообще ничего не делает.
-			if _G.scrollMax>0 then
-				-- Колесо даёт небольшой импульс, а не мгновенный прыжок.
-				SCROLL_VELOCITY=SCROLL_VELOCITY-(i.Position.Z*SCROLL_STEP)
-				SCROLL_VELOCITY=math.clamp(SCROLL_VELOCITY,-18,18)
-			end
+		local vp=contentViewport
+		local q=vp.AbsolutePosition
+		local z=vp.AbsoluteSize
+		if p.X>=q.X and p.X<=q.X+z.X and p.Y>=q.Y and p.Y<=q.Y+z.Y and _G.scrollMax>0 then
+			_G.scrollTarget=math.clamp(_G.scrollTarget-i.Position.Z*SCROLL_STEP,0,_G.scrollMax)
 		end
-
-	elseif i.UserInputType==Enum.UserInputType.MouseMovement
-		and _G.scrollDragging then
-
-		local delta=i.Position.Y-_G.scrollDragStart
-		local trackHeight=scrollTrack.AbsoluteSize.Y
-		local thumbHeight=scrollThumb.AbsoluteSize.Y
-		local travel=math.max(1,trackHeight-thumbHeight)
-
-		setScrollTarget(
-			_G.scrollStartOffset+(delta/travel)*_G.scrollMax
-		)
+	elseif i.UserInputType==Enum.UserInputType.MouseMovement and _G.scrollDragging then
+		local d=i.Position.Y-_G.scrollDragStart
+		local th=scrollTrack.AbsoluteSize.Y
+		local h=scrollThumb.AbsoluteSize.Y
+		local travel=math.max(1,th-h)
+		_G.scrollTarget=math.clamp(_G.scrollStartOffset+d/travel*_G.scrollMax,0,_G.scrollMax)
 	end
 end)
 
 scrollThumb.InputBegan:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseButton1
-		or i.UserInputType==Enum.UserInputType.Touch then
-
-		if _G.scrollMax<=0 then return end
-
+	if (i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch) and _G.scrollMax>0 then
 		_G.scrollDragging=true
 		_G.scrollDragStart=i.Position.Y
 		_G.scrollStartOffset=_G.scrollOffset
@@ -923,47 +845,17 @@ scrollThumb.InputBegan:Connect(function(i)
 end)
 
 UIS.InputEnded:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseButton1
-		or i.UserInputType==Enum.UserInputType.Touch then
-		_G.scrollDragging=false
-	end
+	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then _G.scrollDragging=false end
 end)
 
-RS.RenderStepped:Connect(function(dt)
-	-- Динамический размер: добавленные позже элементы автоматически
-	-- увеличивают область прокрутки.
-	local newMax=getScrollMax()
-
-	if newMax~=_G.scrollMax then
-		_G.scrollMax=newMax
-		_G.scrollOffset=math.clamp(_G.scrollOffset,0,newMax)
-		_G.scrollTarget=math.clamp(_G.scrollTarget,0,newMax)
+RS.RenderStepped:Connect(function()
+	if _G.currentCategory=="movement" or _G.currentCategory=="misc" then
+		_G.scrollMax=math.max(0,currentHeight()-contentViewport.AbsoluteSize.Y)
+		_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
+		_G.scrollOffset=_G.scrollOffset+(_G.scrollTarget-_G.scrollOffset)*SCROLL_SMOOTH
+		if math.abs(_G.scrollTarget-_G.scrollOffset)<0.05 then _G.scrollOffset=_G.scrollTarget end
+		applyScroll()
 	end
-
-	-- Плавная "инерция" колеса.
-	if math.abs(SCROLL_VELOCITY)>0.01 then
-		_G.scrollTarget=math.clamp(
-			_G.scrollTarget+SCROLL_VELOCITY,
-			0,
-			_G.scrollMax
-		)
-
-		SCROLL_VELOCITY=SCROLL_VELOCITY*(SCROLL_FRICTION^math.max(dt*60,0.1))
-	else
-		SCROLL_VELOCITY=0
-	end
-
-	-- Мягкое spring-подобное движение к target.
-	local delta=_G.scrollTarget-_G.scrollOffset
-	local smooth=1-math.pow(1-SCROLL_SMOOTH,math.max(dt*60,0.1))
-
-	_G.scrollOffset=_G.scrollOffset+delta*smooth
-
-	if math.abs(delta)<0.03 and math.abs(SCROLL_VELOCITY)<0.03 then
-		_G.scrollOffset=_G.scrollTarget
-	end
-
-	applyScroll()
 end)
 
 local function setToggle(t,k,on,anim)
@@ -1326,99 +1218,46 @@ UIS.InputEnded:Connect(function(i)
 	if i.KeyCode==Enum.KeyCode.Space then _G.lastSpace=false end
 end)
 
-local categorySwitchToken=0
-
-local CATEGORY_TWEEN_TIME=0.2
-
-local function setTextVisible(container,visible)
-	for _,obj in ipairs(container:GetDescendants()) do
-		if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-			obj.Visible=visible
-		end
-	end
-end
+local catToken=0
+local CAT_TIME=0.2
 
 local function switchCat(c)
 	if _G.currentCategory==c then return end
-
-	categorySwitchToken=categorySwitchToken+1
-	local token=categorySwitchToken
-
-	local oldCategory=_G.currentCategory
-	local oldContainer=(oldCategory=="movement") and mc or miscC
-	local newContainer=(c=="movement") and mc or miscC
-
+	catToken+=1
+	local token=catToken
+	local old=_G.currentCategory=="movement" and mc or miscC
+	local new=c=="movement" and mc or miscC
+	local dir=c=="misc" and 1 or -1
+	local h=contentViewport.AbsoluteSize.Y
 	_G.currentCategory=c
 	_G.scrollOffset=0
 	_G.scrollTarget=0
-	SCROLL_VELOCITY=0
 
-	local direction
-	if c=="misc" then
-		-- Переход с верхней категории на нижнюю:
-		-- старая уезжает вверх, новая приезжает снизу.
-		direction=1
-	else
-		-- Переход с нижней на верхнюю:
-		-- старая уезжает вниз, новая приезжает сверху.
-		direction=-1
-	end
+	old.Visible=true
+	new.Visible=true
+	old.Position=UDim2.new(0,0,0,0)
+	new.Position=UDim2.new(0,0,0,dir*h)
 
-	local viewportHeight=contentViewport.AbsoluteSize.Y
+	local inf=TweenInfo.new(CAT_TIME,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
+	TS:Create(old,inf,{Position=UDim2.new(0,0,0,-dir*h)}):Play()
+	local nt=TS:Create(new,inf,{Position=UDim2.new(0,0,0,0)})
+	nt:Play()
 
-	oldContainer.Visible=true
-	newContainer.Visible=true
-
-	-- Начальные позиции перед анимацией.
-	oldContainer.Position=UDim2.new(0,0,0,0)
-	newContainer.Position=UDim2.new(0,0,0,direction*viewportHeight)
-
-	setTextVisible(oldContainer,true)
-	setTextVisible(newContainer,true)
-
-	local info=TweenInfo.new(
-		CATEGORY_TWEEN_TIME,
-		Enum.EasingStyle.Quart,
-		Enum.EasingDirection.Out
-	)
-
-	TS:Create(
-		oldContainer,
-		info,
-		{Position=UDim2.new(0,0,0,-direction*viewportHeight)}
-	):Play()
-
-	local newTween=TS:Create(
-		newContainer,
-		info,
-		{Position=UDim2.new(0,0,0,0)}
-	)
-
-	newTween:Play()
-
-	-- Положение активной вкладки.
 	if c=="movement" then
-		TS:Create(movL,info,{TextTransparency=0}):Play()
-		TS:Create(miscL,info,{TextTransparency=0.4}):Play()
+		TS:Create(movL,inf,{TextTransparency=0}):Play()
+		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
 	else
-		TS:Create(movL,info,{TextTransparency=0.4}):Play()
-		TS:Create(miscL,info,{TextTransparency=0}):Play()
+		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(miscL,inf,{TextTransparency=0}):Play()
 	end
 
-	newTween.Completed:Connect(function()
-		if token~=categorySwitchToken then return end
-
-		mc.Visible=(c=="movement")
-		miscC.Visible=(c=="misc")
-
+	nt.Completed:Connect(function()
+		if token~=catToken then return end
+		mc.Visible=c=="movement"
+		miscC.Visible=c=="misc"
 		mc.Position=UDim2.new(0,0,0,0)
 		miscC.Position=UDim2.new(0,0,0,0)
-
-		_G.scrollOffset=0
-		_G.scrollTarget=0
-		SCROLL_VELOCITY=0
-
-		applyScroll()
+		resetScroll()
 	end)
 end
 
@@ -1465,10 +1304,21 @@ local function setVisible(s)
 	miscC.Visible=s and _G.currentCategory=="misc"
 	catBar.Visible=s
 
+	local info=TweenInfo.new(0.35,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
 	if s then
+		scrollTrack.Position=UDim2.new(1,-10,0,35)
+		scrollTrack.Visible=true
+		scrollTrack.BackgroundTransparency=1
+		scrollThumb.BackgroundTransparency=1
+		TS:Create(scrollTrack,info,{BackgroundTransparency=0.25}):Play()
+		TS:Create(scrollThumb,info,{BackgroundTransparency=0}):Play()
 		applyScroll()
 	else
-		scrollTrack.Visible=false
+		TS:Create(scrollTrack,info,{BackgroundTransparency=1,Position=UDim2.new(1,-10,0,-35)}):Play()
+		TS:Create(scrollThumb,info,{BackgroundTransparency=1}):Play()
+		task.delay(0.35,function()
+			if not s then scrollTrack.Visible=false end
+		end)
 	end
 end
 
@@ -1633,7 +1483,6 @@ end)
 player.CharacterAdded:Connect(function(c)
 	_G.scrollOffset=0
 	_G.scrollTarget=0
-	applyScroll()
 	character=c
 	humanoid=character:WaitForChild("Humanoid")
 	root=character:WaitForChild("HumanoidRootPart")
