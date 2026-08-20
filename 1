@@ -72,8 +72,8 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,320,0,570)
-mf.Position=UDim2.new(0.5,-160,0.5,-285)
+mf.Size=UDim2.new(0,360,0,570)
+mf.Position=UDim2.new(0.5,-180,0.5,-285)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
 mf.Active=true
@@ -197,7 +197,7 @@ end
 
 local mc=Instance.new("Frame")
 mc.Size=UDim2.new(0,258,0,520)
-mc.Position=UDim2.new(0,86,0,30)
+mc.Position=UDim2.new(0,0,0,30)
 mc.BackgroundTransparency=1
 mc.Parent=mf
 
@@ -234,7 +234,7 @@ spS.Parent=mc
 Instance.new("UICorner",spS).CornerRadius=UDim.new(0,4)
 
 local spF=Instance.new("Frame")
-spF.Size=UDim2.new(0.5,0,1,0)
+spF.Size=UDim2.new(0,0,1,0)
 spF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spF.BorderSizePixel=0
 spF.Parent=spS
@@ -242,7 +242,7 @@ Instance.new("UICorner",spF).CornerRadius=UDim.new(0,4)
 
 local spH=Instance.new("Frame")
 spH.Size=UDim2.new(0,16,0,16)
-spH.Position=UDim2.new(0.5,-8,0.5,-8)
+spH.Position=UDim2.new(0,8,0.5,-8)
 spH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spH.BorderSizePixel=0
 spH.Parent=spS
@@ -290,7 +290,7 @@ jS.Parent=mc
 Instance.new("UICorner",jS).CornerRadius=UDim.new(0,4)
 
 local jF=Instance.new("Frame")
-jF.Size=UDim2.new(0.5,0,1,0)
+jF.Size=UDim2.new(0,0,1,0)
 jF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jF.BorderSizePixel=0
 jF.Parent=jS
@@ -298,7 +298,7 @@ Instance.new("UICorner",jF).CornerRadius=UDim.new(0,4)
 
 local jH=Instance.new("Frame")
 jH.Size=UDim2.new(0,16,0,16)
-jH.Position=UDim2.new(0.5,-8,0.5,-8)
+jH.Position=UDim2.new(0,8,0.5,-8)
 jH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jH.BorderSizePixel=0
 jH.Parent=jS
@@ -346,7 +346,7 @@ fS.Parent=mc
 Instance.new("UICorner",fS).CornerRadius=UDim.new(0,4)
 
 local fF=Instance.new("Frame")
-fF.Size=UDim2.new(0.5,0,1,0)
+fF.Size=UDim2.new(0,0,1,0)
 fF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fF.BorderSizePixel=0
 fF.Parent=fS
@@ -354,7 +354,7 @@ Instance.new("UICorner",fF).CornerRadius=UDim.new(0,4)
 
 local fH=Instance.new("Frame")
 fH.Size=UDim2.new(0,16,0,16)
-fH.Position=UDim2.new(0.5,-8,0.5,-8)
+fH.Position=UDim2.new(0,8,0.5,-8)
 fH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fH.BorderSizePixel=0
 fH.Parent=fS
@@ -423,7 +423,7 @@ Instance.new("UICorner",stF).CornerRadius=UDim.new(0,4)
 
 local stH=Instance.new("Frame")
 stH.Size=UDim2.new(0,16,0,16)
-stH.Position=UDim2.new(0,-8,0.5,-8)
+stH.Position=UDim2.new(0,8,0.5,-8)
 stH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 stH.BorderSizePixel=0
 stH.Parent=stS
@@ -493,10 +493,43 @@ local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
 
 local miscC=Instance.new("Frame")
 miscC.Size=UDim2.new(0,258,0,450)
-miscC.Position=UDim2.new(0,86,0,30)
+miscC.Position=UDim2.new(0,0,0,30)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
 miscC.Parent=mf
+
+local contentViewport=Instance.new("Frame")
+contentViewport.Size=UDim2.new(0,260,0,500)
+contentViewport.Position=UDim2.new(0,92,0,35)
+contentViewport.BackgroundTransparency=1
+contentViewport.ClipsDescendants=true
+contentViewport.Parent=mf
+
+mc.Parent=contentViewport
+mc.Position=UDim2.new(0,0,0,0)
+miscC.Parent=contentViewport
+miscC.Position=UDim2.new(0,0,0,0)
+
+local scrollBar=Instance.new("Frame")
+scrollBar.Size=UDim2.new(0,7,0,420)
+scrollBar.Position=UDim2.new(1,-12,0,88)
+scrollBar.BackgroundColor3=Color3.new(0.16,0.16,0.16)
+scrollBar.BackgroundTransparency=0.25
+scrollBar.BorderSizePixel=0
+scrollBar.Parent=mf
+Instance.new("UICorner",scrollBar).CornerRadius=UDim.new(1,0)
+
+local scrollThumb=Instance.new("Frame")
+scrollThumb.Size=UDim2.new(1,90,0,1)
+scrollThumb.Position=UDim2.new(0,-41,0,0)
+scrollThumb.BackgroundColor3=Color3.new(0.65,0.65,0.65)
+scrollThumb.BorderSizePixel=0
+scrollThumb.Parent=scrollBar
+Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
+
+_G.scrollOffset=0
+_G.scrollTarget=0
+_G.scrollMax=math.max(0,mc.Size.Y.Offset-contentViewport.Size.Y.Offset)
 
 local aimT=Instance.new("TextLabel")
 aimT.Size=UDim2.new(0.5,0,0,25)
@@ -703,102 +736,67 @@ wcT.Parent=miscC
 local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
 
 local catBar=Instance.new("Frame")
-catBar.Size=UDim2.new(0,82,1,-70)
-catBar.Position=UDim2.new(0,4,0,35)
+catBar.Size=UDim2.new(0,86,1,-70)
+catBar.Position=UDim2.new(0,2,0,35)
 catBar.BackgroundTransparency=1
 catBar.Parent=mf
 
 local movL=Instance.new("TextButton")
-movL.Size=UDim2.new(1,0,0,42)
+movL.Size=UDim2.new(1,0,0,40)
 movL.Position=UDim2.new(0,0,0,8)
 movL.BackgroundTransparency=1
 movL.Text="movement"
 movL.TextColor3=Color3.new(1,1,1)
 movL.TextTransparency=0
-movL.TextSize=14
+movL.TextSize=15
 movL.Font=Enum.Font.GothamBold
-movL.TextWrapped=true
+movL.TextWrapped=false
 movL.Parent=catBar
 
 local catSep=Instance.new("Frame")
-catSep.Size=UDim2.new(0,48,0,1)
-catSep.Position=UDim2.new(0.5,-24,0,54)
+catSep.Size=UDim2.new(0,52,0,1)
+catSep.Position=UDim2.new(0.5,-26,0,52)
 catSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 catSep.BorderSizePixel=0
 catSep.Parent=catBar
 
 local miscL=Instance.new("TextButton")
-miscL.Size=UDim2.new(1,0,0,42)
-miscL.Position=UDim2.new(0,0,0,64)
+miscL.Size=UDim2.new(1,0,0,40)
+miscL.Position=UDim2.new(0,0,0,60)
 miscL.BackgroundTransparency=1
 miscL.Text="misc"
 miscL.TextColor3=Color3.new(1,1,1)
 miscL.TextTransparency=0.4
-miscL.TextSize=14
+miscL.TextSize=15
 miscL.Font=Enum.Font.GothamBold
-miscL.TextWrapped=true
+miscL.TextWrapped=false
 miscL.Parent=catBar
 
-
-local scrollOffset=0
-local scrollTarget=0
-local scrollMax=0
-local scrollStep=45
-
-local scrollBar=Instance.new("Frame")
-scrollBar.Size=UDim2.new(0,7,0,420)
-scrollBar.Position=UDim2.new(1,-11,0,70)
-scrollBar.BackgroundColor3=Color3.new(0.16,0.16,0.16)
-scrollBar.BackgroundTransparency=0.25
-scrollBar.BorderSizePixel=0
-scrollBar.Parent=mf
-Instance.new("UICorner",scrollBar).CornerRadius=UDim.new(1,0)
-
-local scrollThumb=Instance.new("Frame")
-scrollThumb.Size=UDim2.new(1,70,0,1)
-scrollThumb.Position=UDim2.new(0,-32,0,0)
-scrollThumb.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-scrollThumb.BorderSizePixel=0
-scrollThumb.Parent=scrollBar
-Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
-
-local function updateScrollBounds()
-\tscrollMax=math.max(0,520-380)
-\tif scrollMax<=0 then
-\t\tscrollTarget=0
-\t\tscrollOffset=0
-\tend
+local function updateScrollBar()
+	local contentHeight=mc.Size.Y.Offset
+	local viewportHeight=contentViewport.AbsoluteSize.Y
+	local trackHeight=scrollBar.AbsoluteSize.Y
+	_G.scrollMax=math.max(0,contentHeight-viewportHeight)
+	if _G.scrollMax<=0 then
+		_G.scrollOffset=0
+		_G.scrollTarget=0
+		scrollThumb.Size=UDim2.new(1,90,0,trackHeight)
+		scrollThumb.Position=UDim2.new(0,-41,0,0)
+		return
+	end
+	local thumbHeight=math.max(50,trackHeight*(viewportHeight/contentHeight))
+	scrollThumb.Size=UDim2.new(1,90,0,thumbHeight)
+	local maxThumbY=math.max(0,trackHeight-thumbHeight)
+	local thumbY=maxThumbY*(_G.scrollOffset/_G.scrollMax)
+	scrollThumb.Position=UDim2.new(0,-41,0,thumbY)
 end
 
 local function applyScroll()
-\tlocal y=-scrollOffset
-\tmc.Position=UDim2.new(0,86,0,30+y)
-\tmiscC.Position=UDim2.new(0,86,0,30+y)
-\tif scrollMax>0 then
-\t\tlocal ratio=scrollOffset/scrollMax
-\t\tscrollThumb.Position=UDim2.new(0,-32,ratio*(scrollBar.AbsoluteSize.Y-scrollThumb.AbsoluteSize.Y),0)
-\telse
-\t\tscrollThumb.Position=UDim2.new(0,-32,0,0)
-\tend
+	local y=-_G.scrollOffset
+	mc.Position=UDim2.new(0,0,0,y)
+	miscC.Position=UDim2.new(0,0,0,y)
+	updateScrollBar()
 end
-
-UIS.InputChanged:Connect(function(i)
-\tif i.UserInputType==Enum.UserInputType.MouseWheel then
-\t\tscrollTarget=math.clamp(scrollTarget-i.Position.Z*scrollStep,0,scrollMax)
-\tend
-end)
-
-RS.RenderStepped:Connect(function()
-\tif math.abs(scrollOffset-scrollTarget)>0.05 then
-\t\tscrollOffset=scrollOffset+(scrollTarget-scrollOffset)*0.18
-\t\tapplyScroll()
-\tend
-end)
-
-task.defer(function()
-\tupdateScrollBounds()
-\tapplyScroll()
-end)
 
 local function setToggle(t,k,on,anim)
 	local pos=on and UDim2.new(1,-20,0.5,-9) or UDim2.new(0,2,0.5,-9)
@@ -861,115 +859,619 @@ hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
 
+local function setColors(en,label,slider,fill,handle)
+	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	local sc=en and Color3.new(0.5,0.5,0.5) or Color3.new(0.3,0.3,0.3)
+	local fc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+	TS:Create(label,inf,{TextColor3=tc}):Play()
+	if slider then TS:Create(slider,inf,{BackgroundColor3=sc}):Play() end
+	if fill then TS:Create(fill,inf,{BackgroundColor3=fc}):Play() end
+	if handle then TS:Create(handle,inf,{BackgroundColor3=fc}):Play() end
+end
 
-local __ENV=getgenv()
-__ENV.__MY_SCRIPT_ENV={
-	player=player,
-	character=character,
-	humanoid=humanoid,
-	root=root,
-	mouse=mouse,
-	UIS=UIS,
-	RS=RS,
-	TS=TS,
-	PL=PL,
-	sg=sg,
-	mf=mf,
-	ms=ms,
-	title=title,
-	fpsLabel=fpsLabel,
-	hideBtn=hideBtn,
-	hideSt=hideSt,
-	closeBtn=closeBtn,
-	closeSt=closeSt,
-	ct=ct,
-	ass=ass,
-	mc=mc,
-	spT=spT,
-	spTr=spTr,
-	spVT=spVT,
-	spS=spS,
-	spF=spF,
-	spH=spH,
-	spSS=spSS,
-	sep1=sep1,
-	jT=jT,
-	jTr=jTr,
-	jST=jST,
-	jS=jS,
-	jF=jF,
-	jH=jH,
-	jSS=jSS,
-	sep2=sep2,
-	fT=fT,
-	fTr=fTr,
-	fST=fST,
-	fS=fS,
-	fF=fF,
-	fH=fH,
-	fSS=fSS,
-	nT=nT,
-	nTr=nTr,
-	sep3=sep3,
-	stT=stT,
-	stTr=stTr,
-	stVT=stVT,
-	stS=stS,
-	stF=stF,
-	stH=stH,
-	stSS=stSS,
-	sep4=sep4,
-	awT=awT,
-	awTr=awTr,
-	sep5=sep5,
-	cT=cT,
-	cTr=cTr,
-	sep6=sep6,
-	ajT=ajT,
-	ajTr=ajTr,
-	miscC=miscC,
-	aimT=aimT,
-	aimTr=aimTr,
-	smT=smT,
-	smS=smS,
-	smF=smF,
-	smH=smH,
-	smSS=smSS,
-	rT=rT,
-	rS=rS,
-	rF=rF,
-	rH=rH,
-	rSS=rSS,
-	targT=targT,
-	targB=targB,
-	targSt=targSt,
-	sortT=sortT,
-	sortB=sortB,
-	sortSt=sortSt,
-	modeT=modeT,
-	modeB=modeB,
-	modeSt=modeSt,
-	tlT=tlT,
-	tlTr=tlTr,
-	wcT=wcT,
-	wcTr=wcTr,
-	catBar=catBar,
-	movL=movL,
-	catSep=catSep,
-	miscL=miscL,
-	scrollOffset=scrollOffset,
-	scrollTarget=scrollTarget,
-	scrollMax=scrollMax,
-	scrollStep=scrollStep,
-	scrollBar=scrollBar,
-	scrollThumb=scrollThumb,
-	updateScrollBounds=updateScrollBounds,
-	applyScroll=applyScroll,
-	setToggle=setToggle,
-	hover=hover,
-}
+local function setAimColors(en)
+	setColors(en,aimT,nil,nil,nil)
+	setColors(en,smT,smS,smF,smH)
+	setColors(en,rT,rS,rF,rH)
+	setColors(en,targT,nil,nil,nil)
+	setColors(en,sortT,nil,nil,nil)
+	setColors(en,modeT,nil,nil,nil)
+	setColors(en,tlT,nil,nil,nil)
+	setColors(en,wcT,nil,nil,nil)
+	targB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	sortB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	modeB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	targB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
+	sortB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
+	modeB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
+end
 
-local __SRC3=game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/3")
-local __FN3,__ERR3=loadstring(__SRC3)
-assert(__FN3,__ERR3)
-__FN3()
+local function updateNoclip()
+	local en=_G.flightEnabled and _G.noclipEnabled
+	setColors(en,nT,nil,nil,nil)
+	setToggle(nTr,nK,en,true)
+end
+
+local function applySpeed()
+	if _G.speedEnabled and humanoid then humanoid.WalkSpeed=_G.currentSpeed
+	elseif humanoid then humanoid.WalkSpeed=16 end
+end
+
+local function applyJump()
+	if humanoid then humanoid.JumpPower=50 end
+end
+
+local function setNoclip(s)
+	if not character then return end
+	for _,p in pairs(character:GetDescendants()) do
+		if p:IsA("BasePart") then p.CanCollide=not s end
+	end
+end
+
+local function stopFlight()
+	_G.flying=false
+	if _G.bodyVelocity then _G.bodyVelocity:Destroy() _G.bodyVelocity=nil end
+	if _G.bodyGyro then _G.bodyGyro:Destroy() _G.bodyGyro=nil end
+	if humanoid then humanoid.PlatformStand=false end
+	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
+	setNoclip(false)
+	updateNoclip()
+end
+
+local function startFlight()
+	if _G.flying or not root then return end
+	_G.flying=true
+	_G.bodyVelocity=Instance.new("BodyVelocity")
+	_G.bodyVelocity.MaxForce=Vector3.new(math.huge,math.huge,math.huge)
+	_G.bodyVelocity.Velocity=Vector3.zero
+	_G.bodyVelocity.Parent=root
+	_G.bodyGyro=Instance.new("BodyGyro")
+	_G.bodyGyro.MaxTorque=Vector3.new(math.huge,math.huge,math.huge)
+	_G.bodyGyro.P=10000
+	_G.bodyGyro.Parent=root
+	humanoid.PlatformStand=true
+	if _G.noclipEnabled then
+		setNoclip(true)
+		_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+	end
+	updateNoclip()
+end
+
+local function applyFlight()
+	if _G.flightEnabled then startFlight() else stopFlight() end
+end
+
+local function startAirwalk()
+	if _G.airwalkPlatform then return end
+	_G.airwalkY=root.Position.Y-3
+	_G.airwalkPlatform=Instance.new("Part")
+	_G.airwalkPlatform.Size=Vector3.new(6,1,6)
+	_G.airwalkPlatform.Transparency=1
+	_G.airwalkPlatform.CanCollide=true
+	_G.airwalkPlatform.Anchored=true
+	_G.airwalkPlatform.Parent=workspace
+end
+
+local function stopAirwalk()
+	if _G.airwalkPlatform then _G.airwalkPlatform:Destroy() _G.airwalkPlatform=nil end
+end
+
+local function updateSpeed(v)
+	_G.currentSpeed=_G.minSpeed+(_G.maxSpeed-_G.minSpeed)*v
+	spVT.Text="Value: "..math.floor(_G.currentSpeed+0.5)
+	applySpeed()
+end
+
+local function updateJump(v)
+	_G.currentJumpStrength=_G.minJump+(_G.maxJump-_G.minJump)*v
+	jST.Text="Strength: "..math.floor(_G.currentJumpStrength+0.5)
+end
+
+local function updateFlight(v)
+	_G.currentFlight=_G.minFlight+(_G.maxFlight-_G.minFlight)*v
+	fST.Text="Speed: "..math.floor(_G.currentFlight+0.5)
+end
+
+local function updateStrafe(v)
+	_G.currentStrafe=_G.minStrafe+(_G.maxStrafe-_G.minStrafe)*v
+	stVT.Text="Value: "..math.floor(_G.currentStrafe+0.5)
+end
+
+local function updateSmooth(v)
+	_G.currentSmoothness=_G.minSmooth+(_G.maxSmooth-_G.minSmooth)*v
+	smT.Text="Speed: "..string.format("%.2f",_G.currentSmoothness)
+end
+
+local function updateRange(v)
+	_G.currentRange=_G.minRange+(_G.maxRange-_G.minRange)*v
+	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
+end
+
+local function updateSlider(f,h,v)
+	v=math.clamp(v,0,1)
+	local track=h.Parent
+	local width=track.AbsoluteSize.X
+	if width<=16 then return end
+	local x=8+(width-16)*v
+	f.Size=UDim2.new(0,x,1,0)
+	h.Position=UDim2.new(0,x,0.5,-8)
+end
+
+local function toggleSpeed()
+	_G.speedEnabled=not _G.speedEnabled
+	setToggle(spTr,spK,_G.speedEnabled,true)
+	setColors(_G.speedEnabled,spT,nil,nil,nil)
+	setColors(_G.speedEnabled,spVT,spS,spF,spH)
+	applySpeed()
+end
+
+local function toggleJump()
+	_G.jumpEnabled=not _G.jumpEnabled
+	setToggle(jTr,jK,_G.jumpEnabled,true)
+	setColors(_G.jumpEnabled,jT,nil,nil,nil)
+	setColors(_G.jumpEnabled,jST,jS,jF,jH)
+	applyJump()
+end
+
+local function toggleFlight()
+	_G.flightEnabled=not _G.flightEnabled
+	setToggle(fTr,fK,_G.flightEnabled,true)
+	setColors(_G.flightEnabled,fT,nil,nil,nil)
+	setColors(_G.flightEnabled,fST,fS,fF,fH)
+	applyFlight()
+end
+
+local function toggleNoclip()
+	if not _G.flightEnabled then return end
+	_G.noclipEnabled=not _G.noclipEnabled
+	updateNoclip()
+	if _G.noclipEnabled then
+		if _G.flying then
+			setNoclip(true)
+			if not _G.noclipConnection then
+				_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+			end
+		end
+	else
+		if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
+		setNoclip(false)
+	end
+end
+
+local function toggleStrafe()
+	_G.strafeEnabled=not _G.strafeEnabled
+	setToggle(stTr,stK,_G.strafeEnabled,true)
+	setColors(_G.strafeEnabled,stT,nil,nil,nil)
+	setColors(_G.strafeEnabled,stVT,stS,stF,stH)
+end
+
+local function toggleAirwalk()
+	_G.airwalkEnabled=not _G.airwalkEnabled
+	setToggle(awTr,awK,_G.airwalkEnabled,true)
+	setColors(_G.airwalkEnabled,awT,nil,nil,nil)
+	if _G.airwalkEnabled then startAirwalk() else stopAirwalk() end
+end
+
+local function toggleClickTp()
+	_G.clickTpEnabled=not _G.clickTpEnabled
+	setToggle(cTr,cK,_G.clickTpEnabled,true)
+	setColors(_G.clickTpEnabled,cT,nil,nil,nil)
+	if _G.clickTpEnabled then mouse.Icon="rbxassetid://6065121748" else mouse.Icon="" end
+end
+
+local function toggleAirJump()
+	_G.airJumpEnabled=not _G.airJumpEnabled
+	setToggle(ajTr,ajK,_G.airJumpEnabled,true)
+	setColors(_G.airJumpEnabled,ajT,nil,nil,nil)
+end
+
+local function toggleAimbot()
+	_G.aimbotEnabled=not _G.aimbotEnabled
+	setToggle(aimTr,aimK,_G.aimbotEnabled,true)
+	setAimColors(_G.aimbotEnabled)
+	if not _G.aimbotEnabled then _G.lockedTarget=nil end
+end
+
+local function toggleTargetLock()
+	_G.targetLockEnabled=not _G.targetLockEnabled
+	setToggle(tlTr,tlK,_G.targetLockEnabled,true)
+	if _G.aimbotEnabled then setColors(_G.targetLockEnabled,tlT,nil,nil,nil) end
+	if not _G.targetLockEnabled then _G.lockedTarget=nil end
+end
+
+local function toggleWallsCheck()
+	_G.wallsCheckEnabled=not _G.wallsCheckEnabled
+	setToggle(wcTr,wcK,_G.wallsCheckEnabled,true)
+	if _G.aimbotEnabled then setColors(_G.wallsCheckEnabled,wcT,nil,nil,nil) end
+end
+
+local function cycleTarget()
+	if _G.aimTarget=="Head" then
+		_G.aimTarget="Body"
+		targB.Text="Body"
+		targT.Text="Target: Body"
+	else
+		_G.aimTarget="Head"
+		targB.Text="Head"
+		targT.Text="Target: Head"
+	end
+end
+
+local function cycleSort()
+	if _G.sortMode=="Distance" then
+		_G.sortMode="Cursor"
+		sortB.Text="Cursor"
+		sortT.Text="Sort: Cursor"
+	else
+		_G.sortMode="Distance"
+		sortB.Text="Distance"
+		sortT.Text="Sort: Distance"
+	end
+end
+
+local function cycleMode()
+	if _G.aimMode=="Center" then
+		_G.aimMode="Cursor"
+		modeB.Text="Cursor"
+		modeT.Text="Mode: Cursor"
+	else
+		_G.aimMode="Center"
+		modeB.Text="Center"
+		modeT.Text="Mode: Center"
+	end
+end
+
+spCl.MouseButton1Click:Connect(toggleSpeed)
+jCl.MouseButton1Click:Connect(toggleJump)
+fCl.MouseButton1Click:Connect(toggleFlight)
+nCl.MouseButton1Click:Connect(toggleNoclip)
+stCl.MouseButton1Click:Connect(toggleStrafe)
+awCl.MouseButton1Click:Connect(toggleAirwalk)
+cCl.MouseButton1Click:Connect(toggleClickTp)
+ajCl.MouseButton1Click:Connect(toggleAirJump)
+aimCl.MouseButton1Click:Connect(toggleAimbot)
+tlCl.MouseButton1Click:Connect(toggleTargetLock)
+wcCl.MouseButton1Click:Connect(toggleWallsCheck)
+targB.MouseButton1Click:Connect(cycleTarget)
+sortB.MouseButton1Click:Connect(cycleSort)
+modeB.MouseButton1Click:Connect(cycleMode)
+
+mouse.Button1Down:Connect(function()
+	if _G.clickTpEnabled and root and mouse.Hit then
+		root.CFrame=CFrame.new(mouse.Hit.Position+Vector3.new(0,3,0))
+	end
+end)
+
+UIS.InputBegan:Connect(function(i,p)
+	if p then return end
+	if i.KeyCode==Enum.KeyCode.Space and humanoid and not _G.lastSpace then
+		_G.lastSpace=true
+		if _G.jumpEnabled then
+			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			if root then
+				local v=root.AssemblyLinearVelocity
+				root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y+_G.currentJumpStrength,v.Z)
+			end
+		elseif _G.airJumpEnabled then
+			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
+	end
+end)
+
+UIS.InputEnded:Connect(function(i)
+	if i.KeyCode==Enum.KeyCode.Space then _G.lastSpace=false end
+end)
+
+local function switchCat(c)
+	if _G.currentCategory==c then return end
+	_G.currentCategory=c
+	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+	if c=="movement" then
+		TS:Create(movL,inf,{TextTransparency=0}):Play()
+		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
+		miscC.Visible=false
+		mc.Visible=true
+	else
+		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(miscL,inf,{TextTransparency=0}):Play()
+		mc.Visible=false
+		miscC.Visible=true
+	end
+end
+
+movL.MouseButton1Click:Connect(function() switchCat("movement") end)
+miscL.MouseButton1Click:Connect(function() switchCat("misc") end)
+
+mf.InputBegan:Connect(function(i)
+	if _G.isSliding then return end
+	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+		_G.isDragging=true
+		_G.dragStart=i.Position
+		_G.startPos=mf.Position
+		_G.targetPos=mf.Position
+	end
+end)
+
+UIS.InputChanged:Connect(function(i)
+	if _G.isDragging and not _G.isSliding and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+		local d=i.Position-_G.dragStart
+		_G.targetPos=UDim2.new(_G.startPos.X.Scale,_G.startPos.X.Offset+d.X,_G.startPos.Y.Scale,_G.startPos.Y.Offset+d.Y)
+	end
+end)
+
+UIS.InputEnded:Connect(function(i)
+	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+		_G.isDragging=false
+		_G.isSliding=false
+	end
+end)
+
+RS.RenderStepped:Connect(function()
+	if _G.targetPos then
+		local c=mf.Position
+		local dx=_G.targetPos.X.Offset-c.X.Offset
+		local dy=_G.targetPos.Y.Offset-c.Y.Offset
+		if math.abs(dx)>0.5 or math.abs(dy)>0.5 then
+			mf.Position=UDim2.new(c.X.Scale,c.X.Offset+dx*0.18,c.Y.Scale,c.Y.Offset+dy*0.18)
+		end
+	end
+	if math.abs(_G.scrollOffset-_G.scrollTarget)>0.05 then
+		_G.scrollOffset=_G.scrollOffset+(_G.scrollTarget-_G.scrollOffset)*0.18
+		applyScroll()
+	end
+end)
+
+local function setVisible(s)
+	mc.Visible=s and _G.currentCategory=="movement"
+	miscC.Visible=s and _G.currentCategory=="misc"
+	catBar.Visible=s
+	scrollBar.Visible=s
+end
+
+local function startFps()
+	if _G.fpsConnection then return end
+	local f=0
+	local l=tick()
+	_G.fpsConnection=RS.RenderStepped:Connect(function()
+		f=f+1
+		local n=tick()
+		if n-l>=0.016 then
+			fpsLabel.Text="fps "..math.floor(f/(n-l))
+			f=0
+			l=n
+		end
+	end)
+end
+
+local function setMinimized(s)
+	if _G.isAnimating then return end
+	_G.isAnimating=true
+	_G.isHidden=s
+	local ts=s and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,570)
+	local tw=TS:Create(mf,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=ts})
+	if s then
+		setVisible(false)
+		startFps()
+		TS:Create(fpsLabel,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextTransparency=0}):Play()
+	else
+		TS:Create(fpsLabel,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextTransparency=1}):Play()
+	end
+	tw:Play()
+	tw.Completed:Connect(function()
+		if not s then
+			setVisible(true)
+			if _G.fpsConnection then _G.fpsConnection:Disconnect() _G.fpsConnection=nil end
+		end
+		_G.isAnimating=false
+	end)
+end
+
+hideBtn.MouseButton1Click:Connect(function() setMinimized(not _G.isHidden) end)
+
+closeBtn.MouseButton1Click:Connect(function()
+	stopFlight()
+	stopAirwalk()
+	if _G.fpsConnection then _G.fpsConnection:Disconnect() end
+	mouse.Icon=""
+	sg:Destroy()
+end)
+
+task.defer(function()
+	updateScrollBar()
+	applyScroll()
+end)
+
+local function updateSpeedFromInput(i)
+	local s=spS.AbsoluteSize.X
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-spS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	updateSlider(spF,spH,v)
+	updateSpeed(v)
+end
+
+local function updateJumpFromInput(i)
+	local s=jS.AbsoluteSize.X
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-jS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	updateSlider(jF,jH,v)
+	updateJump(v)
+end
+
+local function updateFlightFromInput(i)
+	local s=fS.AbsoluteSize.X
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-fS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	updateSlider(fF,fH,v)
+	updateFlight(v)
+end
+
+local function updateStrafeFromInput(i)
+	local s=stS.AbsoluteSize.X
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-stS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	updateSlider(stF,stH,v)
+	updateStrafe(v)
+end
+
+local function updateSmoothFromInput(i)
+	local s=smS.AbsoluteSize.X
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-smS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	updateSlider(smF,smH,v)
+	updateSmooth(v)
+end
+
+local function updateRangeFromInput(i)
+	local s=rS.AbsoluteSize.X
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-rS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	updateSlider(rF,rH,v)
+	updateRange(v)
+end
+
+local function startDrag(f,u)
+	return function(i)
+		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+			_G.isSliding=true
+			_G.isDragging=false
+			if f=="sp" then _G.draggingSpeed=true
+			elseif f=="j" then _G.draggingJump=true
+			elseif f=="f" then _G.draggingFlight=true
+			elseif f=="st" then _G.draggingStrafe=true
+			elseif f=="sm" then _G.draggingSmooth=true
+			elseif f=="r" then _G.draggingRange=true end
+			u(i)
+		end
+	end
+end
+
+spS.InputBegan:Connect(startDrag("sp",updateSpeedFromInput))
+spH.InputBegan:Connect(startDrag("sp",updateSpeedFromInput))
+jS.InputBegan:Connect(startDrag("j",updateJumpFromInput))
+jH.InputBegan:Connect(startDrag("j",updateJumpFromInput))
+fS.InputBegan:Connect(startDrag("f",updateFlightFromInput))
+fH.InputBegan:Connect(startDrag("f",updateFlightFromInput))
+stS.InputBegan:Connect(startDrag("st",updateStrafeFromInput))
+stH.InputBegan:Connect(startDrag("st",updateStrafeFromInput))
+smS.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
+smH.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
+rS.InputBegan:Connect(startDrag("r",updateRangeFromInput))
+rH.InputBegan:Connect(startDrag("r",updateRangeFromInput))
+
+UIS.InputChanged:Connect(function(i)
+	if i.UserInputType==Enum.UserInputType.MouseWheel and not _G.isHidden then
+		_G.scrollTarget=math.clamp(_G.scrollTarget-i.Position.Z*45,0,_G.scrollMax)
+	end
+	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+		updateSpeedFromInput(i)
+	end
+	if _G.draggingJump and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+		updateJumpFromInput(i)
+	end
+	if _G.draggingFlight and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+		updateFlightFromInput(i)
+	end
+	if _G.draggingStrafe and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+		updateStrafeFromInput(i)
+	end
+	if _G.draggingSmooth and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+		updateSmoothFromInput(i)
+	end
+	if _G.draggingRange and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+		updateRangeFromInput(i)
+	end
+end)
+
+UIS.InputEnded:Connect(function(i)
+	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+		_G.draggingSpeed=false
+		_G.draggingJump=false
+		_G.draggingFlight=false
+		_G.draggingStrafe=false
+		_G.draggingSmooth=false
+		_G.draggingRange=false
+		_G.isSliding=false
+	end
+end)
+
+player.CharacterAdded:Connect(function(c)
+	character=c
+	humanoid=character:WaitForChild("Humanoid")
+	root=character:WaitForChild("HumanoidRootPart")
+	_G.scrollOffset=0
+	_G.scrollTarget=0
+	applyScroll()
+	stopFlight()
+	stopAirwalk()
+	_G.speedEnabled=false
+	_G.jumpEnabled=false
+	_G.flightEnabled=false
+	_G.noclipEnabled=false
+	_G.strafeEnabled=false
+	_G.airwalkEnabled=false
+	_G.clickTpEnabled=false
+	_G.airJumpEnabled=false
+	_G.aimbotEnabled=false
+	_G.targetLockEnabled=false
+	_G.wallsCheckEnabled=false
+	_G.lockedTarget=nil
+	mouse.Icon=""
+	_G.currentSpeed=16
+	_G.currentJumpStrength=50
+	_G.currentFlight=50
+	_G.currentStrafe=0
+	_G.currentSmoothness=0.15
+	_G.currentRange=500
+	_G.aimMode="Center"
+	_G.sortMode="Distance"
+	_G.aimTarget="Head"
+	setToggle(spTr,spK,false,false)
+	setToggle(jTr,jK,false,false)
+	setToggle(fTr,fK,false,false)
+	setToggle(nTr,nK,false,false)
+	setToggle(stTr,stK,false,false)
+	setToggle(awTr,awK,false,false)
+	setToggle(cTr,cK,false,false)
+	setToggle(ajTr,ajK,false,false)
+	setToggle(aimTr,aimK,false,false)
+	setToggle(tlTr,tlK,false,false)
+	setToggle(wcTr,wcK,false,false)
+	updateSlider(spF,spH,0.08)
+	spT.Text="Speed"
+	spVT.Text="Value: 16"
+	setColors(false,spT,nil,nil,nil)
+	setColors(false,spVT,spS,spF,spH)
+	updateSlider(jF,jH,0.25)
+	jT.Text="Jump"
+	jST.Text="Strength: 50"
+	setColors(false,jT,nil,nil,nil)
+	setColors(false,jST,jS,jF,jH)
+	updateSlider(fF,fH,0.25)
+	fT.Text="Flight"
+	fST.Text="Speed: 50"
+	setColors(false,fT,nil,nil,nil)
+	setColors(false,fST,fS,fF,fH)
+	updateNoclip()
+	updateSlider(stF,stH,0)
+	stT.Text="Strafe"
+	stVT.Text="Value: 0"
+	setColors(false,stT,nil,nil,nil)
+	setColors(false,stVT,stS,stF,stH)
+	setColors(false,awT,nil,nil,nil)
+	setColors(false,cT,nil,nil,nil)
+	setColors(false,ajT,nil,nil,nil)
+	updateSlider(smF,smH,0.3)
+	smT.Text="Speed: 0.15"
+	updateSlider(rF,rH,0.5)
+	rT.Text="Range: 500"
+	targB.Text="Head"
+	targT.Text="Target: Head"
+	sortB.Text="Distance"
+	sortT.Text="Sort: Distance"
+	modeB.Text="Center"
+	modeT.Text="Mode: Center"
+	setAimColors(false)
+	applySpeed()
+	applyJump()
+end)
