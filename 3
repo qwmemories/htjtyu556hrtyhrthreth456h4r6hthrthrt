@@ -1,3 +1,134 @@
+repeat task.wait() until _G.__script1Ready
+
+local function setColors(en,label,slider,fill,handle)
+	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	local sc=en and Color3.new(0.5,0.5,0.5) or Color3.new(0.3,0.3,0.3)
+	local fc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+	TS:Create(label,inf,{TextColor3=tc}):Play()
+	if slider then TS:Create(slider,inf,{BackgroundColor3=sc}):Play() end
+	if fill then TS:Create(fill,inf,{BackgroundColor3=fc}):Play() end
+	if handle then TS:Create(handle,inf,{BackgroundColor3=fc}):Play() end
+end
+
+local function setAimColors(en)
+	setColors(en,aimT,nil,nil,nil)
+	setColors(en,smT,smS,smF,smH)
+	setColors(en,rT,rS,rF,rH)
+	setColors(en,targT,nil,nil,nil)
+	setColors(en,sortT,nil,nil,nil)
+	setColors(en,modeT,nil,nil,nil)
+	setColors(en,tlT,nil,nil,nil)
+	setColors(en,wcT,nil,nil,nil)
+	targB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	sortB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	modeB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	targB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
+	sortB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
+	modeB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
+end
+
+local function updateNoclip()
+	local en=_G.flightEnabled and _G.noclipEnabled
+	setColors(en,nT,nil,nil,nil)
+	setToggle(nTr,nK,en,true)
+end
+
+local function applySpeed()
+	if _G.speedEnabled and humanoid then humanoid.WalkSpeed=_G.currentSpeed
+	elseif humanoid then humanoid.WalkSpeed=16 end
+end
+
+local function applyJump()
+	if humanoid then humanoid.JumpPower=50 end
+end
+
+local function setNoclip(s)
+	if not character then return end
+	for _,p in pairs(character:GetDescendants()) do
+		if p:IsA("BasePart") then p.CanCollide=not s end
+	end
+end
+
+local function stopFlight()
+	_G.flying=false
+	if _G.bodyVelocity then _G.bodyVelocity:Destroy() _G.bodyVelocity=nil end
+	if _G.bodyGyro then _G.bodyGyro:Destroy() _G.bodyGyro=nil end
+	if humanoid then humanoid.PlatformStand=false end
+	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
+	setNoclip(false)
+	updateNoclip()
+end
+
+local function startFlight()
+	if _G.flying or not root then return end
+	_G.flying=true
+	_G.bodyVelocity=Instance.new("BodyVelocity")
+	_G.bodyVelocity.MaxForce=Vector3.new(math.huge,math.huge,math.huge)
+	_G.bodyVelocity.Velocity=Vector3.zero
+	_G.bodyVelocity.Parent=root
+	_G.bodyGyro=Instance.new("BodyGyro")
+	_G.bodyGyro.MaxTorque=Vector3.new(math.huge,math.huge,math.huge)
+	_G.bodyGyro.P=10000
+	_G.bodyGyro.Parent=root
+	humanoid.PlatformStand=true
+	if _G.noclipEnabled then
+		setNoclip(true)
+		_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+	end
+	updateNoclip()
+end
+
+local function applyFlight()
+	if _G.flightEnabled then startFlight() else stopFlight() end
+end
+
+local function startAirwalk()
+	if _G.airwalkPlatform then return end
+	_G.airwalkY=root.Position.Y-3
+	_G.airwalkPlatform=Instance.new("Part")
+	_G.airwalkPlatform.Size=Vector3.new(6,1,6)
+	_G.airwalkPlatform.Transparency=1
+	_G.airwalkPlatform.CanCollide=true
+	_G.airwalkPlatform.Anchored=true
+	_G.airwalkPlatform.Parent=workspace
+end
+
+local function stopAirwalk()
+	if _G.airwalkPlatform then _G.airwalkPlatform:Destroy() _G.airwalkPlatform=nil end
+end
+
+local function updateSpeed(v)
+	_G.currentSpeed=_G.minSpeed+(_G.maxSpeed-_G.minSpeed)*v
+	spVT.Text="Value: "..math.floor(_G.currentSpeed+0.5)
+	applySpeed()
+end
+
+local function updateJump(v)
+	_G.currentJumpStrength=_G.minJump+(_G.maxJump-_G.minJump)*v
+	jST.Text="Strength: "..math.floor(_G.currentJumpStrength+0.5)
+end
+
+local function updateFlight(v)
+	_G.currentFlight=_G.minFlight+(_G.maxFlight-_G.minFlight)*v
+	fST.Text="Speed: "..math.floor(_G.currentFlight+0.5)
+end
+
+local function updateStrafe(v)
+	_G.currentStrafe=_G.minStrafe+(_G.maxStrafe-_G.minStrafe)*v
+	stVT.Text="Value: "..math.floor(_G.currentStrafe+0.5)
+end
+
+local function updateSmooth(v)
+	_G.currentSmoothness=_G.minSmooth+(_G.maxSmooth-_G.minSmooth)*v
+	smT.Text="Speed: "..string.format("%.2f",_G.currentSmoothness)
+end
+
+local function updateRange(v)
+	_G.currentRange=_G.minRange+(_G.maxRange-_G.minRange)*v
+	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
+end
+
 local function updateSlider(f,h,v)
 	f.Size=UDim2.new(v,0,1,0)
 	h.Position=UDim2.new(v,-8,0.5,-8)
