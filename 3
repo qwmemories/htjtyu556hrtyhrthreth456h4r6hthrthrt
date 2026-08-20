@@ -134,7 +134,7 @@ RS.RenderStepped:Connect(function()
 				local newPos=targetPos-dir*_G.targetStrafeDistance
 				root.CFrame=CFrame.new(newPos,newPos+root.CFrame.LookVector)
 			else
-				local angle=_G.targetStrafeAngle+_G.direction*_G.targetStrafeSpeed*0.02
+				local angle=_G.targetStrafeAngle+_G.direction*_G.targetStrafeSpeed*0.003
 				local offset=Vector3.new(math.cos(angle),0,math.sin(angle))*_G.targetStrafeRange
 				if _G.targetStrafeMode=="Square" then
 					local sq=math.floor(angle/(math.pi/2))%4
@@ -152,6 +152,9 @@ RS.RenderStepped:Connect(function()
 				local lookDir=(targetPos-newPos).Unit
 				root.CFrame=CFrame.new(newPos,newPos+lookDir)
 				_G.targetStrafeAngle=angle
+				if humanoid then
+					humanoid:MoveTo(newPos+Vector3.new(0,0,0))
+				end
 			end
 		else
 			_G.targetStrafeTarget=getClosestPlayer()
