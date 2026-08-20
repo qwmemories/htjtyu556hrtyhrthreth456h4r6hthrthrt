@@ -203,7 +203,7 @@ contentViewport.ClipsDescendants=true
 contentViewport.Parent=mf
 
 local mc=Instance.new("Frame")
-mc.Size=UDim2.new(0,258,0,528)
+mc.Size=UDim2.new(0,258,0,560)
 mc.Position=UDim2.new(0,0,0,0)
 mc.BackgroundTransparency=1
 mc.Parent=contentViewport
@@ -763,48 +763,26 @@ Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
 
 _G.scrollOffset=0
 _G.scrollTarget=0
-_G.scrollMax=0
+_G.scrollMax=100
 _G.scrollDragging=false
 _G.scrollDragStart=0
 _G.scrollStartOffset=0
-
--- Медленный ручной скролл.
--- 6 px за один тик колеса + ограниченная скорость движения.
-local SCROLL_STEP=6
-local SCROLL_SPEED=2.5
-local MIN_THUMB_HEIGHT=44
-
-local function getScrollMax()
-	return math.max(
-		0,
-		mc.AbsoluteSize.Y-contentViewport.AbsoluteSize.Y
-	)
-end
 
 local function updateScrollBar()
 	local viewportHeight=contentViewport.AbsoluteSize.Y
 	local contentHeight=mc.AbsoluteSize.Y
 	local trackHeight=scrollTrack.AbsoluteSize.Y
-
 	local maxOffset=math.max(0,contentHeight-viewportHeight)
 	_G.scrollMax=maxOffset
-
-	if maxOffset<=0 or trackHeight<=0 then
+	if maxOffset<=0 then
 		scrollThumb.Size=UDim2.new(1,0,1,0)
 		scrollThumb.Position=UDim2.new(0,0,0,0)
 		return
 	end
-
-	local thumbHeight=math.clamp(
-		trackHeight*(viewportHeight/contentHeight),
-		MIN_THUMB_HEIGHT,
-		trackHeight
-	)
-
-	local travel=math.max(0,trackHeight-thumbHeight)
-	local ratio=math.clamp(_G.scrollOffset/maxOffset,0,1)
-
+	local thumbHeight=math.max(40,trackHeight*(viewportHeight/contentHeight))
 	scrollThumb.Size=UDim2.new(1,0,0,thumbHeight)
+	local travel=math.max(0,trackHeight-thumbHeight)
+	local ratio=_G.scrollOffset/maxOffset
 	scrollThumb.Position=UDim2.new(0,0,0,travel*ratio)
 end
 
@@ -813,88 +791,51 @@ local function setScrollTarget(v)
 end
 
 local function applyScroll()
-	_G.scrollMax=getScrollMax()
-
-	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
-	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
-
-	local y=-math.floor(_G.scrollOffset+0.5)
-
-	mc.Position=UDim2.new(0,0,0,y)
-	miscC.Position=UDim2.new(0,0,0,y)
-
+	local y=-_G.scrollOffset
+	mc.Position=UDim2.new(0,0,y)
+	miscC.Position=UDim2.new(0,0,y)
 	updateScrollBar()
 end
 
-local function resetScroll()
-	_G.scrollOffset=0
-	_G.scrollTarget=0
-	applyScroll()
-end
-
 task.defer(function()
-	resetScroll()
+	updateScrollBar()
+	applyScroll()
 end)
 
--- Колесо только меняет цель на маленький шаг.
--- Само движение выполняется отдельно с фиксированной скоростью,
--- поэтому даже быстрое прокручивание мыши не телепортирует GUI.
 UIS.InputChanged:Connect(function(i)
 	if i.UserInputType==Enum.UserInputType.MouseWheel then
 		local p=i.Position
 		local vpPos=contentViewport.AbsolutePosition
 		local vpSize=contentViewport.AbsoluteSize
-
-		if p.X>=vpPos.X and p.X<=vpPos.X+vpSize.X
-			and p.Y>=vpPos.Y and p.Y<=vpPos.Y+vpSize.Y then
-
-			setScrollTarget(
-				_G.scrollTarget-(i.Position.Z*SCROLL_STEP)
-			)
+		if p.X>=vpPos.X and p.X<=vpPos.X+vpSize.X and p.Y>=vpPos.Y and p.Y<=vpPos.Y+vpSize.Y then
+			setScrollTarget(_G.scrollTarget-i.Position.Z*55)
 		end
-
-	elseif i.UserInputType==Enum.UserInputType.MouseMovement
-		and _G.scrollDragging then
-
+	elseif i.UserInputType==Enum.UserInputType.MouseMovement and _G.scrollDragging then
 		local delta=i.Position.Y-_G.scrollDragStart
 		local trackHeight=scrollTrack.AbsoluteSize.Y
 		local thumbHeight=scrollThumb.AbsoluteSize.Y
 		local travel=math.max(1,trackHeight-thumbHeight)
-
-		setScrollTarget(
-			_G.scrollStartOffset+(delta/travel)*_G.scrollMax
-		)
+		setScrollTarget(_G.scrollStartOffset+(delta/travel)*_G.scrollMax)
 	end
 end)
 
 scrollThumb.InputBegan:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseButton1
-		or i.UserInputType==Enum.UserInputType.Touch then
-
+	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
 		_G.scrollDragging=true
 		_G.scrollDragStart=i.Position.Y
-		_G.scrollStartOffset=_G.scrollOffset
+		_G.scrollStartOffset=_G.scrollTarget
 	end
 end)
 
 UIS.InputEnded:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseButton1
-		or i.UserInputType==Enum.UserInputType.Touch then
+	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
 		_G.scrollDragging=false
 	end
 end)
 
--- Движение с фиксированной скоростью вместо Lerp.
--- Благодаря этому скролл физически не может мгновенно прыгнуть.
 RS.RenderStepped:Connect(function()
-	local delta=_G.scrollTarget-_G.scrollOffset
-
-	if math.abs(delta)>0.01 then
-		local step=math.min(math.abs(delta),SCROLL_SPEED)
-		_G.scrollOffset=_G.scrollOffset+math.sign(delta)*step
-		applyScroll()
-	else
-		_G.scrollOffset=_G.scrollTarget
+	if math.abs(_G.scrollOffset-_G.scrollTarget)>0.05 then
+		_G.scrollOffset=_G.scrollOffset+(_G.scrollTarget-_G.scrollOffset)*0.18
 		applyScroll()
 	end
 end)
@@ -1262,9 +1203,7 @@ end)
 local function switchCat(c)
 	if _G.currentCategory==c then return end
 	_G.currentCategory=c
-	_G.scrollOffset=0
 	_G.scrollTarget=0
-	applyScroll()
 	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 	if c=="movement" then
 		TS:Create(movL,inf,{TextTransparency=0}):Play()
@@ -1485,7 +1424,6 @@ end)
 player.CharacterAdded:Connect(function(c)
 	_G.scrollOffset=0
 	_G.scrollTarget=0
-	applyScroll()
 	character=c
 	humanoid=character:WaitForChild("Humanoid")
 	root=character:WaitForChild("HumanoidRootPart")
