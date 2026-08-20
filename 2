@@ -8,6 +8,7 @@ local RS=game:GetService("RunService")
 local PL=game:GetService("Players")
 
 repeat wait(0.1) until _G.speedEnabled~=nil
+wait(0.2)
 
 local function setNoclip(s)
 	if not character then return end
@@ -72,14 +73,61 @@ function _G.stopAirwalkFunc()
 	if _G.airwalkPlatform then _G.airwalkPlatform:Destroy() _G.airwalkPlatform=nil end
 end
 
-local function applySpeed()
-	if _G.speedEnabled and humanoid then humanoid.WalkSpeed=_G.currentSpeed
-	elseif humanoid then humanoid.WalkSpeed=16 end
+local function getTargets()
+	local t={}
+	for _,p in pairs(PL:GetPlayers()) do
+		if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Head") then
+			local h=p.Character:FindFirstChild("Humanoid")
+			if h and h.Health>0 then table.insert(t,p) end
+		end
+	end
+	return t
 end
 
-local function applyJump()
-	if _G.jumpEnabled and humanoid then humanoid.JumpPower=_G.currentJump
-	elseif humanoid then humanoid.JumpPower=50 end
+local function selectTarget(targets)
+	if #targets==0 then return nil end
+	if _G.sortMode=="Distance" then
+		table.sort(targets,function(a,b)
+			local da=(a.Character.HumanoidRootPart.Position-root.Position).Magnitude
+			local db=(b.Character.HumanoidRootPart.Position-root.Position).Magnitude
+			return da<db
+		end)
+		return targets[1]
+	else
+		local mp=UIS:GetMouseLocation()
+		table.sort(targets,function(a,b)
+			local pa,oa=workspace.CurrentCamera:WorldToViewportPoint(a.Character.Head.Position)
+			local pb,ob=workspace.CurrentCamera:WorldToViewportPoint(b.Character.Head.Position)
+			if not oa then return false end
+			if not ob then return true end
+			return (Vector2.new(pa.X,pa.Y)-mp).Magnitude<(Vector2.new(pb.X,pb.Y)-mp).Magnitude
+		end)
+		return targets[1]
+	end
+end
+
+local function isVisible(part)
+	if not _G.wallsCheckEnabled then return true end
+	local origin=workspace.CurrentCamera.CFrame.Position
+	local direction=(part.Position-origin)
+	local ray=workspace:Raycast(origin,direction)
+	if ray and ray.Instance then
+		local hitChar=ray.Instance:FindFirstAncestorOfClass("Model")
+		if hitChar and hitChar:FindFirstChild("Humanoid") then
+			return true
+		else
+			return false
+		end
+	end
+	return true
+end
+
+local function getAimPart(target)
+	if _G.aimTarget=="Head" then
+		return target.Character.Head
+	else
+		return target.Character.HumanoidRootPart
+	end
 end
 
 RS.RenderStepped:Connect(function()
@@ -95,6 +143,38 @@ RS.RenderStepped:Connect(function()
 		if move.Magnitude>0 then move=move.Unit*_G.currentFlight end
 		_G.bodyVelocity.Velocity=move
 		_G.bodyGyro.CFrame=cam.CFrame
+	end
+
+	if _G.aimbotEnabled then
+		local targets=getTargets()
+		local target=nil
+		if _G.targetLockEnabled and _G.lockedTarget and _G.lockedTarget.Character and _G.lockedTarget.Character:FindFirstChild("Head") then
+			local d=(_G.lockedTarget.Character.Head.Position-root.Position).Magnitude
+			if d<=_G.currentRange then target=_G.lockedTarget else _G.lockedTarget=nil end
+		end
+		if not target then
+			target=selectTarget(targets)
+			if _G.targetLockEnabled and target then _G.lockedTarget=target end
+		end
+		if target and target.Character then
+			local aimPart=getAimPart(target)
+			if aimPart then
+				local d=(aimPart.Position-root.Position).Magnitude
+				if d<=_G.currentRange and isVisible(aimPart) then
+					local cam=workspace.CurrentCamera
+					if _G.aimMode=="Center" then
+						local goal=CFrame.new(cam.CFrame.Position,aimPart.Position)
+						cam.CFrame=cam.CFrame:Lerp(goal,_G.currentSmoothness)
+					else
+						local pos,on=cam:WorldToViewportPoint(aimPart.Position)
+						if on then
+							local mp=UIS:GetMouseLocation()
+							mousemoverel((pos.X-mp.X)*_G.currentSmoothness,(pos.Y-mp.Y)*_G.currentSmoothness)
+						end
+					end
+				end
+			end
+		end
 	end
 end)
 
@@ -118,6 +198,4 @@ player.CharacterAdded:Connect(function(c)
 	root=character:WaitForChild("HumanoidRootPart")
 	_G.stopFlightFunc()
 	_G.stopAirwalkFunc()
-	applySpeed()
-	applyJump()
 end)
