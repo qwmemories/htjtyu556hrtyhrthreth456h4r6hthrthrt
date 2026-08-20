@@ -12,7 +12,6 @@ _G.speedEnabled=false
 _G.jumpEnabled=false
 _G.flightEnabled=false
 _G.noclipEnabled=false
-_G.phaseEnabled=false
 _G.strafeEnabled=false
 _G.airwalkEnabled=false
 _G.clickTpEnabled=false
@@ -58,7 +57,6 @@ _G.flying=false
 _G.bodyVelocity=nil
 _G.bodyGyro=nil
 _G.noclipConnection=nil
-_G.phaseConnection=nil
 _G.airwalkPlatform=nil
 _G.airwalkY=0
 _G.fpsConnection=nil
@@ -74,8 +72,8 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,350,0,500)
-mf.Position=UDim2.new(0.5,-175,0.5,-250)
+mf.Size=UDim2.new(0,350,0,570)
+mf.Position=UDim2.new(0.5,-175,0.5,-285)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
 mf.Active=true
@@ -507,26 +505,6 @@ ajT.TextXAlignment=Enum.TextXAlignment.Left
 ajT.Parent=mc
 
 local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
-
-local sep7=Instance.new("Frame")
-sep7.Size=UDim2.new(0.9,0,0,1)
-sep7.Position=UDim2.new(0.05,0,0,534)
-sep7.BackgroundColor3=Color3.new(0.4,0.4,0.4)
-sep7.BorderSizePixel=0
-sep7.Parent=mc
-
-local phaseT=Instance.new("TextLabel")
-phaseT.Size=UDim2.new(0.5,0,0,25)
-phaseT.Position=UDim2.new(0,10,0,544)
-phaseT.BackgroundTransparency=1
-phaseT.Text="Phase"
-phaseT.TextColor3=Color3.new(0.6,0.6,0.6)
-phaseT.TextSize=20
-phaseT.Font=Enum.Font.Gotham
-phaseT.TextXAlignment=Enum.TextXAlignment.Left
-phaseT.Parent=mc
-
-local phaseTr,phaseK,phaseSt,phaseCl=ct(mc,UDim2.new(0.75,0,0,546))
 
 local miscC=Instance.new("Frame")
 miscC.Size=UDim2.new(0,258,0,450)
@@ -1077,7 +1055,6 @@ hover(stH,stHS)
 hover(awTr,awSt)
 hover(cTr,cSt)
 hover(ajTr,ajSt)
-hover(phaseTr,phaseSt)
 hover(aimTr,aimSt)
 hover(tlTr,tlSt)
 hover(wcTr,wcSt)
@@ -1154,9 +1131,6 @@ local function stopFlight()
 	if humanoid then humanoid.PlatformStand=false end
 	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
 	setNoclip(false)
-	if _G.phaseEnabled then
-		setNoclip(true)
-	end
 	updateNoclip()
 end
 
@@ -1275,35 +1249,6 @@ local function toggleNoclip()
 	end
 end
 
-local function updatePhase()
-	local en=_G.phaseEnabled
-	setColors(en,phaseT,nil,nil,nil)
-	setToggle(phaseTr,phaseK,en,true)
-end
-
-local function togglePhase()
-	_G.phaseEnabled=not _G.phaseEnabled
-	updatePhase()
-
-	if _G.phaseEnabled then
-		setNoclip(true)
-		if _G.phaseConnection then
-			_G.phaseConnection:Disconnect()
-		end
-		_G.phaseConnection=RS.Stepped:Connect(function()
-			if _G.phaseEnabled then
-				setNoclip(true)
-			end
-		end)
-	else
-		if _G.phaseConnection then
-			_G.phaseConnection:Disconnect()
-			_G.phaseConnection=nil
-		end
-		setNoclip(false)
-	end
-end
-
 local function toggleStrafe()
 	_G.strafeEnabled=not _G.strafeEnabled
 	setToggle(stTr,stK,_G.strafeEnabled,true)
@@ -1391,7 +1336,6 @@ spCl.MouseButton1Click:Connect(toggleSpeed)
 jCl.MouseButton1Click:Connect(toggleJump)
 fCl.MouseButton1Click:Connect(toggleFlight)
 nCl.MouseButton1Click:Connect(toggleNoclip)
-phaseCl.MouseButton1Click:Connect(togglePhase)
 stCl.MouseButton1Click:Connect(toggleStrafe)
 awCl.MouseButton1Click:Connect(toggleAirwalk)
 cCl.MouseButton1Click:Connect(toggleClickTp)
@@ -1431,11 +1375,16 @@ end)
 
 local function switchCat(c)
 	if _G.currentCategory==c then return end
+
 	_G.currentCategory=c
+	scrollTarget=0
+	scrollCurrent=0
 	contentViewport.CanvasPosition=Vector2.new(0,0)
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
+
 	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+
 	if c=="movement" then
 		TS:Create(movL,inf,{TextTransparency=0}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
@@ -1447,7 +1396,11 @@ local function switchCat(c)
 		mc.Visible=false
 		miscC.Visible=true
 	end
-	task.defer(refreshScroll)
+
+	task.defer(function()
+		task.wait()
+		refreshScroll(true)
+	end)
 end
 
 movL.MouseButton1Click:Connect(function() switchCat("movement") end)
@@ -1494,7 +1447,7 @@ local function setVisible(s)
 	catBar.Visible=s
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
-	contentViewport.ScrollingEnabled=s
+	contentViewport.ScrollingEnabled=false
 end
 
 local function startFps()
@@ -1518,11 +1471,16 @@ local function setMinimized(s)
 	_G.isAnimating=true
 	_G.isHidden=s
 
+	-- Scrollbar disappears for the whole duration of the UI animation.
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
 	contentViewport.ScrollingEnabled=false
 
-	local ts=s and UDim2.new(0,350,0,30) or UDim2.new(0,350,0,500)
+	-- The normal UI is slightly shorter so there is no large empty gap below it.
+	local ts=s
+		and UDim2.new(0,350,0,30)
+		or UDim2.new(0,350,0,530)
+
 	local tw=TS:Create(
 		mf,
 		TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
@@ -1532,6 +1490,7 @@ local function setMinimized(s)
 	if s then
 		setVisible(false)
 		startFps()
+
 		TS:Create(
 			fpsLabel,
 			TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
@@ -1550,16 +1509,20 @@ local function setMinimized(s)
 	tw.Completed:Connect(function()
 		if not s then
 			setVisible(true)
-			contentViewport.ScrollingEnabled=true
-			refreshScroll()
-
-			if _G.fpsConnection then
-				_G.fpsConnection:Disconnect()
-				_G.fpsConnection=nil
-			end
+			-- Recalculate after the animation so the scrollbar appears
+			-- only when the current category actually needs it.
+			refreshScroll(true)
+		else
+			scrollTrack.Visible=false
+			scrollThumb.Visible=false
 		end
 
 		_G.isAnimating=false
+
+		if s and _G.fpsConnection then
+			_G.fpsConnection:Disconnect()
+			_G.fpsConnection=nil
+		end
 	end)
 end
 
@@ -1568,14 +1531,6 @@ hideBtn.MouseButton1Click:Connect(function() setMinimized(not _G.isHidden) end)
 closeBtn.MouseButton1Click:Connect(function()
 	stopFlight()
 	stopAirwalk()
-	if _G.phaseConnection then
-		_G.phaseConnection:Disconnect()
-		_G.phaseConnection=nil
-	end
-	if _G.phaseEnabled then
-		setNoclip(false)
-		_G.phaseEnabled=false
-	end
 	if _G.fpsConnection then _G.fpsConnection:Disconnect() end
 	mouse.Icon=""
 	sg:Destroy()
@@ -1692,6 +1647,8 @@ UIS.InputEnded:Connect(function(i)
 end)
 
 player.CharacterAdded:Connect(function(c)
+	scrollTarget=0
+	scrollCurrent=0
 	_G.scrollOffset=0
 	_G.scrollTarget=0
 	character=c
@@ -1699,11 +1656,6 @@ player.CharacterAdded:Connect(function(c)
 	root=character:WaitForChild("HumanoidRootPart")
 	stopFlight()
 	stopAirwalk()
-	if _G.phaseConnection then
-		_G.phaseConnection:Disconnect()
-		_G.phaseConnection=nil
-	end
-	_G.phaseEnabled=false
 	_G.speedEnabled=false
 	_G.jumpEnabled=false
 	_G.flightEnabled=false
@@ -1730,7 +1682,6 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(jTr,jK,false,false)
 	setToggle(fTr,fK,false,false)
 	setToggle(nTr,nK,false,false)
-	setToggle(phaseTr,phaseK,false,false)
 	setToggle(stTr,stK,false,false)
 	setToggle(awTr,awK,false,false)
 	setToggle(cTr,cK,false,false)
@@ -1754,7 +1705,6 @@ player.CharacterAdded:Connect(function(c)
 	setColors(false,fT,nil,nil,nil)
 	setColors(false,fST,fS,fF,fH)
 	updateNoclip()
-	updatePhase()
 	updateSlider(stF,stH,0)
 	stT.Text="Strafe"
 	stVT.Text="Value: 0"
