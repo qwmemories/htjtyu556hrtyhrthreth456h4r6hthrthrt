@@ -633,7 +633,7 @@ local sortT=Instance.new("TextLabel")
 sortT.Size=UDim2.new(0.5,0,0,25)
 sortT.Position=UDim2.new(0,10,0,190)
 sortT.BackgroundTransparency=1
-sortT.Text="Sort: Distance"
+sortT.Text="Sort:"
 sortT.TextColor3=Color3.new(0.6,0.6,0.6)
 sortT.TextSize=18
 sortT.Font=Enum.Font.Gotham
@@ -664,7 +664,7 @@ local modeT=Instance.new("TextLabel")
 modeT.Size=UDim2.new(0.5,0,0,25)
 modeT.Position=UDim2.new(0,10,0,222)
 modeT.BackgroundTransparency=1
-modeT.Text="Mode: Center"
+modeT.Text="Mode:"
 modeT.TextColor3=Color3.new(0.6,0.6,0.6)
 modeT.TextSize=18
 modeT.Font=Enum.Font.Gotham
@@ -1312,11 +1312,11 @@ local function cycleSort()
 	if _G.sortMode=="Distance" then
 		_G.sortMode="Cursor"
 		sortB.Text="Cursor"
-		sortT.Text="Sort: Cursor"
+		sortT.Text="Sort:"
 	else
 		_G.sortMode="Distance"
 		sortB.Text="Distance"
-		sortT.Text="Sort: Distance"
+		sortT.Text="Sort:"
 	end
 end
 
@@ -1324,11 +1324,11 @@ local function cycleMode()
 	if _G.aimMode=="Center" then
 		_G.aimMode="Cursor"
 		modeB.Text="Cursor"
-		modeT.Text="Mode: Cursor"
+		modeT.Text="Mode:"
 	else
 		_G.aimMode="Center"
 		modeB.Text="Center"
-		modeT.Text="Mode: Center"
+		modeT.Text="Mode:"
 	end
 end
 
@@ -1716,9 +1716,9 @@ player.CharacterAdded:Connect(function(c)
 	targB.Text="Head"
 	targT.Text="Target:"
 	sortB.Text="Distance"
-	sortT.Text="Sort: Distance"
+	sortT.Text="Sort:"
 	modeB.Text="Center"
-	modeT.Text="Mode: Center"
+	modeT.Text="Mode:"
 	setAimColors(false)
 	applySpeed()
 	applyJump()
