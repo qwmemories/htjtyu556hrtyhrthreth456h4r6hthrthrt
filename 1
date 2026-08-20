@@ -1,12 +1,12 @@
-player=game.Players.LocalPlayer
-character=player.Character or player.CharacterAdded:Wait()
-humanoid=character:WaitForChild("Humanoid")
-root=character:WaitForChild("HumanoidRootPart")
-mouse=player:GetMouse()
-UIS=game:GetService("UserInputService")
-RS=game:GetService("RunService")
-TS=game:GetService("TweenService")
-PL=game:GetService("Players")
+local player=game.Players.LocalPlayer
+local character=player.Character or player.CharacterAdded:Wait()
+local humanoid=character:WaitForChild("Humanoid")
+local root=character:WaitForChild("HumanoidRootPart")
+local mouse=player:GetMouse()
+local UIS=game:GetService("UserInputService")
+local RS=game:GetService("RunService")
+local TS=game:GetService("TweenService")
+local PL=game:GetService("Players")
 
 _G.speedEnabled=false
 _G.jumpEnabled=false
@@ -68,10 +68,10 @@ task.spawn(function()
 	end)
 end)
 
-sg=Instance.new("ScreenGui")
+local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
-mf=Instance.new("Frame")
+local mf=Instance.new("Frame")
 mf.Size=UDim2.new(0,320,0,570)
 mf.Position=UDim2.new(0.5,-160,0.5,-285)
 mf.BackgroundColor3=Color3.new(0,0,0)
@@ -80,13 +80,13 @@ mf.Active=true
 mf.Parent=sg
 Instance.new("UICorner",mf).CornerRadius=UDim.new(0,10)
 
-ms=Instance.new("UIStroke")
+local ms=Instance.new("UIStroke")
 ms.Color=Color3.new(1,1,1)
 ms.Transparency=0.78
 ms.Thickness=1.5
 ms.Parent=mf
 
-title=Instance.new("TextLabel")
+local title=Instance.new("TextLabel")
 title.Size=UDim2.new(0,80,0,25)
 title.Position=UDim2.new(0,10,0,0)
 title.BackgroundTransparency=1
@@ -97,7 +97,7 @@ title.Font=Enum.Font.GothamBold
 title.TextXAlignment=Enum.TextXAlignment.Left
 title.Parent=mf
 
-fpsLabel=Instance.new("TextLabel")
+local fpsLabel=Instance.new("TextLabel")
 fpsLabel.Size=UDim2.new(0,100,0,25)
 fpsLabel.Position=UDim2.new(0,90,0,0)
 fpsLabel.BackgroundTransparency=1
@@ -109,7 +109,7 @@ fpsLabel.TextXAlignment=Enum.TextXAlignment.Left
 fpsLabel.TextTransparency=1
 fpsLabel.Parent=mf
 
-hideBtn=Instance.new("TextButton")
+local hideBtn=Instance.new("TextButton")
 hideBtn.Size=UDim2.new(0,22,0,22)
 hideBtn.Position=UDim2.new(1,-52,0,4)
 hideBtn.BackgroundColor3=Color3.new(0.15,0.15,0.15)
@@ -122,14 +122,14 @@ hideBtn.AutoButtonColor=false
 hideBtn.Parent=mf
 Instance.new("UICorner",hideBtn).CornerRadius=UDim.new(0,5)
 
-hideSt=Instance.new("UIStroke")
+local hideSt=Instance.new("UIStroke")
 hideSt.Color=Color3.fromRGB(160,160,160)
 hideSt.Transparency=1
 hideSt.Thickness=1.5
 hideSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 hideSt.Parent=hideBtn
 
-closeBtn=Instance.new("TextButton")
+local closeBtn=Instance.new("TextButton")
 closeBtn.Size=UDim2.new(0,22,0,22)
 closeBtn.Position=UDim2.new(1,-28,0,4)
 closeBtn.BackgroundColor3=Color3.new(0.15,0.15,0.15)
@@ -142,14 +142,14 @@ closeBtn.AutoButtonColor=false
 closeBtn.Parent=mf
 Instance.new("UICorner",closeBtn).CornerRadius=UDim.new(0,5)
 
-closeSt=Instance.new("UIStroke")
+local closeSt=Instance.new("UIStroke")
 closeSt.Color=Color3.fromRGB(160,160,160)
 closeSt.Transparency=1
 closeSt.Thickness=1.5
 closeSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 closeSt.Parent=closeBtn
 
-function ct(p,pos)
+local function ct(p,pos)
 	local t=Instance.new("Frame")
 	t.Size=UDim2.new(0,46,0,22)
 	t.Position=pos
@@ -179,7 +179,7 @@ function ct(p,pos)
 	return t,k,ts,c
 end
 
-function ass(s,h)
+local function ass(s,h)
 	local ss=Instance.new("UIStroke")
 	ss.Color=Color3.fromRGB(160,160,160)
 	ss.Transparency=1
@@ -195,13 +195,13 @@ function ass(s,h)
 	return ss,hs
 end
 
-mc=Instance.new("Frame")
+local mc=Instance.new("Frame")
 mc.Size=UDim2.new(0,258,0,520)
 mc.Position=UDim2.new(0,86,0,30)
 mc.BackgroundTransparency=1
 mc.Parent=mf
 
-spT=Instance.new("TextLabel")
+local spT=Instance.new("TextLabel")
 spT.Size=UDim2.new(0.5,0,0,25)
 spT.Position=UDim2.new(0,10,0,2)
 spT.BackgroundTransparency=1
@@ -212,9 +212,9 @@ spT.Font=Enum.Font.Gotham
 spT.TextXAlignment=Enum.TextXAlignment.Left
 spT.Parent=mc
 
-spTr,spK,spSt,spCl=ct(mc,UDim2.new(0.75,0,0,4))
+local spTr,spK,spSt,spCl=ct(mc,UDim2.new(0.75,0,0,4))
 
-spVT=Instance.new("TextLabel")
+local spVT=Instance.new("TextLabel")
 spVT.Size=UDim2.new(0.5,0,0,25)
 spVT.Position=UDim2.new(0,10,0,34)
 spVT.BackgroundTransparency=1
@@ -225,7 +225,7 @@ spVT.Font=Enum.Font.Gotham
 spVT.TextXAlignment=Enum.TextXAlignment.Left
 spVT.Parent=mc
 
-spS=Instance.new("Frame")
+local spS=Instance.new("Frame")
 spS.Size=UDim2.new(0.85,0,0,8)
 spS.Position=UDim2.new(0.075,0,0,64)
 spS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
@@ -233,14 +233,14 @@ spS.BorderSizePixel=0
 spS.Parent=mc
 Instance.new("UICorner",spS).CornerRadius=UDim.new(0,4)
 
-spF=Instance.new("Frame")
+local spF=Instance.new("Frame")
 spF.Size=UDim2.new(0.5,0,1,0)
 spF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spF.BorderSizePixel=0
 spF.Parent=spS
 Instance.new("UICorner",spF).CornerRadius=UDim.new(0,4)
 
-spH=Instance.new("Frame")
+local spH=Instance.new("Frame")
 spH.Size=UDim2.new(0,16,0,16)
 spH.Position=UDim2.new(0.5,-8,0.5,-8)
 spH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
@@ -248,16 +248,16 @@ spH.BorderSizePixel=0
 spH.Parent=spS
 Instance.new("UICorner",spH).CornerRadius=UDim.new(0,8)
 
-spSS,spHS=ass(spS,spH)
+local spSS,spHS=ass(spS,spH)
 
-sep1=Instance.new("Frame")
+local sep1=Instance.new("Frame")
 sep1.Size=UDim2.new(0.9,0,0,1)
 sep1.Position=UDim2.new(0.05,0,0,86)
 sep1.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep1.BorderSizePixel=0
 sep1.Parent=mc
 
-jT=Instance.new("TextLabel")
+local jT=Instance.new("TextLabel")
 jT.Size=UDim2.new(0.5,0,0,25)
 jT.Position=UDim2.new(0,10,0,96)
 jT.BackgroundTransparency=1
@@ -268,9 +268,9 @@ jT.Font=Enum.Font.Gotham
 jT.TextXAlignment=Enum.TextXAlignment.Left
 jT.Parent=mc
 
-jTr,jK,jSt,jCl=ct(mc,UDim2.new(0.75,0,0,98))
+local jTr,jK,jSt,jCl=ct(mc,UDim2.new(0.75,0,0,98))
 
-jST=Instance.new("TextLabel")
+local jST=Instance.new("TextLabel")
 jST.Size=UDim2.new(0.5,0,0,25)
 jST.Position=UDim2.new(0,10,0,128)
 jST.BackgroundTransparency=1
@@ -281,7 +281,7 @@ jST.Font=Enum.Font.Gotham
 jST.TextXAlignment=Enum.TextXAlignment.Left
 jST.Parent=mc
 
-jS=Instance.new("Frame")
+local jS=Instance.new("Frame")
 jS.Size=UDim2.new(0.85,0,0,8)
 jS.Position=UDim2.new(0.075,0,0,158)
 jS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
@@ -289,14 +289,14 @@ jS.BorderSizePixel=0
 jS.Parent=mc
 Instance.new("UICorner",jS).CornerRadius=UDim.new(0,4)
 
-jF=Instance.new("Frame")
+local jF=Instance.new("Frame")
 jF.Size=UDim2.new(0.5,0,1,0)
 jF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jF.BorderSizePixel=0
 jF.Parent=jS
 Instance.new("UICorner",jF).CornerRadius=UDim.new(0,4)
 
-jH=Instance.new("Frame")
+local jH=Instance.new("Frame")
 jH.Size=UDim2.new(0,16,0,16)
 jH.Position=UDim2.new(0.5,-8,0.5,-8)
 jH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
@@ -304,16 +304,16 @@ jH.BorderSizePixel=0
 jH.Parent=jS
 Instance.new("UICorner",jH).CornerRadius=UDim.new(0,8)
 
-jSS,jHS=ass(jS,jH)
+local jSS,jHS=ass(jS,jH)
 
-sep2=Instance.new("Frame")
+local sep2=Instance.new("Frame")
 sep2.Size=UDim2.new(0.9,0,0,1)
 sep2.Position=UDim2.new(0.05,0,0,180)
 sep2.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep2.BorderSizePixel=0
 sep2.Parent=mc
 
-fT=Instance.new("TextLabel")
+local fT=Instance.new("TextLabel")
 fT.Size=UDim2.new(0.5,0,0,25)
 fT.Position=UDim2.new(0,10,0,190)
 fT.BackgroundTransparency=1
@@ -324,9 +324,9 @@ fT.Font=Enum.Font.Gotham
 fT.TextXAlignment=Enum.TextXAlignment.Left
 fT.Parent=mc
 
-fTr,fK,fSt,fCl=ct(mc,UDim2.new(0.75,0,0,192))
+local fTr,fK,fSt,fCl=ct(mc,UDim2.new(0.75,0,0,192))
 
-fST=Instance.new("TextLabel")
+local fST=Instance.new("TextLabel")
 fST.Size=UDim2.new(0.5,0,0,25)
 fST.Position=UDim2.new(0,10,0,224)
 fST.BackgroundTransparency=1
@@ -337,7 +337,7 @@ fST.Font=Enum.Font.Gotham
 fST.TextXAlignment=Enum.TextXAlignment.Left
 fST.Parent=mc
 
-fS=Instance.new("Frame")
+local fS=Instance.new("Frame")
 fS.Size=UDim2.new(0.85,0,0,8)
 fS.Position=UDim2.new(0.075,0,0,254)
 fS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
@@ -345,14 +345,14 @@ fS.BorderSizePixel=0
 fS.Parent=mc
 Instance.new("UICorner",fS).CornerRadius=UDim.new(0,4)
 
-fF=Instance.new("Frame")
+local fF=Instance.new("Frame")
 fF.Size=UDim2.new(0.5,0,1,0)
 fF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fF.BorderSizePixel=0
 fF.Parent=fS
 Instance.new("UICorner",fF).CornerRadius=UDim.new(0,4)
 
-fH=Instance.new("Frame")
+local fH=Instance.new("Frame")
 fH.Size=UDim2.new(0,16,0,16)
 fH.Position=UDim2.new(0.5,-8,0.5,-8)
 fH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
@@ -360,9 +360,9 @@ fH.BorderSizePixel=0
 fH.Parent=fS
 Instance.new("UICorner",fH).CornerRadius=UDim.new(0,8)
 
-fSS,fHS=ass(fS,fH)
+local fSS,fHS=ass(fS,fH)
 
-nT=Instance.new("TextLabel")
+local nT=Instance.new("TextLabel")
 nT.Size=UDim2.new(0.5,0,0,25)
 nT.Position=UDim2.new(0,10,0,282)
 nT.BackgroundTransparency=1
@@ -373,16 +373,16 @@ nT.Font=Enum.Font.Gotham
 nT.TextXAlignment=Enum.TextXAlignment.Left
 nT.Parent=mc
 
-nTr,nK,nSt,nCl=ct(mc,UDim2.new(0.75,0,0,284))
+local nTr,nK,nSt,nCl=ct(mc,UDim2.new(0.75,0,0,284))
 
-sep3=Instance.new("Frame")
+local sep3=Instance.new("Frame")
 sep3.Size=UDim2.new(0.9,0,0,1)
 sep3.Position=UDim2.new(0.05,0,0,314)
 sep3.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep3.BorderSizePixel=0
 sep3.Parent=mc
 
-stT=Instance.new("TextLabel")
+local stT=Instance.new("TextLabel")
 stT.Size=UDim2.new(0.5,0,0,25)
 stT.Position=UDim2.new(0,10,0,324)
 stT.BackgroundTransparency=1
@@ -393,9 +393,9 @@ stT.Font=Enum.Font.Gotham
 stT.TextXAlignment=Enum.TextXAlignment.Left
 stT.Parent=mc
 
-stTr,stK,stSt,stCl=ct(mc,UDim2.new(0.75,0,0,326))
+local stTr,stK,stSt,stCl=ct(mc,UDim2.new(0.75,0,0,326))
 
-stVT=Instance.new("TextLabel")
+local stVT=Instance.new("TextLabel")
 stVT.Size=UDim2.new(0.5,0,0,25)
 stVT.Position=UDim2.new(0,10,0,356)
 stVT.BackgroundTransparency=1
@@ -406,7 +406,7 @@ stVT.Font=Enum.Font.Gotham
 stVT.TextXAlignment=Enum.TextXAlignment.Left
 stVT.Parent=mc
 
-stS=Instance.new("Frame")
+local stS=Instance.new("Frame")
 stS.Size=UDim2.new(0.85,0,0,8)
 stS.Position=UDim2.new(0.075,0,0,386)
 stS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
@@ -414,14 +414,14 @@ stS.BorderSizePixel=0
 stS.Parent=mc
 Instance.new("UICorner",stS).CornerRadius=UDim.new(0,4)
 
-stF=Instance.new("Frame")
+local stF=Instance.new("Frame")
 stF.Size=UDim2.new(0,0,1,0)
 stF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 stF.BorderSizePixel=0
 stF.Parent=stS
 Instance.new("UICorner",stF).CornerRadius=UDim.new(0,4)
 
-stH=Instance.new("Frame")
+local stH=Instance.new("Frame")
 stH.Size=UDim2.new(0,16,0,16)
 stH.Position=UDim2.new(0,-8,0.5,-8)
 stH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
@@ -429,16 +429,16 @@ stH.BorderSizePixel=0
 stH.Parent=stS
 Instance.new("UICorner",stH).CornerRadius=UDim.new(0,8)
 
-stSS,stHS=ass(stS,stH)
+local stSS,stHS=ass(stS,stH)
 
-sep4=Instance.new("Frame")
+local sep4=Instance.new("Frame")
 sep4.Size=UDim2.new(0.9,0,0,1)
 sep4.Position=UDim2.new(0.05,0,0,410)
 sep4.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep4.BorderSizePixel=0
 sep4.Parent=mc
 
-awT=Instance.new("TextLabel")
+local awT=Instance.new("TextLabel")
 awT.Size=UDim2.new(0.5,0,0,25)
 awT.Position=UDim2.new(0,10,0,420)
 awT.BackgroundTransparency=1
@@ -449,16 +449,16 @@ awT.Font=Enum.Font.Gotham
 awT.TextXAlignment=Enum.TextXAlignment.Left
 awT.Parent=mc
 
-awTr,awK,awSt,awCl=ct(mc,UDim2.new(0.75,0,0,422))
+local awTr,awK,awSt,awCl=ct(mc,UDim2.new(0.75,0,0,422))
 
-sep5=Instance.new("Frame")
+local sep5=Instance.new("Frame")
 sep5.Size=UDim2.new(0.9,0,0,1)
 sep5.Position=UDim2.new(0.05,0,0,452)
 sep5.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep5.BorderSizePixel=0
 sep5.Parent=mc
 
-cT=Instance.new("TextLabel")
+local cT=Instance.new("TextLabel")
 cT.Size=UDim2.new(0.5,0,0,25)
 cT.Position=UDim2.new(0,10,0,462)
 cT.BackgroundTransparency=1
@@ -469,16 +469,16 @@ cT.Font=Enum.Font.Gotham
 cT.TextXAlignment=Enum.TextXAlignment.Left
 cT.Parent=mc
 
-cTr,cK,cSt,cCl=ct(mc,UDim2.new(0.75,0,0,464))
+local cTr,cK,cSt,cCl=ct(mc,UDim2.new(0.75,0,0,464))
 
-sep6=Instance.new("Frame")
+local sep6=Instance.new("Frame")
 sep6.Size=UDim2.new(0.9,0,0,1)
 sep6.Position=UDim2.new(0.05,0,0,494)
 sep6.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep6.BorderSizePixel=0
 sep6.Parent=mc
 
-ajT=Instance.new("TextLabel")
+local ajT=Instance.new("TextLabel")
 ajT.Size=UDim2.new(0.5,0,0,25)
 ajT.Position=UDim2.new(0,10,0,504)
 ajT.BackgroundTransparency=1
@@ -489,16 +489,16 @@ ajT.Font=Enum.Font.Gotham
 ajT.TextXAlignment=Enum.TextXAlignment.Left
 ajT.Parent=mc
 
-ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
+local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
 
-miscC=Instance.new("Frame")
+local miscC=Instance.new("Frame")
 miscC.Size=UDim2.new(0,258,0,450)
 miscC.Position=UDim2.new(0,86,0,30)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
 miscC.Parent=mf
 
-aimT=Instance.new("TextLabel")
+local aimT=Instance.new("TextLabel")
 aimT.Size=UDim2.new(0.5,0,0,25)
 aimT.Position=UDim2.new(0,10,0,2)
 aimT.BackgroundTransparency=1
@@ -509,9 +509,9 @@ aimT.Font=Enum.Font.Gotham
 aimT.TextXAlignment=Enum.TextXAlignment.Left
 aimT.Parent=miscC
 
-aimTr,aimK,aimSt,aimCl=ct(miscC,UDim2.new(0.75,0,0,4))
+local aimTr,aimK,aimSt,aimCl=ct(miscC,UDim2.new(0.75,0,0,4))
 
-smT=Instance.new("TextLabel")
+local smT=Instance.new("TextLabel")
 smT.Size=UDim2.new(0.5,0,0,25)
 smT.Position=UDim2.new(0,10,0,40)
 smT.BackgroundTransparency=1
@@ -522,7 +522,7 @@ smT.Font=Enum.Font.Gotham
 smT.TextXAlignment=Enum.TextXAlignment.Left
 smT.Parent=miscC
 
-smS=Instance.new("Frame")
+local smS=Instance.new("Frame")
 smS.Size=UDim2.new(0.85,0,0,8)
 smS.Position=UDim2.new(0.075,0,0,70)
 smS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
@@ -530,14 +530,14 @@ smS.BorderSizePixel=0
 smS.Parent=miscC
 Instance.new("UICorner",smS).CornerRadius=UDim.new(0,4)
 
-smF=Instance.new("Frame")
+local smF=Instance.new("Frame")
 smF.Size=UDim2.new(0.3,0,1,0)
 smF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 smF.BorderSizePixel=0
 smF.Parent=smS
 Instance.new("UICorner",smF).CornerRadius=UDim.new(0,4)
 
-smH=Instance.new("Frame")
+local smH=Instance.new("Frame")
 smH.Size=UDim2.new(0,16,0,16)
 smH.Position=UDim2.new(0.3,-8,0.5,-8)
 smH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
@@ -545,9 +545,9 @@ smH.BorderSizePixel=0
 smH.Parent=smS
 Instance.new("UICorner",smH).CornerRadius=UDim.new(0,8)
 
-smSS,smHS=ass(smS,smH)
+local smSS,smHS=ass(smS,smH)
 
-rT=Instance.new("TextLabel")
+local rT=Instance.new("TextLabel")
 rT.Size=UDim2.new(0.5,0,0,25)
 rT.Position=UDim2.new(0,10,0,100)
 rT.BackgroundTransparency=1
@@ -558,7 +558,7 @@ rT.Font=Enum.Font.Gotham
 rT.TextXAlignment=Enum.TextXAlignment.Left
 rT.Parent=miscC
 
-rS=Instance.new("Frame")
+local rS=Instance.new("Frame")
 rS.Size=UDim2.new(0.85,0,0,8)
 rS.Position=UDim2.new(0.075,0,0,130)
 rS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
@@ -566,14 +566,14 @@ rS.BorderSizePixel=0
 rS.Parent=miscC
 Instance.new("UICorner",rS).CornerRadius=UDim.new(0,4)
 
-rF=Instance.new("Frame")
+local rF=Instance.new("Frame")
 rF.Size=UDim2.new(0.5,0,1,0)
 rF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 rF.BorderSizePixel=0
 rF.Parent=rS
 Instance.new("UICorner",rF).CornerRadius=UDim.new(0,4)
 
-rH=Instance.new("Frame")
+local rH=Instance.new("Frame")
 rH.Size=UDim2.new(0,16,0,16)
 rH.Position=UDim2.new(0.5,-8,0.5,-8)
 rH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
@@ -581,9 +581,9 @@ rH.BorderSizePixel=0
 rH.Parent=rS
 Instance.new("UICorner",rH).CornerRadius=UDim.new(0,8)
 
-rSS,rHS=ass(rS,rH)
+local rSS,rHS=ass(rS,rH)
 
-targT=Instance.new("TextLabel")
+local targT=Instance.new("TextLabel")
 targT.Size=UDim2.new(0.5,0,0,25)
 targT.Position=UDim2.new(0,10,0,158)
 targT.BackgroundTransparency=1
@@ -594,7 +594,7 @@ targT.Font=Enum.Font.Gotham
 targT.TextXAlignment=Enum.TextXAlignment.Left
 targT.Parent=miscC
 
-targB=Instance.new("TextButton")
+local targB=Instance.new("TextButton")
 targB.Size=UDim2.new(0.35,0,0,22)
 targB.Position=UDim2.new(0.6,0,0,159)
 targB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
@@ -607,14 +607,14 @@ targB.AutoButtonColor=false
 targB.Parent=miscC
 Instance.new("UICorner",targB).CornerRadius=UDim.new(0,5)
 
-targSt=Instance.new("UIStroke")
+local targSt=Instance.new("UIStroke")
 targSt.Color=Color3.fromRGB(160,160,160)
 targSt.Transparency=0.4
 targSt.Thickness=1.5
 targSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 targSt.Parent=targB
 
-sortT=Instance.new("TextLabel")
+local sortT=Instance.new("TextLabel")
 sortT.Size=UDim2.new(0.5,0,0,25)
 sortT.Position=UDim2.new(0,10,0,190)
 sortT.BackgroundTransparency=1
@@ -625,7 +625,7 @@ sortT.Font=Enum.Font.Gotham
 sortT.TextXAlignment=Enum.TextXAlignment.Left
 sortT.Parent=miscC
 
-sortB=Instance.new("TextButton")
+local sortB=Instance.new("TextButton")
 sortB.Size=UDim2.new(0.35,0,0,22)
 sortB.Position=UDim2.new(0.6,0,0,191)
 sortB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
@@ -638,14 +638,14 @@ sortB.AutoButtonColor=false
 sortB.Parent=miscC
 Instance.new("UICorner",sortB).CornerRadius=UDim.new(0,5)
 
-sortSt=Instance.new("UIStroke")
+local sortSt=Instance.new("UIStroke")
 sortSt.Color=Color3.fromRGB(160,160,160)
 sortSt.Transparency=0.4
 sortSt.Thickness=1.5
 sortSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 sortSt.Parent=sortB
 
-modeT=Instance.new("TextLabel")
+local modeT=Instance.new("TextLabel")
 modeT.Size=UDim2.new(0.5,0,0,25)
 modeT.Position=UDim2.new(0,10,0,222)
 modeT.BackgroundTransparency=1
@@ -656,7 +656,7 @@ modeT.Font=Enum.Font.Gotham
 modeT.TextXAlignment=Enum.TextXAlignment.Left
 modeT.Parent=miscC
 
-modeB=Instance.new("TextButton")
+local modeB=Instance.new("TextButton")
 modeB.Size=UDim2.new(0.35,0,0,22)
 modeB.Position=UDim2.new(0.6,0,0,223)
 modeB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
@@ -669,14 +669,14 @@ modeB.AutoButtonColor=false
 modeB.Parent=miscC
 Instance.new("UICorner",modeB).CornerRadius=UDim.new(0,5)
 
-modeSt=Instance.new("UIStroke")
+local modeSt=Instance.new("UIStroke")
 modeSt.Color=Color3.fromRGB(160,160,160)
 modeSt.Transparency=0.4
 modeSt.Thickness=1.5
 modeSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 modeSt.Parent=modeB
 
-tlT=Instance.new("TextLabel")
+local tlT=Instance.new("TextLabel")
 tlT.Size=UDim2.new(0.5,0,0,25)
 tlT.Position=UDim2.new(0,10,0,258)
 tlT.BackgroundTransparency=1
@@ -687,9 +687,9 @@ tlT.Font=Enum.Font.Gotham
 tlT.TextXAlignment=Enum.TextXAlignment.Left
 tlT.Parent=miscC
 
-tlTr,tlK,tlSt,tlCl=ct(miscC,UDim2.new(0.75,0,0,260))
+local tlTr,tlK,tlSt,tlCl=ct(miscC,UDim2.new(0.75,0,0,260))
 
-wcT=Instance.new("TextLabel")
+local wcT=Instance.new("TextLabel")
 wcT.Size=UDim2.new(0.5,0,0,25)
 wcT.Position=UDim2.new(0,10,0,296)
 wcT.BackgroundTransparency=1
@@ -700,15 +700,15 @@ wcT.Font=Enum.Font.Gotham
 wcT.TextXAlignment=Enum.TextXAlignment.Left
 wcT.Parent=miscC
 
-wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
+local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
 
-catBar=Instance.new("Frame")
+local catBar=Instance.new("Frame")
 catBar.Size=UDim2.new(0,82,1,-70)
 catBar.Position=UDim2.new(0,4,0,35)
 catBar.BackgroundTransparency=1
 catBar.Parent=mf
 
-movL=Instance.new("TextButton")
+local movL=Instance.new("TextButton")
 movL.Size=UDim2.new(1,0,0,42)
 movL.Position=UDim2.new(0,0,0,8)
 movL.BackgroundTransparency=1
@@ -720,14 +720,14 @@ movL.Font=Enum.Font.GothamBold
 movL.TextWrapped=true
 movL.Parent=catBar
 
-catSep=Instance.new("Frame")
+local catSep=Instance.new("Frame")
 catSep.Size=UDim2.new(0,48,0,1)
 catSep.Position=UDim2.new(0.5,-24,0,54)
 catSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 catSep.BorderSizePixel=0
 catSep.Parent=catBar
 
-miscL=Instance.new("TextButton")
+local miscL=Instance.new("TextButton")
 miscL.Size=UDim2.new(1,0,0,42)
 miscL.Position=UDim2.new(0,0,0,64)
 miscL.BackgroundTransparency=1
@@ -740,12 +740,12 @@ miscL.TextWrapped=true
 miscL.Parent=catBar
 
 
-scrollOffset=0
-scrollTarget=0
-scrollMax=0
-scrollStep=45
+local scrollOffset=0
+local scrollTarget=0
+local scrollMax=0
+local scrollStep=45
 
-scrollBar=Instance.new("Frame")
+local scrollBar=Instance.new("Frame")
 scrollBar.Size=UDim2.new(0,7,0,420)
 scrollBar.Position=UDim2.new(1,-11,0,70)
 scrollBar.BackgroundColor3=Color3.new(0.16,0.16,0.16)
@@ -754,7 +754,7 @@ scrollBar.BorderSizePixel=0
 scrollBar.Parent=mf
 Instance.new("UICorner",scrollBar).CornerRadius=UDim.new(1,0)
 
-scrollThumb=Instance.new("Frame")
+local scrollThumb=Instance.new("Frame")
 scrollThumb.Size=UDim2.new(1,70,0,1)
 scrollThumb.Position=UDim2.new(0,-32,0,0)
 scrollThumb.BackgroundColor3=Color3.new(0.6,0.6,0.6)
@@ -762,7 +762,7 @@ scrollThumb.BorderSizePixel=0
 scrollThumb.Parent=scrollBar
 Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
 
-function updateScrollBounds()
+local function updateScrollBounds()
 \tscrollMax=math.max(0,520-380)
 \tif scrollMax<=0 then
 \t\tscrollTarget=0
@@ -770,7 +770,7 @@ function updateScrollBounds()
 \tend
 end
 
-function applyScroll()
+local function applyScroll()
 \tlocal y=-scrollOffset
 \tmc.Position=UDim2.new(0,86,0,30+y)
 \tmiscC.Position=UDim2.new(0,86,0,30+y)
@@ -800,7 +800,7 @@ task.defer(function()
 \tapplyScroll()
 end)
 
-function setToggle(t,k,on,anim)
+local function setToggle(t,k,on,anim)
 	local pos=on and UDim2.new(1,-20,0.5,-9) or UDim2.new(0,2,0.5,-9)
 	local tc=on and Color3.new(0.5,0.5,0.5) or Color3.new(0.15,0.15,0.15)
 	local kc=on and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
@@ -815,7 +815,7 @@ function setToggle(t,k,on,anim)
 	end
 end
 
-function hover(b,s)
+local function hover(b,s)
 	b.MouseEnter:Connect(function()
 		TS:Create(s,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Transparency=0.4}):Play()
 	end)
@@ -861,7 +861,115 @@ hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
 
-local __src3=game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/3")
-local __fn3,__err3=loadstring(__src3)
-assert(__fn3,__err3)
-__fn3()
+
+local __ENV=getgenv()
+__ENV.__MY_SCRIPT_ENV={
+	player=player,
+	character=character,
+	humanoid=humanoid,
+	root=root,
+	mouse=mouse,
+	UIS=UIS,
+	RS=RS,
+	TS=TS,
+	PL=PL,
+	sg=sg,
+	mf=mf,
+	ms=ms,
+	title=title,
+	fpsLabel=fpsLabel,
+	hideBtn=hideBtn,
+	hideSt=hideSt,
+	closeBtn=closeBtn,
+	closeSt=closeSt,
+	ct=ct,
+	ass=ass,
+	mc=mc,
+	spT=spT,
+	spTr=spTr,
+	spVT=spVT,
+	spS=spS,
+	spF=spF,
+	spH=spH,
+	spSS=spSS,
+	sep1=sep1,
+	jT=jT,
+	jTr=jTr,
+	jST=jST,
+	jS=jS,
+	jF=jF,
+	jH=jH,
+	jSS=jSS,
+	sep2=sep2,
+	fT=fT,
+	fTr=fTr,
+	fST=fST,
+	fS=fS,
+	fF=fF,
+	fH=fH,
+	fSS=fSS,
+	nT=nT,
+	nTr=nTr,
+	sep3=sep3,
+	stT=stT,
+	stTr=stTr,
+	stVT=stVT,
+	stS=stS,
+	stF=stF,
+	stH=stH,
+	stSS=stSS,
+	sep4=sep4,
+	awT=awT,
+	awTr=awTr,
+	sep5=sep5,
+	cT=cT,
+	cTr=cTr,
+	sep6=sep6,
+	ajT=ajT,
+	ajTr=ajTr,
+	miscC=miscC,
+	aimT=aimT,
+	aimTr=aimTr,
+	smT=smT,
+	smS=smS,
+	smF=smF,
+	smH=smH,
+	smSS=smSS,
+	rT=rT,
+	rS=rS,
+	rF=rF,
+	rH=rH,
+	rSS=rSS,
+	targT=targT,
+	targB=targB,
+	targSt=targSt,
+	sortT=sortT,
+	sortB=sortB,
+	sortSt=sortSt,
+	modeT=modeT,
+	modeB=modeB,
+	modeSt=modeSt,
+	tlT=tlT,
+	tlTr=tlTr,
+	wcT=wcT,
+	wcTr=wcTr,
+	catBar=catBar,
+	movL=movL,
+	catSep=catSep,
+	miscL=miscL,
+	scrollOffset=scrollOffset,
+	scrollTarget=scrollTarget,
+	scrollMax=scrollMax,
+	scrollStep=scrollStep,
+	scrollBar=scrollBar,
+	scrollThumb=scrollThumb,
+	updateScrollBounds=updateScrollBounds,
+	applyScroll=applyScroll,
+	setToggle=setToggle,
+	hover=hover,
+}
+
+local __SRC3=game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/3")
+local __FN3,__ERR3=loadstring(__SRC3)
+assert(__FN3,__ERR3)
+__FN3()
