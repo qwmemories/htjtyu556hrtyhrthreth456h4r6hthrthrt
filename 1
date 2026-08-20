@@ -22,7 +22,7 @@ _G.wallsCheckEnabled=false
 _G.aimTarget="Head"
 
 _G.currentSpeed=16
-_G.currentJumpStrengthStrength=50
+_G.currentJumpStrength=50
 _G.currentFlight=50
 _G.currentStrafe=0
 _G.currentSmoothness=0.15
@@ -72,8 +72,8 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,260,0,570)
-mf.Position=UDim2.new(0.5,-130,0.5,-285)
+mf.Size=UDim2.new(0,320,0,570)
+mf.Position=UDim2.new(0.5,-160,0.5,-285)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
 mf.Active=true
@@ -196,7 +196,7 @@ local function ass(s,h)
 end
 
 local mc=Instance.new("Frame")
-mc.Size=UDim2.new(1,0,0,520)
+mc.Size=UDim2.new(0,258,0,520)
 mc.Position=UDim2.new(0,0,0,30)
 mc.BackgroundTransparency=1
 mc.Parent=mf
@@ -234,7 +234,7 @@ spS.Parent=mc
 Instance.new("UICorner",spS).CornerRadius=UDim.new(0,4)
 
 local spF=Instance.new("Frame")
-spF.Size=UDim2.new(0.08,0,1,0)
+spF.Size=UDim2.new(0,0,1,0)
 spF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spF.BorderSizePixel=0
 spF.Parent=spS
@@ -242,7 +242,7 @@ Instance.new("UICorner",spF).CornerRadius=UDim.new(0,4)
 
 local spH=Instance.new("Frame")
 spH.Size=UDim2.new(0,16,0,16)
-spH.Position=UDim2.new(0.08,-8,0.5,-8)
+spH.Position=UDim2.new(0,8,0.5,-8)
 spH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spH.BorderSizePixel=0
 spH.Parent=spS
@@ -290,7 +290,7 @@ jS.Parent=mc
 Instance.new("UICorner",jS).CornerRadius=UDim.new(0,4)
 
 local jF=Instance.new("Frame")
-jF.Size=UDim2.new(0.25,0,1,0)
+jF.Size=UDim2.new(0,0,1,0)
 jF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jF.BorderSizePixel=0
 jF.Parent=jS
@@ -298,7 +298,7 @@ Instance.new("UICorner",jF).CornerRadius=UDim.new(0,4)
 
 local jH=Instance.new("Frame")
 jH.Size=UDim2.new(0,16,0,16)
-jH.Position=UDim2.new(0.25,-8,0.5,-8)
+jH.Position=UDim2.new(0,8,0.5,-8)
 jH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jH.BorderSizePixel=0
 jH.Parent=jS
@@ -346,7 +346,7 @@ fS.Parent=mc
 Instance.new("UICorner",fS).CornerRadius=UDim.new(0,4)
 
 local fF=Instance.new("Frame")
-fF.Size=UDim2.new(0.25,0,1,0)
+fF.Size=UDim2.new(0,0,1,0)
 fF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fF.BorderSizePixel=0
 fF.Parent=fS
@@ -354,7 +354,7 @@ Instance.new("UICorner",fF).CornerRadius=UDim.new(0,4)
 
 local fH=Instance.new("Frame")
 fH.Size=UDim2.new(0,16,0,16)
-fH.Position=UDim2.new(0.25,-8,0.5,-8)
+fH.Position=UDim2.new(0,8,0.5,-8)
 fH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fH.BorderSizePixel=0
 fH.Parent=fS
@@ -386,7 +386,7 @@ local stT=Instance.new("TextLabel")
 stT.Size=UDim2.new(0.5,0,0,25)
 stT.Position=UDim2.new(0,10,0,324)
 stT.BackgroundTransparency=1
-stT.Text="Strafe: 0"
+stT.Text="Strafe"
 stT.TextColor3=Color3.new(0.6,0.6,0.6)
 stT.TextSize=20
 stT.Font=Enum.Font.Gotham
@@ -395,9 +395,20 @@ stT.Parent=mc
 
 local stTr,stK,stSt,stCl=ct(mc,UDim2.new(0.75,0,0,326))
 
+local stVT=Instance.new("TextLabel")
+stVT.Size=UDim2.new(0.5,0,0,25)
+stVT.Position=UDim2.new(0,10,0,356)
+stVT.BackgroundTransparency=1
+stVT.Text="Value: 0"
+stVT.TextColor3=Color3.new(0.6,0.6,0.6)
+stVT.TextSize=18
+stVT.Font=Enum.Font.Gotham
+stVT.TextXAlignment=Enum.TextXAlignment.Left
+stVT.Parent=mc
+
 local stS=Instance.new("Frame")
 stS.Size=UDim2.new(0.85,0,0,8)
-stS.Position=UDim2.new(0.075,0,0,356)
+stS.Position=UDim2.new(0.075,0,0,386)
 stS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
 stS.BorderSizePixel=0
 stS.Parent=mc
@@ -412,7 +423,7 @@ Instance.new("UICorner",stF).CornerRadius=UDim.new(0,4)
 
 local stH=Instance.new("Frame")
 stH.Size=UDim2.new(0,16,0,16)
-stH.Position=UDim2.new(0,-8,0.5,-8)
+stH.Position=UDim2.new(0,8,0.5,-8)
 stH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 stH.BorderSizePixel=0
 stH.Parent=stS
@@ -422,14 +433,14 @@ local stSS,stHS=ass(stS,stH)
 
 local sep4=Instance.new("Frame")
 sep4.Size=UDim2.new(0.9,0,0,1)
-sep4.Position=UDim2.new(0.05,0,0,380)
+sep4.Position=UDim2.new(0.05,0,0,410)
 sep4.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep4.BorderSizePixel=0
 sep4.Parent=mc
 
 local awT=Instance.new("TextLabel")
 awT.Size=UDim2.new(0.5,0,0,25)
-awT.Position=UDim2.new(0,10,0,390)
+awT.Position=UDim2.new(0,10,0,420)
 awT.BackgroundTransparency=1
 awT.Text="Airwalk"
 awT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -438,18 +449,18 @@ awT.Font=Enum.Font.Gotham
 awT.TextXAlignment=Enum.TextXAlignment.Left
 awT.Parent=mc
 
-local awTr,awK,awSt,awCl=ct(mc,UDim2.new(0.75,0,0,392))
+local awTr,awK,awSt,awCl=ct(mc,UDim2.new(0.75,0,0,422))
 
 local sep5=Instance.new("Frame")
 sep5.Size=UDim2.new(0.9,0,0,1)
-sep5.Position=UDim2.new(0.05,0,0,422)
+sep5.Position=UDim2.new(0.05,0,0,452)
 sep5.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep5.BorderSizePixel=0
 sep5.Parent=mc
 
 local cT=Instance.new("TextLabel")
 cT.Size=UDim2.new(0.5,0,0,25)
-cT.Position=UDim2.new(0,10,0,432)
+cT.Position=UDim2.new(0,10,0,462)
 cT.BackgroundTransparency=1
 cT.Text="ClickTP"
 cT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -458,18 +469,18 @@ cT.Font=Enum.Font.Gotham
 cT.TextXAlignment=Enum.TextXAlignment.Left
 cT.Parent=mc
 
-local cTr,cK,cSt,cCl=ct(mc,UDim2.new(0.75,0,0,434))
+local cTr,cK,cSt,cCl=ct(mc,UDim2.new(0.75,0,0,464))
 
 local sep6=Instance.new("Frame")
 sep6.Size=UDim2.new(0.9,0,0,1)
-sep6.Position=UDim2.new(0.05,0,0,464)
+sep6.Position=UDim2.new(0.05,0,0,494)
 sep6.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep6.BorderSizePixel=0
 sep6.Parent=mc
 
 local ajT=Instance.new("TextLabel")
 ajT.Size=UDim2.new(0.5,0,0,25)
-ajT.Position=UDim2.new(0,10,0,474)
+ajT.Position=UDim2.new(0,10,0,504)
 ajT.BackgroundTransparency=1
 ajT.Text="AirJump"
 ajT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -478,10 +489,10 @@ ajT.Font=Enum.Font.Gotham
 ajT.TextXAlignment=Enum.TextXAlignment.Left
 ajT.Parent=mc
 
-local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,476))
+local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
 
 local miscC=Instance.new("Frame")
-miscC.Size=UDim2.new(1,0,0,450)
+miscC.Size=UDim2.new(0,258,0,450)
 miscC.Position=UDim2.new(0,0,0,30)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
@@ -692,38 +703,40 @@ wcT.Parent=miscC
 local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
 
 local catBar=Instance.new("Frame")
-catBar.Size=UDim2.new(1,0,0,35)
-catBar.Position=UDim2.new(0,0,1,-40)
+catBar.Size=UDim2.new(0,52,1,-70)
+catBar.Position=UDim2.new(1,-54,0,35)
 catBar.BackgroundTransparency=1
 catBar.Parent=mf
 
 local movL=Instance.new("TextButton")
-movL.Size=UDim2.new(0.45,0,1,0)
-movL.Position=UDim2.new(0.05,0,0,0)
+movL.Size=UDim2.new(1,0,0,40)
+movL.Position=UDim2.new(0,0,0,8)
 movL.BackgroundTransparency=1
 movL.Text="movement"
 movL.TextColor3=Color3.new(1,1,1)
 movL.TextTransparency=0
-movL.TextSize=16
+movL.TextSize=12
 movL.Font=Enum.Font.GothamBold
+movL.TextWrapped=true
 movL.Parent=catBar
 
 local catSep=Instance.new("Frame")
-catSep.Size=UDim2.new(0,1,0.6,0)
-catSep.Position=UDim2.new(0.5,-0.5,0.2,0)
+catSep.Size=UDim2.new(0,28,0,1)
+catSep.Position=UDim2.new(0.5,-14,0,52)
 catSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 catSep.BorderSizePixel=0
 catSep.Parent=catBar
 
 local miscL=Instance.new("TextButton")
-miscL.Size=UDim2.new(0.45,0,1,0)
-miscL.Position=UDim2.new(0.5,0,0,0)
+miscL.Size=UDim2.new(1,0,0,40)
+miscL.Position=UDim2.new(0,0,0,60)
 miscL.BackgroundTransparency=1
 miscL.Text="misc"
 miscL.TextColor3=Color3.new(1,1,1)
 miscL.TextTransparency=0.4
-miscL.TextSize=16
+miscL.TextSize=12
 miscL.Font=Enum.Font.GothamBold
+miscL.TextWrapped=true
 miscL.Parent=catBar
 
 local function setToggle(t,k,on,anim)
@@ -763,12 +776,20 @@ hover(fS,fSS)
 hover(fH,fHS)
 hover(nTr,nSt)
 hover(stTr,stSt)
+hover(stS,stSS)
+hover(stH,stHS)
 hover(awTr,awSt)
 hover(cTr,cSt)
 hover(ajTr,ajSt)
 hover(aimTr,aimSt)
 hover(tlTr,tlSt)
 hover(wcTr,wcSt)
+hover(spS,spSS)
+hover(spH,spHS)
+hover(jS,jSS)
+hover(jH,jHS)
+hover(fS,fSS)
+hover(fH,fHS)
 hover(stS,stSS)
 hover(stH,stHS)
 hover(smS,smSS)
@@ -879,13 +900,13 @@ end
 
 local function updateSpeed(v)
 	_G.currentSpeed=_G.minSpeed+(_G.maxSpeed-_G.minSpeed)*v
-	spT.Text="Speed: "..math.floor(_G.currentSpeed+0.5)
+	spVT.Text="Value: "..math.floor(_G.currentSpeed+0.5)
 	applySpeed()
 end
 
 local function updateJump(v)
-	_G.currentJumpStrengthStrength=_G.minJump+(_G.maxJump-_G.minJump)*v
-	jST.Text="Strength: "..math.floor(_G.currentJumpStrengthStrength+0.5)
+	_G.currentJumpStrength=_G.minJump+(_G.maxJump-_G.minJump)*v
+	jST.Text="Strength: "..math.floor(_G.currentJumpStrength+0.5)
 end
 
 local function updateFlight(v)
@@ -895,7 +916,7 @@ end
 
 local function updateStrafe(v)
 	_G.currentStrafe=_G.minStrafe+(_G.maxStrafe-_G.minStrafe)*v
-	stT.Text="Strafe: "..math.floor(_G.currentStrafe+0.5)
+	stVT.Text="Value: "..math.floor(_G.currentStrafe+0.5)
 end
 
 local function updateSmooth(v)
@@ -909,8 +930,13 @@ local function updateRange(v)
 end
 
 local function updateSlider(f,h,v)
-	f.Size=UDim2.new(v,0,1,0)
-	h.Position=UDim2.new(v,-8,0.5,-8)
+	v=math.clamp(v,0,1)
+	local track=h.Parent
+	local width=track.AbsoluteSize.X
+	if width<=16 then return end
+	local x=8+(width-16)*v
+	f.Size=UDim2.new(0,x,1,0)
+	h.Position=UDim2.new(0,x,0.5,-8)
 end
 
 local function toggleSpeed()
@@ -957,7 +983,8 @@ end
 local function toggleStrafe()
 	_G.strafeEnabled=not _G.strafeEnabled
 	setToggle(stTr,stK,_G.strafeEnabled,true)
-	setColors(_G.strafeEnabled,stT,stS,stF,stH)
+	setColors(_G.strafeEnabled,stT,nil,nil,nil)
+	setColors(_G.strafeEnabled,stVT,stS,stF,stH)
 end
 
 local function toggleAirwalk()
@@ -1065,7 +1092,7 @@ UIS.InputBegan:Connect(function(i,p)
 			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 			if root then
 				local v=root.AssemblyLinearVelocity
-				root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y+_G.currentJumpStrengthStrength,v.Z)
+				root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y+_G.currentJumpStrength,v.Z)
 			end
 		elseif _G.airJumpEnabled then
 			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
@@ -1157,7 +1184,7 @@ local function setMinimized(s)
 	if _G.isAnimating then return end
 	_G.isAnimating=true
 	_G.isHidden=s
-	local ts=s and UDim2.new(0,260,0,30) or UDim2.new(0,260,0,570)
+	local ts=s and UDim2.new(0,320,0,30) or UDim2.new(0,320,0,570)
 	local tw=TS:Create(mf,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=ts})
 	if s then
 		setVisible(false)
@@ -1188,48 +1215,48 @@ end)
 
 local function updateSpeedFromInput(i)
 	local s=spS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-spS.AbsolutePosition.X,0,s)/s
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-spS.AbsolutePosition.X-8,0,s-16)/(s-16)
 	updateSlider(spF,spH,v)
 	updateSpeed(v)
 end
 
 local function updateJumpFromInput(i)
 	local s=jS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-jS.AbsolutePosition.X,0,s)/s
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-jS.AbsolutePosition.X-8,0,s-16)/(s-16)
 	updateSlider(jF,jH,v)
 	updateJump(v)
 end
 
 local function updateFlightFromInput(i)
 	local s=fS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-fS.AbsolutePosition.X,0,s)/s
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-fS.AbsolutePosition.X-8,0,s-16)/(s-16)
 	updateSlider(fF,fH,v)
 	updateFlight(v)
 end
 
 local function updateStrafeFromInput(i)
 	local s=stS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-stS.AbsolutePosition.X,0,s)/s
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-stS.AbsolutePosition.X-8,0,s-16)/(s-16)
 	updateSlider(stF,stH,v)
 	updateStrafe(v)
 end
 
 local function updateSmoothFromInput(i)
 	local s=smS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-smS.AbsolutePosition.X,0,s)/s
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-smS.AbsolutePosition.X-8,0,s-16)/(s-16)
 	updateSlider(smF,smH,v)
 	updateSmooth(v)
 end
 
 local function updateRangeFromInput(i)
 	local s=rS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-rS.AbsolutePosition.X,0,s)/s
+	if s<=16 then return end
+	local v=math.clamp(i.Position.X-rS.AbsolutePosition.X-8,0,s-16)/(s-16)
 	updateSlider(rF,rH,v)
 	updateRange(v)
 end
@@ -1316,7 +1343,7 @@ player.CharacterAdded:Connect(function(c)
 	_G.lockedTarget=nil
 	mouse.Icon=""
 	_G.currentSpeed=16
-	_G.currentJumpStrengthStrength=50
+	_G.currentJumpStrength=50
 	_G.currentFlight=50
 	_G.currentStrafe=0
 	_G.currentSmoothness=0.15
@@ -1342,6 +1369,7 @@ player.CharacterAdded:Connect(function(c)
 	setColors(false,spVT,spS,spF,spH)
 	updateSlider(jF,jH,0.25)
 	jT.Text="Jump"
+	jST.Text="Strength: 50"
 	setColors(false,jT,nil,nil,nil)
 	setColors(false,jST,jS,jF,jH)
 	updateSlider(fF,fH,0.25)
@@ -1351,8 +1379,10 @@ player.CharacterAdded:Connect(function(c)
 	setColors(false,fST,fS,fF,fH)
 	updateNoclip()
 	updateSlider(stF,stH,0)
-	stT.Text="Strafe: 0"
-	setColors(false,stT,stS,stF,stH)
+	stT.Text="Strafe"
+	stVT.Text="Value: 0"
+	setColors(false,stT,nil,nil,nil)
+	setColors(false,stVT,stS,stF,stH)
 	setColors(false,awT,nil,nil,nil)
 	setColors(false,cT,nil,nil,nil)
 	setColors(false,ajT,nil,nil,nil)
