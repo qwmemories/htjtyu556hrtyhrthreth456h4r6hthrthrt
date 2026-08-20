@@ -602,7 +602,7 @@ local targT=Instance.new("TextLabel")
 targT.Size=UDim2.new(0.5,0,0,25)
 targT.Position=UDim2.new(0,10,0,158)
 targT.BackgroundTransparency=1
-targT.Text="Target: Head"
+targT.Text="Target:"
 targT.TextColor3=Color3.new(0.6,0.6,0.6)
 targT.TextSize=18
 targT.Font=Enum.Font.Gotham
@@ -624,7 +624,7 @@ Instance.new("UICorner",targB).CornerRadius=UDim.new(0,5)
 
 local targSt=Instance.new("UIStroke")
 targSt.Color=Color3.fromRGB(160,160,160)
-targSt.Transparency=0.4
+targSt.Transparency=1
 targSt.Thickness=1.5
 targSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 targSt.Parent=targB
@@ -655,7 +655,7 @@ Instance.new("UICorner",sortB).CornerRadius=UDim.new(0,5)
 
 local sortSt=Instance.new("UIStroke")
 sortSt.Color=Color3.fromRGB(160,160,160)
-sortSt.Transparency=0.4
+sortSt.Transparency=1
 sortSt.Thickness=1.5
 sortSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 sortSt.Parent=sortB
@@ -686,7 +686,7 @@ Instance.new("UICorner",modeB).CornerRadius=UDim.new(0,5)
 
 local modeSt=Instance.new("UIStroke")
 modeSt.Color=Color3.fromRGB(160,160,160)
-modeSt.Transparency=0.4
+modeSt.Transparency=1
 modeSt.Thickness=1.5
 modeSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 modeSt.Parent=modeB
@@ -1300,11 +1300,11 @@ local function cycleTarget()
 	if _G.aimTarget=="Head" then
 		_G.aimTarget="Body"
 		targB.Text="Body"
-		targT.Text="Target: Body"
+		targT.Text="Target:"
 	else
 		_G.aimTarget="Head"
 		targB.Text="Head"
-		targT.Text="Target: Head"
+		targT.Text="Target:"
 	end
 end
 
@@ -1714,7 +1714,7 @@ player.CharacterAdded:Connect(function(c)
 	updateSlider(rF,rH,0.5)
 	rT.Text="Range: 500"
 	targB.Text="Head"
-	targT.Text="Target: Head"
+	targT.Text="Target:"
 	sortB.Text="Distance"
 	sortT.Text="Sort: Distance"
 	modeB.Text="Center"
