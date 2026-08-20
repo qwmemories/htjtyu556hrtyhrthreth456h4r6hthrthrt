@@ -1,1 +1,166 @@
+local player=game.Players.LocalPlayer
+local character=player.Character or player.CharacterAdded:Wait()
+local humanoid=character:WaitForChild("Humanoid")
+local root=character:WaitForChild("HumanoidRootPart")
+local mouse=player:GetMouse()
+local UIS=game:GetService("UserInputService")
+local RS=game:GetService("RunService")
+local PL=game:GetService("Players")
 
+repeat wait(0.1) until _G.speedEnabled~=nil
+wait(0.2)
+
+UIS.InputBegan:Connect(function(i,p)
+	if p then return end
+	if i.KeyCode==Enum.KeyCode.A then _G.direction=-1 end
+	if i.KeyCode==Enum.KeyCode.D then _G.direction=1 end
+end)
+
+local function getTargets()
+	local t={}
+	for _,p in pairs(PL:GetPlayers()) do
+		if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Head") then
+			local h=p.Character:FindFirstChild("Humanoid")
+			if h and h.Health>0 then table.insert(t,p) end
+		end
+	end
+	return t
+end
+
+local function selectTarget(targets)
+	if #targets==0 then return nil end
+	if _G.sortMode=="Distance" then
+		table.sort(targets,function(a,b)
+			local da=(a.Character.HumanoidRootPart.Position-root.Position).Magnitude
+			local db=(b.Character.HumanoidRootPart.Position-root.Position).Magnitude
+			return da<db
+		end)
+		return targets[1]
+	else
+		local mp=UIS:GetMouseLocation()
+		table.sort(targets,function(a,b)
+			local pa,oa=workspace.CurrentCamera:WorldToViewportPoint(a.Character.Head.Position)
+			local pb,ob=workspace.CurrentCamera:WorldToViewportPoint(b.Character.Head.Position)
+			if not oa then return false end
+			if not ob then return true end
+			return (Vector2.new(pa.X,pa.Y)-mp).Magnitude<(Vector2.new(pb.X,pb.Y)-mp).Magnitude
+		end)
+		return targets[1]
+	end
+end
+
+local function isVisible(part)
+	if not _G.wallsCheckEnabled then return true end
+	local origin=workspace.CurrentCamera.CFrame.Position
+	local direction=(part.Position-origin)
+	local ray=workspace:Raycast(origin,direction)
+	if ray and ray.Instance then
+		local hitChar=ray.Instance:FindFirstAncestorOfClass("Model")
+		if hitChar and hitChar:FindFirstChild("Humanoid") then
+			return true
+		else
+			return false
+		end
+	end
+	return true
+end
+
+local function getAimPart(target)
+	if _G.aimTarget=="Head" then
+		return target.Character.Head
+	else
+		return target.Character.HumanoidRootPart
+	end
+end
+
+local function getClosestPlayer()
+	local closest=nil
+	local shortest=math.huge
+	for _,p in pairs(PL:GetPlayers()) do
+		if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+			local dist=(p.Character.HumanoidRootPart.Position-root.Position).Magnitude
+			if dist<shortest and dist<=_G.targetStrafeDistance then
+				shortest=dist
+				closest=p
+			end
+		end
+	end
+	return closest
+end
+
+RS.RenderStepped:Connect(function()
+	if _G.aimbotEnabled then
+		local targets=getTargets()
+		local target=nil
+		if _G.targetLockEnabled and _G.lockedTarget and _G.lockedTarget.Character and _G.lockedTarget.Character:FindFirstChild("Head") then
+			local d=(_G.lockedTarget.Character.Head.Position-root.Position).Magnitude
+			if d<=_G.currentRange then target=_G.lockedTarget else _G.lockedTarget=nil end
+		end
+		if not target then
+			target=selectTarget(targets)
+			if _G.targetLockEnabled and target then _G.lockedTarget=target end
+		end
+		if target and target.Character then
+			local aimPart=getAimPart(target)
+			if aimPart then
+				local d=(aimPart.Position-root.Position).Magnitude
+				if d<=_G.currentRange and isVisible(aimPart) then
+					local cam=workspace.CurrentCamera
+					if _G.aimMode=="Center" then
+						local goal=CFrame.new(cam.CFrame.Position,aimPart.Position)
+						cam.CFrame=cam.CFrame:Lerp(goal,_G.currentSmoothness)
+					else
+						local pos,on=cam:WorldToViewportPoint(aimPart.Position)
+						if on then
+							local mp=UIS:GetMouseLocation()
+							mousemoverel((pos.X-mp.X)*_G.currentSmoothness,(pos.Y-mp.Y)*_G.currentSmoothness)
+						end
+					end
+				end
+			end
+		end
+	end
+
+	if _G.targetStrafeEnabled then
+		if not _G.targetStrafeTarget or not _G.targetStrafeTarget.Character or not _G.targetStrafeTarget.Character:FindFirstChild("HumanoidRootPart") then
+			_G.targetStrafeTarget=getClosestPlayer()
+		end
+		if _G.targetStrafeTarget and _G.targetStrafeTarget.Character and _G.targetStrafeTarget.Character:FindFirstChild("HumanoidRootPart") then
+			local targetPos=_G.targetStrafeTarget.Character.HumanoidRootPart.Position
+			local currentPos=root.Position
+			local dist=(targetPos-currentPos).Magnitude
+			if dist>_G.targetStrafeDistance then
+				local dir=(targetPos-currentPos).Unit
+				local newPos=targetPos-dir*_G.targetStrafeDistance
+				root.CFrame=CFrame.new(newPos,newPos+root.CFrame.LookVector)
+			else
+				local angle=_G.targetStrafeAngle+_G.direction*_G.targetStrafeSpeed*0.02
+				local offset=Vector3.new(math.cos(angle),0,math.sin(angle))*_G.targetStrafeRange
+				if _G.targetStrafeMode=="Square" then
+					local sq=math.floor(angle/(math.pi/2))%4
+					if sq==0 then offset=Vector3.new(_G.targetStrafeRange,0,0)
+					elseif sq==1 then offset=Vector3.new(0,0,_G.targetStrafeRange)
+					elseif sq==2 then offset=Vector3.new(-_G.targetStrafeRange,0,0)
+					else offset=Vector3.new(0,0,-_G.targetStrafeRange) end
+				elseif _G.targetStrafeMode=="Triangle" then
+					local a=angle%(2*math.pi)
+					if a<math.pi*2/3 then offset=Vector3.new(_G.targetStrafeRange*math.cos(a),0,_G.targetStrafeRange*math.sin(a))
+					elseif a<math.pi*4/3 then offset=Vector3.new(_G.targetStrafeRange*math.cos(a-math.pi*2/3),0,_G.targetStrafeRange*math.sin(a-math.pi*2/3))
+					else offset=Vector3.new(_G.targetStrafeRange*math.cos(a-math.pi*4/3),0,_G.targetStrafeRange*math.sin(a-math.pi*4/3)) end
+				end
+				local newPos=targetPos+offset
+				local lookDir=(targetPos-newPos).Unit
+				root.CFrame=CFrame.new(newPos,newPos+lookDir)
+				_G.targetStrafeAngle=angle
+			end
+		else
+			_G.targetStrafeTarget=getClosestPlayer()
+		end
+	end
+end)
+
+player.CharacterAdded:Connect(function(c)
+	character=c
+	humanoid=character:WaitForChild("Humanoid")
+	root=character:WaitForChild("HumanoidRootPart")
+end)
