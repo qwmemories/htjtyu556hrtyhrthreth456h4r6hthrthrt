@@ -5,1503 +5,187 @@ local root=character:WaitForChild("HumanoidRootPart")
 local mouse=player:GetMouse()
 local UIS=game:GetService("UserInputService")
 local RS=game:GetService("RunService")
-local TS=game:GetService("TweenService")
 local PL=game:GetService("Players")
 
-_G.speedEnabled=false
-_G.jumpEnabled=false
-_G.flightEnabled=false
-_G.noclipEnabled=false
-_G.strafeEnabled=false
-_G.airwalkEnabled=false
-_G.clickTpEnabled=false
-_G.airJumpEnabled=false
-_G.aimbotEnabled=false
-_G.targetLockEnabled=false
-_G.wallsCheckEnabled=false
-_G.aimTarget="Head"
-_G.targetStrafeEnabled=false
-_G.targetStrafeSpeed=20
-_G.targetStrafeRange=10
-_G.targetStrafeDistance=50
-_G.targetStrafeMode="Circle"
-_G.targetStrafeDir=1
-
-_G.currentSpeed=16
-_G.currentJump=50
-_G.currentFlight=50
-_G.currentStrafe=0
-_G.currentSmoothness=0.15
-_G.currentRange=500
-_G.aimMode="Center"
-_G.sortMode="Distance"
-
-_G.isHidden=false
-_G.isAnimating=false
-_G.isDragging=false
-_G.isSliding=false
-_G.dragStart=nil
-_G.startPos=nil
-_G.targetPos=nil
-_G.currentCategory="movement"
-_G.lockedTarget=nil
-_G.targetStrafeTarget=nil
-_G.targetStrafeAngle=0
-
-_G.minSpeed,_G.maxSpeed=0,200
-_G.minJump,_G.maxJump=0,200
-_G.minFlight,_G.maxFlight=0,200
-_G.minStrafe,_G.maxStrafe=0,100
-_G.minSmooth,_G.maxSmooth=0.01,1
-_G.minRange,_G.maxRange=10,1000
-_G.minTSpeed,_G.maxTSpeed=1,50
-_G.minTRange,_G.maxTRange=3,30
-_G.minTDistance,_G.maxTDistance=10,200
-
-_G.draggingSpeed=false
-_G.draggingJump=false
-_G.draggingFlight=false
-_G.draggingStrafe=false
-_G.draggingSmooth=false
-_G.draggingRange=false
-_G.draggingTSpeed=false
-_G.draggingTRange=false
-_G.draggingTDistance=false
-_G.flying=false
-_G.bodyVelocity=nil
-_G.bodyGyro=nil
-_G.noclipConnection=nil
-_G.airwalkPlatform=nil
-_G.airwalkY=0
-_G.fpsConnection=nil
-_G.lastSpace=false
-
-task.spawn(function()
-	pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/2"))()
-	end)
-end)
-task.spawn(function()
-	pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/3"))()
-	end)
-end)
-
-local sg=Instance.new("ScreenGui")
-sg.Parent=player.PlayerGui
-
-local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,300,0,590)
-mf.Position=UDim2.new(0.5,-150,0.5,-295)
-mf.BackgroundColor3=Color3.new(0,0,0)
-mf.BackgroundTransparency=0.3
-mf.Active=true
-mf.Parent=sg
-Instance.new("UICorner",mf).CornerRadius=UDim.new(0,10)
-
-local ms=Instance.new("UIStroke")
-ms.Color=Color3.new(1,1,1)
-ms.Transparency=0.78
-ms.Thickness=1.5
-ms.Parent=mf
-
-local title=Instance.new("TextLabel")
-title.Size=UDim2.new(0,100,0,30)
-title.Position=UDim2.new(0,10,0,5)
-title.BackgroundTransparency=1
-title.Text="script"
-title.TextColor3=Color3.new(1,1,1)
-title.TextScaled=true
-title.Font=Enum.Font.GothamBold
-title.TextXAlignment=Enum.TextXAlignment.Left
-title.Parent=mf
-
-local fpsLabel=Instance.new("TextLabel")
-fpsLabel.Size=UDim2.new(0,100,0,30)
-fpsLabel.Position=UDim2.new(0,110,0,5)
-fpsLabel.BackgroundTransparency=1
-fpsLabel.Text="fps 0"
-fpsLabel.TextColor3=Color3.new(0.6,0.6,0.6)
-fpsLabel.TextSize=18
-fpsLabel.Font=Enum.Font.Gotham
-fpsLabel.TextXAlignment=Enum.TextXAlignment.Left
-fpsLabel.TextTransparency=1
-fpsLabel.Parent=mf
-
-local hideBtn=Instance.new("TextButton")
-hideBtn.Size=UDim2.new(0,22,0,22)
-hideBtn.Position=UDim2.new(1,-52,0,8)
-hideBtn.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-hideBtn.BackgroundTransparency=0.04
-hideBtn.Text="−"
-hideBtn.TextColor3=Color3.new(1,1,1)
-hideBtn.TextScaled=true
-hideBtn.Font=Enum.Font.GothamBold
-hideBtn.AutoButtonColor=false
-hideBtn.Parent=mf
-Instance.new("UICorner",hideBtn).CornerRadius=UDim.new(0,5)
-
-local hideSt=Instance.new("UIStroke")
-hideSt.Color=Color3.fromRGB(160,160,160)
-hideSt.Transparency=1
-hideSt.Thickness=1.5
-hideSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
-hideSt.Parent=hideBtn
-
-local closeBtn=Instance.new("TextButton")
-closeBtn.Size=UDim2.new(0,22,0,22)
-closeBtn.Position=UDim2.new(1,-28,0,8)
-closeBtn.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-closeBtn.BackgroundTransparency=0.04
-closeBtn.Text="×"
-closeBtn.TextColor3=Color3.new(1,1,1)
-closeBtn.TextScaled=true
-closeBtn.Font=Enum.Font.GothamBold
-closeBtn.AutoButtonColor=false
-closeBtn.Parent=mf
-Instance.new("UICorner",closeBtn).CornerRadius=UDim.new(0,5)
-
-local closeSt=Instance.new("UIStroke")
-closeSt.Color=Color3.fromRGB(160,160,160)
-closeSt.Transparency=1
-closeSt.Thickness=1.5
-closeSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
-closeSt.Parent=closeBtn
-
-local function ct(p,pos)
-	local t=Instance.new("Frame")
-	t.Size=UDim2.new(0,46,0,22)
-	t.Position=pos
-	t.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-	t.BackgroundTransparency=0.04
-	t.BorderSizePixel=0
-	t.Parent=p
-	Instance.new("UICorner",t).CornerRadius=UDim.new(1,0)
-	local ts=Instance.new("UIStroke")
-	ts.Color=Color3.fromRGB(160,160,160)
-	ts.Transparency=1
-	ts.Thickness=1.5
-	ts.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
-	ts.Parent=t
-	local k=Instance.new("Frame")
-	k.Size=UDim2.new(0,18,0,18)
-	k.Position=UDim2.new(0,2,0.5,-9)
-	k.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-	k.BorderSizePixel=0
-	k.Parent=t
-	Instance.new("UICorner",k).CornerRadius=UDim.new(1,0)
-	local c=Instance.new("TextButton")
-	c.Size=UDim2.new(1,0,1,0)
-	c.BackgroundTransparency=1
-	c.Text=""
-	c.Parent=t
-	return t,k,ts,c
-end
-
-local function ass(s,h)
-	local ss=Instance.new("UIStroke")
-	ss.Color=Color3.fromRGB(160,160,160)
-	ss.Transparency=1
-	ss.Thickness=1.5
-	ss.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
-	ss.Parent=s
-	local hs=Instance.new("UIStroke")
-	hs.Color=Color3.fromRGB(160,160,160)
-	hs.Transparency=1
-	hs.Thickness=1.5
-	hs.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
-	hs.Parent=h
-	return ss,hs
-end
-
-local function addSep(parent,pos)
-	local s=Instance.new("Frame")
-	s.Size=UDim2.new(0.9,0,0,1)
-	s.Position=UDim2.new(0.05,0,pos,0)
-	s.BackgroundColor3=Color3.new(0.4,0.4,0.4)
-	s.BorderSizePixel=0
-	s.Parent=parent
-	return s
-end
-
-local mc=Instance.new("ScrollingFrame")
-mc.Size=UDim2.new(1,0,0,420)
-mc.Position=UDim2.new(0,0,0,40)
-mc.BackgroundTransparency=1
-mc.CanvasSize=UDim2.new(0,0,0,470)
-mc.ScrollBarThickness=6
-mc.ScrollBarImageColor3=Color3.new(0.3,0.3,0.3)
-mc.Parent=mf
-
-local spT=Instance.new("TextLabel")
-spT.Size=UDim2.new(0.5,0,0,25)
-spT.Position=UDim2.new(0,10,0,2)
-spT.BackgroundTransparency=1
-spT.Text="Speed: 16"
-spT.TextColor3=Color3.new(0.6,0.6,0.6)
-spT.TextSize=20
-spT.Font=Enum.Font.Gotham
-spT.TextXAlignment=Enum.TextXAlignment.Left
-spT.Parent=mc
-
-local spTr,spK,spSt,spCl=ct(mc,UDim2.new(0.75,0,0,4))
-
-local spS=Instance.new("Frame")
-spS.Size=UDim2.new(0.85,0,0,8)
-spS.Position=UDim2.new(0.075,0,0,34)
-spS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-spS.BorderSizePixel=0
-spS.Parent=mc
-Instance.new("UICorner",spS).CornerRadius=UDim.new(0,4)
-
-local spF=Instance.new("Frame")
-spF.Size=UDim2.new(0.5,0,1,0)
-spF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-spF.BorderSizePixel=0
-spF.Parent=spS
-Instance.new("UICorner",spF).CornerRadius=UDim.new(0,4)
-
-local spH=Instance.new("Frame")
-spH.Size=UDim2.new(0,16,0,16)
-spH.Position=UDim2.new(0.5,-8,0.5,-8)
-spH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-spH.BorderSizePixel=0
-spH.Parent=spS
-Instance.new("UICorner",spH).CornerRadius=UDim.new(0,8)
-
-local spSS,spHS=ass(spS,spH)
-addSep(mc,58)
-
-local jT=Instance.new("TextLabel")
-jT.Size=UDim2.new(0.5,0,0,25)
-jT.Position=UDim2.new(0,10,0,68)
-jT.BackgroundTransparency=1
-jT.Text="Jump: 50"
-jT.TextColor3=Color3.new(0.6,0.6,0.6)
-jT.TextSize=20
-jT.Font=Enum.Font.Gotham
-jT.TextXAlignment=Enum.TextXAlignment.Left
-jT.Parent=mc
-
-local jTr,jK,jSt,jCl=ct(mc,UDim2.new(0.75,0,0,70))
-
-local jS=Instance.new("Frame")
-jS.Size=UDim2.new(0.85,0,0,8)
-jS.Position=UDim2.new(0.075,0,0,100)
-jS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-jS.BorderSizePixel=0
-jS.Parent=mc
-Instance.new("UICorner",jS).CornerRadius=UDim.new(0,4)
-
-local jF=Instance.new("Frame")
-jF.Size=UDim2.new(0.5,0,1,0)
-jF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-jF.BorderSizePixel=0
-jF.Parent=jS
-Instance.new("UICorner",jF).CornerRadius=UDim.new(0,4)
-
-local jH=Instance.new("Frame")
-jH.Size=UDim2.new(0,16,0,16)
-jH.Position=UDim2.new(0.5,-8,0.5,-8)
-jH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-jH.BorderSizePixel=0
-jH.Parent=jS
-Instance.new("UICorner",jH).CornerRadius=UDim.new(0,8)
-
-local jSS,jHS=ass(jS,jH)
-addSep(mc,124)
-
-local fT=Instance.new("TextLabel")
-fT.Size=UDim2.new(0.5,0,0,25)
-fT.Position=UDim2.new(0,10,0,134)
-fT.BackgroundTransparency=1
-fT.Text="Flight: 50"
-fT.TextColor3=Color3.new(0.6,0.6,0.6)
-fT.TextSize=20
-fT.Font=Enum.Font.Gotham
-fT.TextXAlignment=Enum.TextXAlignment.Left
-fT.Parent=mc
-
-local fTr,fK,fSt,fCl=ct(mc,UDim2.new(0.75,0,0,136))
-
-local fS=Instance.new("Frame")
-fS.Size=UDim2.new(0.85,0,0,8)
-fS.Position=UDim2.new(0.075,0,0,166)
-fS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-fS.BorderSizePixel=0
-fS.Parent=mc
-Instance.new("UICorner",fS).CornerRadius=UDim.new(0,4)
-
-local fF=Instance.new("Frame")
-fF.Size=UDim2.new(0.5,0,1,0)
-fF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-fF.BorderSizePixel=0
-fF.Parent=fS
-Instance.new("UICorner",fF).CornerRadius=UDim.new(0,4)
-
-local fH=Instance.new("Frame")
-fH.Size=UDim2.new(0,16,0,16)
-fH.Position=UDim2.new(0.5,-8,0.5,-8)
-fH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-fH.BorderSizePixel=0
-fH.Parent=fS
-Instance.new("UICorner",fH).CornerRadius=UDim.new(0,8)
-
-local fSS,fHS=ass(fS,fH)
-
-local nT=Instance.new("TextLabel")
-nT.Size=UDim2.new(0.5,0,0,25)
-nT.Position=UDim2.new(0,10,0,190)
-nT.BackgroundTransparency=1
-nT.Text="Noclip"
-nT.TextColor3=Color3.new(0.6,0.6,0.6)
-nT.TextSize=20
-nT.Font=Enum.Font.Gotham
-nT.TextXAlignment=Enum.TextXAlignment.Left
-nT.Parent=mc
-
-local nTr,nK,nSt,nCl=ct(mc,UDim2.new(0.75,0,0,192))
-addSep(mc,222)
-
-local stT=Instance.new("TextLabel")
-stT.Size=UDim2.new(0.5,0,0,25)
-stT.Position=UDim2.new(0,10,0,232)
-stT.BackgroundTransparency=1
-stT.Text="Strafe: 0"
-stT.TextColor3=Color3.new(0.6,0.6,0.6)
-stT.TextSize=20
-stT.Font=Enum.Font.Gotham
-stT.TextXAlignment=Enum.TextXAlignment.Left
-stT.Parent=mc
-
-local stTr,stK,stSt,stCl=ct(mc,UDim2.new(0.75,0,0,234))
-
-local stS=Instance.new("Frame")
-stS.Size=UDim2.new(0.85,0,0,8)
-stS.Position=UDim2.new(0.075,0,0,264)
-stS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-stS.BorderSizePixel=0
-stS.Parent=mc
-Instance.new("UICorner",stS).CornerRadius=UDim.new(0,4)
-
-local stF=Instance.new("Frame")
-stF.Size=UDim2.new(0,0,1,0)
-stF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-stF.BorderSizePixel=0
-stF.Parent=stS
-Instance.new("UICorner",stF).CornerRadius=UDim.new(0,4)
-
-local stH=Instance.new("Frame")
-stH.Size=UDim2.new(0,16,0,16)
-stH.Position=UDim2.new(0,-8,0.5,-8)
-stH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-stH.BorderSizePixel=0
-stH.Parent=stS
-Instance.new("UICorner",stH).CornerRadius=UDim.new(0,8)
-
-local stSS,stHS=ass(stS,stH)
-addSep(mc,288)
-
-local awT=Instance.new("TextLabel")
-awT.Size=UDim2.new(0.5,0,0,25)
-awT.Position=UDim2.new(0,10,0,298)
-awT.BackgroundTransparency=1
-awT.Text="Airwalk"
-awT.TextColor3=Color3.new(0.6,0.6,0.6)
-awT.TextSize=20
-awT.Font=Enum.Font.Gotham
-awT.TextXAlignment=Enum.TextXAlignment.Left
-awT.Parent=mc
-
-local awTr,awK,awSt,awCl=ct(mc,UDim2.new(0.75,0,0,300))
-addSep(mc,330)
-
-local cT=Instance.new("TextLabel")
-cT.Size=UDim2.new(0.5,0,0,25)
-cT.Position=UDim2.new(0,10,0,340)
-cT.BackgroundTransparency=1
-cT.Text="ClickTP"
-cT.TextColor3=Color3.new(0.6,0.6,0.6)
-cT.TextSize=20
-cT.Font=Enum.Font.Gotham
-cT.TextXAlignment=Enum.TextXAlignment.Left
-cT.Parent=mc
-
-local cTr,cK,cSt,cCl=ct(mc,UDim2.new(0.75,0,0,342))
-addSep(mc,372)
-
-local ajT=Instance.new("TextLabel")
-ajT.Size=UDim2.new(0.5,0,0,25)
-ajT.Position=UDim2.new(0,10,0,382)
-ajT.BackgroundTransparency=1
-ajT.Text="AirJump"
-ajT.TextColor3=Color3.new(0.6,0.6,0.6)
-ajT.TextSize=20
-ajT.Font=Enum.Font.Gotham
-ajT.TextXAlignment=Enum.TextXAlignment.Left
-ajT.Parent=mc
-
-local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,384))
-
-local miscC=Instance.new("ScrollingFrame")
-miscC.Size=UDim2.new(1,0,0,420)
-miscC.Position=UDim2.new(0,0,0,40)
-miscC.BackgroundTransparency=1
-miscC.CanvasSize=UDim2.new(0,0,0,560)
-miscC.ScrollBarThickness=6
-miscC.ScrollBarImageColor3=Color3.new(0.3,0.3,0.3)
-miscC.Visible=false
-miscC.Parent=mf
-
-local aimT=Instance.new("TextLabel")
-aimT.Size=UDim2.new(0.5,0,0,25)
-aimT.Position=UDim2.new(0,10,0,2)
-aimT.BackgroundTransparency=1
-aimT.Text="Aimbot"
-aimT.TextColor3=Color3.new(0.6,0.6,0.6)
-aimT.TextSize=20
-aimT.Font=Enum.Font.Gotham
-aimT.TextXAlignment=Enum.TextXAlignment.Left
-aimT.Parent=miscC
-
-local aimTr,aimK,aimSt,aimCl=ct(miscC,UDim2.new(0.75,0,0,4))
-
-local smT=Instance.new("TextLabel")
-smT.Size=UDim2.new(0.5,0,0,25)
-smT.Position=UDim2.new(0,10,0,40)
-smT.BackgroundTransparency=1
-smT.Text="Speed: 0.15"
-smT.TextColor3=Color3.new(0.6,0.6,0.6)
-smT.TextSize=18
-smT.Font=Enum.Font.Gotham
-smT.TextXAlignment=Enum.TextXAlignment.Left
-smT.Parent=miscC
-
-local smS=Instance.new("Frame")
-smS.Size=UDim2.new(0.85,0,0,8)
-smS.Position=UDim2.new(0.075,0,0,70)
-smS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-smS.BorderSizePixel=0
-smS.Parent=miscC
-Instance.new("UICorner",smS).CornerRadius=UDim.new(0,4)
-
-local smF=Instance.new("Frame")
-smF.Size=UDim2.new(0.3,0,1,0)
-smF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-smF.BorderSizePixel=0
-smF.Parent=smS
-Instance.new("UICorner",smF).CornerRadius=UDim.new(0,4)
-
-local smH=Instance.new("Frame")
-smH.Size=UDim2.new(0,16,0,16)
-smH.Position=UDim2.new(0.3,-8,0.5,-8)
-smH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-smH.BorderSizePixel=0
-smH.Parent=smS
-Instance.new("UICorner",smH).CornerRadius=UDim.new(0,8)
-
-local smSS,smHS=ass(smS,smH)
-
-local rT=Instance.new("TextLabel")
-rT.Size=UDim2.new(0.5,0,0,25)
-rT.Position=UDim2.new(0,10,0,100)
-rT.BackgroundTransparency=1
-rT.Text="Range: 500"
-rT.TextColor3=Color3.new(0.6,0.6,0.6)
-rT.TextSize=18
-rT.Font=Enum.Font.Gotham
-rT.TextXAlignment=Enum.TextXAlignment.Left
-rT.Parent=miscC
-
-local rS=Instance.new("Frame")
-rS.Size=UDim2.new(0.85,0,0,8)
-rS.Position=UDim2.new(0.075,0,0,130)
-rS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-rS.BorderSizePixel=0
-rS.Parent=miscC
-Instance.new("UICorner",rS).CornerRadius=UDim.new(0,4)
-
-local rF=Instance.new("Frame")
-rF.Size=UDim2.new(0.5,0,1,0)
-rF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-rF.BorderSizePixel=0
-rF.Parent=rS
-Instance.new("UICorner",rF).CornerRadius=UDim.new(0,4)
-
-local rH=Instance.new("Frame")
-rH.Size=UDim2.new(0,16,0,16)
-rH.Position=UDim2.new(0.5,-8,0.5,-8)
-rH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-rH.BorderSizePixel=0
-rH.Parent=rS
-Instance.new("UICorner",rH).CornerRadius=UDim.new(0,8)
-
-local rSS,rHS=ass(rS,rH)
-addSep(miscC,158)
-
-local targT=Instance.new("TextLabel")
-targT.Size=UDim2.new(0.5,0,0,25)
-targT.Position=UDim2.new(0,10,0,168)
-targT.BackgroundTransparency=1
-targT.Text="Target: Head"
-targT.TextColor3=Color3.new(0.6,0.6,0.6)
-targT.TextSize=18
-targT.Font=Enum.Font.Gotham
-targT.TextXAlignment=Enum.TextXAlignment.Left
-targT.Parent=miscC
-
-local targB=Instance.new("TextButton")
-targB.Size=UDim2.new(0.35,0,0,22)
-targB.Position=UDim2.new(0.6,0,0,169)
-targB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-targB.BackgroundTransparency=0.04
-targB.Text="Head"
-targB.TextColor3=Color3.new(1,1,1)
-targB.TextSize=14
-targB.Font=Enum.Font.Gotham
-targB.AutoButtonColor=false
-targB.Parent=miscC
-Instance.new("UICorner",targB).CornerRadius=UDim.new(0,5)
-
-local targSt=Instance.new("UIStroke")
-targSt.Color=Color3.fromRGB(160,160,160)
-targSt.Transparency=1
-targSt.Thickness=1.5
-targSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
-targSt.Parent=targB
-
-local sortT=Instance.new("TextLabel")
-sortT.Size=UDim2.new(0.5,0,0,25)
-sortT.Position=UDim2.new(0,10,0,200)
-sortT.BackgroundTransparency=1
-sortT.Text="Sort: Distance"
-sortT.TextColor3=Color3.new(0.6,0.6,0.6)
-sortT.TextSize=18
-sortT.Font=Enum.Font.Gotham
-sortT.TextXAlignment=Enum.TextXAlignment.Left
-sortT.Parent=miscC
-
-local sortB=Instance.new("TextButton")
-sortB.Size=UDim2.new(0.35,0,0,22)
-sortB.Position=UDim2.new(0.6,0,0,201)
-sortB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-sortB.BackgroundTransparency=0.04
-sortB.Text="Distance"
-sortB.TextColor3=Color3.new(1,1,1)
-sortB.TextSize=14
-sortB.Font=Enum.Font.Gotham
-sortB.AutoButtonColor=false
-sortB.Parent=miscC
-Instance.new("UICorner",sortB).CornerRadius=UDim.new(0,5)
-
-local sortSt=Instance.new("UIStroke")
-sortSt.Color=Color3.fromRGB(160,160,160)
-sortSt.Transparency=1
-sortSt.Thickness=1.5
-sortSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
-sortSt.Parent=sortB
-
-local modeT=Instance.new("TextLabel")
-modeT.Size=UDim2.new(0.5,0,0,25)
-modeT.Position=UDim2.new(0,10,0,232)
-modeT.BackgroundTransparency=1
-modeT.Text="Mode: Center"
-modeT.TextColor3=Color3.new(0.6,0.6,0.6)
-modeT.TextSize=18
-modeT.Font=Enum.Font.Gotham
-modeT.TextXAlignment=Enum.TextXAlignment.Left
-modeT.Parent=miscC
-
-local modeB=Instance.new("TextButton")
-modeB.Size=UDim2.new(0.35,0,0,22)
-modeB.Position=UDim2.new(0.6,0,0,233)
-modeB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-modeB.BackgroundTransparency=0.04
-modeB.Text="Center"
-modeB.TextColor3=Color3.new(1,1,1)
-modeB.TextSize=14
-modeB.Font=Enum.Font.Gotham
-modeB.AutoButtonColor=false
-modeB.Parent=miscC
-Instance.new("UICorner",modeB).CornerRadius=UDim.new(0,5)
-
-local modeSt=Instance.new("UIStroke")
-modeSt.Color=Color3.fromRGB(160,160,160)
-modeSt.Transparency=1
-modeSt.Thickness=1.5
-modeSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
-modeSt.Parent=modeB
-addSep(miscC,264)
-
-local tlT=Instance.new("TextLabel")
-tlT.Size=UDim2.new(0.5,0,0,25)
-tlT.Position=UDim2.new(0,10,0,274)
-tlT.BackgroundTransparency=1
-tlT.Text="TargetLock"
-tlT.TextColor3=Color3.new(0.6,0.6,0.6)
-tlT.TextSize=20
-tlT.Font=Enum.Font.Gotham
-tlT.TextXAlignment=Enum.TextXAlignment.Left
-tlT.Parent=miscC
-
-local tlTr,tlK,tlSt,tlCl=ct(miscC,UDim2.new(0.75,0,0,276))
-
-local wcT=Instance.new("TextLabel")
-wcT.Size=UDim2.new(0.5,0,0,25)
-wcT.Position=UDim2.new(0,10,0,312)
-wcT.BackgroundTransparency=1
-wcT.Text="WallsCheck"
-wcT.TextColor3=Color3.new(0.6,0.6,0.6)
-wcT.TextSize=20
-wcT.Font=Enum.Font.Gotham
-wcT.TextXAlignment=Enum.TextXAlignment.Left
-wcT.Parent=miscC
-
-local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,314))
-addSep(miscC,350)
-
-local tsT=Instance.new("TextLabel")
-tsT.Size=UDim2.new(0.5,0,0,25)
-tsT.Position=UDim2.new(0,10,0,360)
-tsT.BackgroundTransparency=1
-tsT.Text="TargetStrafe"
-tsT.TextColor3=Color3.new(0.6,0.6,0.6)
-tsT.TextSize=20
-tsT.Font=Enum.Font.Gotham
-tsT.TextXAlignment=Enum.TextXAlignment.Left
-tsT.Parent=miscC
-
-local tsTr,tsK,tsSt,tsCl=ct(miscC,UDim2.new(0.75,0,0,362))
-
-local tsSpeedT=Instance.new("TextLabel")
-tsSpeedT.Size=UDim2.new(0.5,0,0,25)
-tsSpeedT.Position=UDim2.new(0,10,0,400)
-tsSpeedT.BackgroundTransparency=1
-tsSpeedT.Text="Speed: 20"
-tsSpeedT.TextColor3=Color3.new(0.6,0.6,0.6)
-tsSpeedT.TextSize=18
-tsSpeedT.Font=Enum.Font.Gotham
-tsSpeedT.TextXAlignment=Enum.TextXAlignment.Left
-tsSpeedT.Parent=miscC
-
-local tsSpeedS=Instance.new("Frame")
-tsSpeedS.Size=UDim2.new(0.85,0,0,8)
-tsSpeedS.Position=UDim2.new(0.075,0,0,430)
-tsSpeedS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-tsSpeedS.BorderSizePixel=0
-tsSpeedS.Parent=miscC
-Instance.new("UICorner",tsSpeedS).CornerRadius=UDim.new(0,4)
-
-local tsSpeedF=Instance.new("Frame")
-tsSpeedF.Size=UDim2.new(0.2,0,1,0)
-tsSpeedF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-tsSpeedF.BorderSizePixel=0
-tsSpeedF.Parent=tsSpeedS
-Instance.new("UICorner",tsSpeedF).CornerRadius=UDim.new(0,4)
-
-local tsSpeedH=Instance.new("Frame")
-tsSpeedH.Size=UDim2.new(0,16,0,16)
-tsSpeedH.Position=UDim2.new(0.2,-8,0.5,-8)
-tsSpeedH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-tsSpeedH.BorderSizePixel=0
-tsSpeedH.Parent=tsSpeedS
-Instance.new("UICorner",tsSpeedH).CornerRadius=UDim.new(0,8)
-
-local tsSpeedSS,tsSpeedHS=ass(tsSpeedS,tsSpeedH)
-
-local tsRangeT=Instance.new("TextLabel")
-tsRangeT.Size=UDim2.new(0.5,0,0,25)
-tsRangeT.Position=UDim2.new(0,10,0,460)
-tsRangeT.BackgroundTransparency=1
-tsRangeT.Text="Radius: 10"
-tsRangeT.TextColor3=Color3.new(0.6,0.6,0.6)
-tsRangeT.TextSize=18
-tsRangeT.Font=Enum.Font.Gotham
-tsRangeT.TextXAlignment=Enum.TextXAlignment.Left
-tsRangeT.Parent=miscC
-
-local tsRangeS=Instance.new("Frame")
-tsRangeS.Size=UDim2.new(0.85,0,0,8)
-tsRangeS.Position=UDim2.new(0.075,0,0,490)
-tsRangeS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-tsRangeS.BorderSizePixel=0
-tsRangeS.Parent=miscC
-Instance.new("UICorner",tsRangeS).CornerRadius=UDim.new(0,4)
-
-local tsRangeF=Instance.new("Frame")
-tsRangeF.Size=UDim2.new(0.3,0,1,0)
-tsRangeF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-tsRangeF.BorderSizePixel=0
-tsRangeF.Parent=tsRangeS
-Instance.new("UICorner",tsRangeF).CornerRadius=UDim.new(0,4)
-
-local tsRangeH=Instance.new("Frame")
-tsRangeH.Size=UDim2.new(0,16,0,16)
-tsRangeH.Position=UDim2.new(0.3,-8,0.5,-8)
-tsRangeH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-tsRangeH.BorderSizePixel=0
-tsRangeH.Parent=tsRangeS
-Instance.new("UICorner",tsRangeH).CornerRadius=UDim.new(0,8)
-
-local tsRangeSS,tsRangeHS=ass(tsRangeS,tsRangeH)
-
-local tsDistT=Instance.new("TextLabel")
-tsDistT.Size=UDim2.new(0.5,0,0,25)
-tsDistT.Position=UDim2.new(0,10,0,520)
-tsDistT.BackgroundTransparency=1
-tsDistT.Text="Distance: 50"
-tsDistT.TextColor3=Color3.new(0.6,0.6,0.6)
-tsDistT.TextSize=18
-tsDistT.Font=Enum.Font.Gotham
-tsDistT.TextXAlignment=Enum.TextXAlignment.Left
-tsDistT.Parent=miscC
-
-local tsDistS=Instance.new("Frame")
-tsDistS.Size=UDim2.new(0.85,0,0,8)
-tsDistS.Position=UDim2.new(0.075,0,0,550)
-tsDistS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-tsDistS.BorderSizePixel=0
-tsDistS.Parent=miscC
-Instance.new("UICorner",tsDistS).CornerRadius=UDim.new(0,4)
-
-local tsDistF=Instance.new("Frame")
-tsDistF.Size=UDim2.new(0.5,0,1,0)
-tsDistF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-tsDistF.BorderSizePixel=0
-tsDistF.Parent=tsDistS
-Instance.new("UICorner",tsDistF).CornerRadius=UDim.new(0,4)
-
-local tsDistH=Instance.new("Frame")
-tsDistH.Size=UDim2.new(0,16,0,16)
-tsDistH.Position=UDim2.new(0.5,-8,0.5,-8)
-tsDistH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-tsDistH.BorderSizePixel=0
-tsDistH.Parent=tsDistS
-Instance.new("UICorner",tsDistH).CornerRadius=UDim.new(0,8)
-
-local tsDistSS,tsDistHS=ass(tsDistS,tsDistH)
-
-local tsModeT=Instance.new("TextLabel")
-tsModeT.Size=UDim2.new(0.5,0,0,25)
-tsModeT.Position=UDim2.new(0,10,0,580)
-tsModeT.BackgroundTransparency=1
-tsModeT.Text="Mode: Circle"
-tsModeT.TextColor3=Color3.new(0.6,0.6,0.6)
-tsModeT.TextSize=18
-tsModeT.Font=Enum.Font.Gotham
-tsModeT.TextXAlignment=Enum.TextXAlignment.Left
-tsModeT.Parent=miscC
-
-local tsModeB=Instance.new("TextButton")
-tsModeB.Size=UDim2.new(0.35,0,0,22)
-tsModeB.Position=UDim2.new(0.6,0,0,581)
-tsModeB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-tsModeB.BackgroundTransparency=0.04
-tsModeB.Text="Circle"
-tsModeB.TextColor3=Color3.new(1,1,1)
-tsModeB.TextSize=14
-tsModeB.Font=Enum.Font.Gotham
-tsModeB.AutoButtonColor=false
-tsModeB.Parent=miscC
-Instance.new("UICorner",tsModeB).CornerRadius=UDim.new(0,5)
-
-local tsModeSt=Instance.new("UIStroke")
-tsModeSt.Color=Color3.fromRGB(160,160,160)
-tsModeSt.Transparency=1
-tsModeSt.Thickness=1.5
-tsModeSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
-tsModeSt.Parent=tsModeB
-
-local catBar=Instance.new("Frame")
-catBar.Size=UDim2.new(1,0,0,35)
-catBar.Position=UDim2.new(0,0,1,-40)
-catBar.BackgroundTransparency=1
-catBar.Parent=mf
-
-local movL=Instance.new("TextButton")
-movL.Size=UDim2.new(0.45,0,1,0)
-movL.Position=UDim2.new(0.05,0,0,0)
-movL.BackgroundTransparency=1
-movL.Text="movement"
-movL.TextColor3=Color3.new(1,1,1)
-movL.TextTransparency=0
-movL.TextSize=16
-movL.Font=Enum.Font.GothamBold
-movL.Parent=catBar
-
-local catSep=Instance.new("Frame")
-catSep.Size=UDim2.new(0,1,0.6,0)
-catSep.Position=UDim2.new(0.5,-0.5,0.2,0)
-catSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
-catSep.BorderSizePixel=0
-catSep.Parent=catBar
-
-local miscL=Instance.new("TextButton")
-miscL.Size=UDim2.new(0.45,0,1,0)
-miscL.Position=UDim2.new(0.5,0,0,0)
-miscL.BackgroundTransparency=1
-miscL.Text="misc"
-miscL.TextColor3=Color3.new(1,1,1)
-miscL.TextTransparency=0.4
-miscL.TextSize=16
-miscL.Font=Enum.Font.GothamBold
-miscL.Parent=catBar
-
-local function setToggle(t,k,on,anim)
-	local pos=on and UDim2.new(1,-20,0.5,-9) or UDim2.new(0,2,0.5,-9)
-	local tc=on and Color3.new(0.5,0.5,0.5) or Color3.new(0.15,0.15,0.15)
-	local kc=on and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	if anim then
-		local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-		TS:Create(k,inf,{Position=pos,BackgroundColor3=kc}):Play()
-		TS:Create(t,inf,{BackgroundColor3=tc}):Play()
-	else
-		k.Position=pos
-		k.BackgroundColor3=kc
-		t.BackgroundColor3=tc
+repeat wait(0.1) until _G.speedEnabled~=nil
+wait(0.2)
+
+local function getTargets()
+	local t={}
+	for _,p in pairs(PL:GetPlayers()) do
+		if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Head") then
+			local h=p.Character:FindFirstChild("Humanoid")
+			if h and h.Health>0 then table.insert(t,p) end
+		end
 	end
+	return t
 end
 
-local function hover(b,s)
-	s.Transparency=1
-	b.MouseEnter:Connect(function()
-		TS:Create(s,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Transparency=0.4}):Play()
-	end)
-	b.MouseLeave:Connect(function()
-		TS:Create(s,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Transparency=1}):Play()
-	end)
-end
-
-hover(hideBtn,hideSt)
-hover(closeBtn,closeSt)
-hover(spTr,spSt)
-hover(jTr,jSt)
-hover(fTr,fSt)
-hover(nTr,nSt)
-hover(stTr,stSt)
-hover(awTr,awSt)
-hover(cTr,cSt)
-hover(ajTr,ajSt)
-hover(aimTr,aimSt)
-hover(tlTr,tlSt)
-hover(wcTr,wcSt)
-hover(tsTr,tsSt)
-hover(spS,spSS)
-hover(spH,spHS)
-hover(jS,jSS)
-hover(jH,jHS)
-hover(fS,fSS)
-hover(fH,fHS)
-hover(stS,stSS)
-hover(stH,stHS)
-hover(smS,smSS)
-hover(smH,smHS)
-hover(rS,rSS)
-hover(rH,rHS)
-hover(targB,targSt)
-hover(sortB,sortSt)
-hover(modeB,modeSt)
-hover(tsSpeedS,tsSpeedSS)
-hover(tsSpeedH,tsSpeedHS)
-hover(tsRangeS,tsRangeSS)
-hover(tsRangeH,tsRangeHS)
-hover(tsDistS,tsDistSS)
-hover(tsDistH,tsDistHS)
-hover(tsModeB,tsModeSt)
-
-local function setColors(en,label,slider,fill,handle)
-	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	local sc=en and Color3.new(0.5,0.5,0.5) or Color3.new(0.3,0.3,0.3)
-	local fc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-	TS:Create(label,inf,{TextColor3=tc}):Play()
-	if slider then TS:Create(slider,inf,{BackgroundColor3=sc}):Play() end
-	if fill then TS:Create(fill,inf,{BackgroundColor3=fc}):Play() end
-	if handle then TS:Create(handle,inf,{BackgroundColor3=fc}):Play() end
-end
-
-local function setAimColors(en)
-	setColors(en,aimT,nil,nil,nil)
-	setColors(en,smT,smS,smF,smH)
-	setColors(en,rT,rS,rF,rH)
-	setColors(en,targT,nil,nil,nil)
-	setColors(en,sortT,nil,nil,nil)
-	setColors(en,modeT,nil,nil,nil)
-	setColors(en,tlT,nil,nil,nil)
-	setColors(en,wcT,nil,nil,nil)
-	targB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	sortB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	modeB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	targB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
-	sortB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
-	modeB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
-end
-
-local function setTSColors(en)
-	setColors(en,tsT,nil,nil,nil)
-	setColors(en,tsSpeedT,tsSpeedS,tsSpeedF,tsSpeedH)
-	setColors(en,tsRangeT,tsRangeS,tsRangeF,tsRangeH)
-	setColors(en,tsDistT,tsDistS,tsDistF,tsDistH)
-	setColors(en,tsModeT,nil,nil,nil)
-	tsModeB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	tsModeB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
-end
-
-local function updateSlider(f,h,v)
-	f.Size=UDim2.new(v,0,1,0)
-	h.Position=UDim2.new(v,-8,0.5,-8)
-end
-
-local function toggleSpeed()
-	_G.speedEnabled=not _G.speedEnabled
-	setToggle(spTr,spK,_G.speedEnabled,true)
-	setColors(_G.speedEnabled,spT,spS,spF,spH)
-end
-
-local function toggleJump()
-	_G.jumpEnabled=not _G.jumpEnabled
-	setToggle(jTr,jK,_G.jumpEnabled,true)
-	setColors(_G.jumpEnabled,jT,jS,jF,jH)
-end
-
-local function toggleFlight()
-	_G.flightEnabled=not _G.flightEnabled
-	setToggle(fTr,fK,_G.flightEnabled,true)
-	setColors(_G.flightEnabled,fT,fS,fF,fH)
-end
-
-local function toggleNoclip()
-	if not _G.flightEnabled then return end
-	_G.noclipEnabled=not _G.noclipEnabled
-	local en=_G.flightEnabled and _G.noclipEnabled
-	setColors(en,nT,nil,nil,nil)
-	setToggle(nTr,nK,en,true)
-end
-
-local function toggleStrafe()
-	_G.strafeEnabled=not _G.strafeEnabled
-	setToggle(stTr,stK,_G.strafeEnabled,true)
-	setColors(_G.strafeEnabled,stT,stS,stF,stH)
-end
-
-local function toggleAirwalk()
-	_G.airwalkEnabled=not _G.airwalkEnabled
-	setToggle(awTr,awK,_G.airwalkEnabled,true)
-	setColors(_G.airwalkEnabled,awT,nil,nil,nil)
-end
-
-local function toggleClickTp()
-	_G.clickTpEnabled=not _G.clickTpEnabled
-	setToggle(cTr,cK,_G.clickTpEnabled,true)
-	setColors(_G.clickTpEnabled,cT,nil,nil,nil)
-	if _G.clickTpEnabled then mouse.Icon="rbxassetid://6065121748" else mouse.Icon="" end
-end
-
-local function toggleAirJump()
-	_G.airJumpEnabled=not _G.airJumpEnabled
-	setToggle(ajTr,ajK,_G.airJumpEnabled,true)
-	setColors(_G.airJumpEnabled,ajT,nil,nil,nil)
-end
-
-local function toggleAimbot()
-	_G.aimbotEnabled=not _G.aimbotEnabled
-	setToggle(aimTr,aimK,_G.aimbotEnabled,true)
-	setAimColors(_G.aimbotEnabled)
-	if not _G.aimbotEnabled then _G.lockedTarget=nil end
-end
-
-local function toggleTargetLock()
-	_G.targetLockEnabled=not _G.targetLockEnabled
-	setToggle(tlTr,tlK,_G.targetLockEnabled,true)
-	if _G.aimbotEnabled then setColors(_G.targetLockEnabled,tlT,nil,nil,nil) end
-	if not _G.targetLockEnabled then _G.lockedTarget=nil end
-end
-
-local function toggleWallsCheck()
-	_G.wallsCheckEnabled=not _G.wallsCheckEnabled
-	setToggle(wcTr,wcK,_G.wallsCheckEnabled,true)
-	if _G.aimbotEnabled then setColors(_G.wallsCheckEnabled,wcT,nil,nil,nil) end
-end
-
-local function toggleTargetStrafe()
-	_G.targetStrafeEnabled=not _G.targetStrafeEnabled
-	setToggle(tsTr,tsK,_G.targetStrafeEnabled,true)
-	setTSColors(_G.targetStrafeEnabled)
-	if not _G.targetStrafeEnabled then _G.targetStrafeTarget=nil end
-end
-
-local function cycleTarget()
-	if _G.aimTarget=="Head" then
-		_G.aimTarget="Body"
-		targB.Text="Body"
-		targT.Text="Target: Body"
-	else
-		_G.aimTarget="Head"
-		targB.Text="Head"
-		targT.Text="Target: Head"
-	end
-end
-
-local function cycleSort()
+local function selectTarget(targets)
+	if #targets==0 then return nil end
 	if _G.sortMode=="Distance" then
-		_G.sortMode="Cursor"
-		sortB.Text="Cursor"
-		sortT.Text="Sort: Cursor"
+		table.sort(targets,function(a,b)
+			local da=(a.Character.HumanoidRootPart.Position-root.Position).Magnitude
+			local db=(b.Character.HumanoidRootPart.Position-root.Position).Magnitude
+			return da<db
+		end)
+		return targets[1]
 	else
-		_G.sortMode="Distance"
-		sortB.Text="Distance"
-		sortT.Text="Sort: Distance"
+		local mp=UIS:GetMouseLocation()
+		table.sort(targets,function(a,b)
+			local pa,oa=workspace.CurrentCamera:WorldToViewportPoint(a.Character.Head.Position)
+			local pb,ob=workspace.CurrentCamera:WorldToViewportPoint(b.Character.Head.Position)
+			if not oa then return false end
+			if not ob then return true end
+			return (Vector2.new(pa.X,pa.Y)-mp).Magnitude<(Vector2.new(pb.X,pb.Y)-mp).Magnitude
+		end)
+		return targets[1]
 	end
 end
 
-local function cycleMode()
-	if _G.aimMode=="Center" then
-		_G.aimMode="Cursor"
-		modeB.Text="Cursor"
-		modeT.Text="Mode: Cursor"
+local function isVisible(part)
+	if not _G.wallsCheckEnabled then return true end
+	local origin=workspace.CurrentCamera.CFrame.Position
+	local direction=(part.Position-origin)
+	local ray=workspace:Raycast(origin,direction)
+	if ray and ray.Instance then
+		local hitChar=ray.Instance:FindFirstAncestorOfClass("Model")
+		if hitChar and hitChar:FindFirstChild("Humanoid") then
+			return true
+		else
+			return false
+		end
+	end
+	return true
+end
+
+local function getAimPart(target)
+	if _G.aimTarget=="Head" then
+		return target.Character.Head
 	else
-		_G.aimMode="Center"
-		modeB.Text="Center"
-		modeT.Text="Mode: Center"
+		return target.Character.HumanoidRootPart
 	end
 end
 
-local function cycleTSMode()
-	if _G.targetStrafeMode=="Circle" then
-		_G.targetStrafeMode="Square"
-		tsModeB.Text="Square"
-		tsModeT.Text="Mode: Square"
-	elseif _G.targetStrafeMode=="Square" then
-		_G.targetStrafeMode="Triangle"
-		tsModeB.Text="Triangle"
-		tsModeT.Text="Mode: Triangle"
-	else
-		_G.targetStrafeMode="Circle"
-		tsModeB.Text="Circle"
-		tsModeT.Text="Mode: Circle"
+local function getTargetStrafeTarget()
+	local closest=nil
+	local shortest=math.huge
+	local rootPos=root.Position
+	for _,p in pairs(PL:GetPlayers()) do
+		if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+			local dist=(p.Character.HumanoidRootPart.Position-rootPos).Magnitude
+			if dist<shortest and dist<=_G.targetStrafeDistance then
+				shortest=dist
+				closest=p
+			end
+		end
 	end
+	return closest
 end
 
-local function updateSpeed(v)
-	_G.currentSpeed=_G.minSpeed+(_G.maxSpeed-_G.minSpeed)*v
-	spT.Text="Speed: "..math.floor(_G.currentSpeed+0.5)
-end
-
-local function updateJump(v)
-	_G.currentJump=_G.minJump+(_G.maxJump-_G.minJump)*v
-	jT.Text="Jump: "..math.floor(_G.currentJump+0.5)
-end
-
-local function updateFlight(v)
-	_G.currentFlight=_G.minFlight+(_G.maxFlight-_G.minFlight)*v
-	fT.Text="Flight: "..math.floor(_G.currentFlight+0.5)
-end
-
-local function updateStrafe(v)
-	_G.currentStrafe=_G.minStrafe+(_G.maxStrafe-_G.minStrafe)*v
-	stT.Text="Strafe: "..math.floor(_G.currentStrafe+0.5)
-end
-
-local function updateSmooth(v)
-	_G.currentSmoothness=_G.minSmooth+(_G.maxSmooth-_G.minSmooth)*v
-	smT.Text="Speed: "..string.format("%.2f",_G.currentSmoothness)
-end
-
-local function updateRange(v)
-	_G.currentRange=_G.minRange+(_G.maxRange-_G.minRange)*v
-	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
-end
-
-local function updateTSpeed(v)
-	_G.targetStrafeSpeed=_G.minTSpeed+(_G.maxTSpeed-_G.minTSpeed)*v
-	tsSpeedT.Text="Speed: "..math.floor(_G.targetStrafeSpeed+0.5)
-end
-
-local function updateTRange(v)
-	_G.targetStrafeRange=_G.minTRange+(_G.maxTRange-_G.minTRange)*v
-	tsRangeT.Text="Radius: "..math.floor(_G.targetStrafeRange+0.5)
-end
-
-local function updateTDistance(v)
-	_G.targetStrafeDistance=_G.minTDistance+(_G.maxTDistance-_G.minTDistance)*v
-	tsDistT.Text="Distance: "..math.floor(_G.targetStrafeDistance+0.5)
-end
-
-spCl.MouseButton1Click:Connect(toggleSpeed)
-jCl.MouseButton1Click:Connect(toggleJump)
-fCl.MouseButton1Click:Connect(toggleFlight)
-nCl.MouseButton1Click:Connect(toggleNoclip)
-stCl.MouseButton1Click:Connect(toggleStrafe)
-awCl.MouseButton1Click:Connect(toggleAirwalk)
-cCl.MouseButton1Click:Connect(toggleClickTp)
-ajCl.MouseButton1Click:Connect(toggleAirJump)
-aimCl.MouseButton1Click:Connect(toggleAimbot)
-tlCl.MouseButton1Click:Connect(toggleTargetLock)
-wcCl.MouseButton1Click:Connect(toggleWallsCheck)
-tsCl.MouseButton1Click:Connect(toggleTargetStrafe)
-targB.MouseButton1Click:Connect(cycleTarget)
-sortB.MouseButton1Click:Connect(cycleSort)
-modeB.MouseButton1Click:Connect(cycleMode)
-tsModeB.MouseButton1Click:Connect(cycleTSMode)
-
-mouse.Button1Down:Connect(function()
-	if _G.clickTpEnabled and root and mouse.Hit then
-		root.CFrame=CFrame.new(mouse.Hit.Position+Vector3.new(0,3,0))
+local function updateTargetStrafe()
+	if not _G.targetStrafeEnabled then
+		_G.targetStrafeTarget=nil
+		return
 	end
-end)
-
-UIS.InputBegan:Connect(function(i,p)
-	if p then return end
-	if i.KeyCode==Enum.KeyCode.Space and _G.airJumpEnabled and humanoid and not _G.lastSpace then
-		_G.lastSpace=true
-		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	
+	if not _G.targetStrafeTarget or not _G.targetStrafeTarget.Character or not _G.targetStrafeTarget.Character:FindFirstChild("HumanoidRootPart") then
+		_G.targetStrafeTarget=getTargetStrafeTarget()
+		if not _G.targetStrafeTarget then return end
 	end
-end)
-
-UIS.InputEnded:Connect(function(i)
-	if i.KeyCode==Enum.KeyCode.Space then _G.lastSpace=false end
-end)
-
-local function switchCat(c)
-	if _G.currentCategory==c then return end
-	_G.currentCategory=c
-	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-	if c=="movement" then
-		TS:Create(movL,inf,{TextTransparency=0}):Play()
-		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
-		miscC.Visible=false
-		mc.Visible=true
-	else
-		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
-		TS:Create(miscL,inf,{TextTransparency=0}):Play()
-		mc.Visible=false
-		miscC.Visible=true
+	
+	local targetPos=_G.targetStrafeTarget.Character.HumanoidRootPart.Position
+	local currentPos=root.Position
+	local dist=(targetPos-currentPos).Magnitude
+	
+	if dist>_G.targetStrafeDistance then
+		_G.targetStrafeTarget=nil
+		return
 	end
+	
+	local angle=_G.targetStrafeAngle
+	local speed=_G.targetStrafeSpeed * 0.5
+	
+	if UIS:IsKeyDown(Enum.KeyCode.A) then
+		_G.targetStrafeDir=-1
+	elseif UIS:IsKeyDown(Enum.KeyCode.D) then
+		_G.targetStrafeDir=1
+	end
+	
+	angle=angle+_G.targetStrafeDir*speed*0.02
+	
+	local radius=_G.targetStrafeRange
+	local offset=Vector3.new(math.cos(angle),0,math.sin(angle))*radius
+	
+	if _G.targetStrafeMode=="Square" then
+		local sq=math.floor(angle/(math.pi/2))%4
+		if sq==0 then offset=Vector3.new(radius,0,0)
+		elseif sq==1 then offset=Vector3.new(0,0,radius)
+		elseif sq==2 then offset=Vector3.new(-radius,0,0)
+		else offset=Vector3.new(0,0,-radius) end
+	elseif _G.targetStrafeMode=="Triangle" then
+		local a=angle%(2*math.pi)
+		if a<math.pi*2/3 then
+			offset=Vector3.new(radius*math.cos(a),0,radius*math.sin(a))
+		elseif a<math.pi*4/3 then
+			offset=Vector3.new(radius*math.cos(a-math.pi*2/3),0,radius*math.sin(a-math.pi*2/3))
+		else
+			offset=Vector3.new(radius*math.cos(a-math.pi*4/3),0,radius*math.sin(a-math.pi*4/3))
+		end
+	end
+	
+	local newPos=targetPos+offset
+	local lookDir=(targetPos-newPos).Unit
+	root.CFrame=CFrame.new(newPos,newPos+lookDir)
+	
+	if humanoid then
+		humanoid.WalkSpeed=16
+		if not humanoid:GetState()==Enum.HumanoidStateType.Running then
+			humanoid:ChangeState(Enum.HumanoidStateType.Running)
+		end
+	end
+	
+	_G.targetStrafeAngle=angle
 end
-
-movL.MouseButton1Click:Connect(function() switchCat("movement") end)
-miscL.MouseButton1Click:Connect(function() switchCat("misc") end)
-
-mf.InputBegan:Connect(function(i)
-	if _G.isSliding then return end
-	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-		_G.isDragging=true
-		_G.dragStart=i.Position
-		_G.startPos=mf.Position
-		_G.targetPos=mf.Position
-	end
-end)
-
-UIS.InputChanged:Connect(function(i)
-	if _G.isDragging and not _G.isSliding and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		local d=i.Position-_G.dragStart
-		_G.targetPos=UDim2.new(_G.startPos.X.Scale,_G.startPos.X.Offset+d.X,_G.startPos.Y.Scale,_G.startPos.Y.Offset+d.Y)
-	end
-end)
-
-UIS.InputEnded:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-		_G.isDragging=false
-		_G.isSliding=false
-	end
-end)
 
 RS.RenderStepped:Connect(function()
-	if _G.targetPos then
-		local c=mf.Position
-		local dx=_G.targetPos.X.Offset-c.X.Offset
-		local dy=_G.targetPos.Y.Offset-c.Y.Offset
-		if math.abs(dx)>0.5 or math.abs(dy)>0.5 then
-			mf.Position=UDim2.new(c.X.Scale,c.X.Offset+dx*0.18,c.Y.Scale,c.Y.Offset+dy*0.18)
+	if _G.aimbotEnabled then
+		local targets=getTargets()
+		local target=nil
+		if _G.targetLockEnabled and _G.lockedTarget and _G.lockedTarget.Character and _G.lockedTarget.Character:FindFirstChild("Head") then
+			local d=(_G.lockedTarget.Character.Head.Position-root.Position).Magnitude
+			if d<=_G.currentRange then target=_G.lockedTarget else _G.lockedTarget=nil end
+		end
+		if not target then
+			target=selectTarget(targets)
+			if _G.targetLockEnabled and target then _G.lockedTarget=target end
+		end
+		if target and target.Character then
+			local aimPart=getAimPart(target)
+			if aimPart then
+				local d=(aimPart.Position-root.Position).Magnitude
+				if d<=_G.currentRange and isVisible(aimPart) then
+					local cam=workspace.CurrentCamera
+					if _G.aimMode=="Center" then
+						local goal=CFrame.new(cam.CFrame.Position,aimPart.Position)
+						cam.CFrame=cam.CFrame:Lerp(goal,_G.currentSmoothness)
+					else
+						local pos,on=cam:WorldToViewportPoint(aimPart.Position)
+						if on then
+							local mp=UIS:GetMouseLocation()
+							mousemoverel((pos.X-mp.X)*_G.currentSmoothness,(pos.Y-mp.Y)*_G.currentSmoothness)
+						end
+					end
+				end
+			end
 		end
 	end
-end)
-
-local function setVisible(s)
-	mc.Visible=s and _G.currentCategory=="movement"
-	miscC.Visible=s and _G.currentCategory=="misc"
-	catBar.Visible=s
-end
-
-local function startFps()
-	if _G.fpsConnection then return end
-	local f=0
-	local l=tick()
-	_G.fpsConnection=RS.RenderStepped:Connect(function()
-		f=f+1
-		local n=tick()
-		if n-l>=0.016 then
-			fpsLabel.Text="fps "..math.floor(f/(n-l))
-			f=0
-			l=n
-		end
-	end)
-end
-
-local function setMinimized(s)
-	if _G.isAnimating then return end
-	_G.isAnimating=true
-	_G.isHidden=s
-	local ts=s and UDim2.new(0,300,0,35) or UDim2.new(0,300,0,590)
-	local tw=TS:Create(mf,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=ts})
-	if s then
-		setVisible(false)
-		startFps()
-		TS:Create(fpsLabel,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextTransparency=0}):Play()
-	else
-		TS:Create(fpsLabel,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextTransparency=1}):Play()
-	end
-	tw:Play()
-	tw.Completed:Connect(function()
-		if not s then
-			setVisible(true)
-			if _G.fpsConnection then _G.fpsConnection:Disconnect() _G.fpsConnection=nil end
-		end
-		_G.isAnimating=false
-	end)
-end
-
-hideBtn.MouseButton1Click:Connect(function() setMinimized(not _G.isHidden) end)
-
-closeBtn.MouseButton1Click:Connect(function()
-	if _G.fpsConnection then _G.fpsConnection:Disconnect() end
-	mouse.Icon=""
-	sg:Destroy()
-end)
-
-local function updateSpeedFromInput(i)
-	local s=spS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-spS.AbsolutePosition.X,0,s)/s
-	updateSlider(spF,spH,v)
-	updateSpeed(v)
-end
-
-local function updateJumpFromInput(i)
-	local s=jS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-jS.AbsolutePosition.X,0,s)/s
-	updateSlider(jF,jH,v)
-	updateJump(v)
-end
-
-local function updateFlightFromInput(i)
-	local s=fS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-fS.AbsolutePosition.X,0,s)/s
-	updateSlider(fF,fH,v)
-	updateFlight(v)
-end
-
-local function updateStrafeFromInput(i)
-	local s=stS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-stS.AbsolutePosition.X,0,s)/s
-	updateSlider(stF,stH,v)
-	updateStrafe(v)
-end
-
-local function updateSmoothFromInput(i)
-	local s=smS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-smS.AbsolutePosition.X,0,s)/s
-	updateSlider(smF,smH,v)
-	updateSmooth(v)
-end
-
-local function updateRangeFromInput(i)
-	local s=rS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-rS.AbsolutePosition.X,0,s)/s
-	updateSlider(rF,rH,v)
-	updateRange(v)
-end
-
-local function updateTSpeedFromInput(i)
-	local s=tsSpeedS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-tsSpeedS.AbsolutePosition.X,0,s)/s
-	updateSlider(tsSpeedF,tsSpeedH,v)
-	updateTSpeed(v)
-end
-
-local function updateTRangeFromInput(i)
-	local s=tsRangeS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-tsRangeS.AbsolutePosition.X,0,s)/s
-	updateSlider(tsRangeF,tsRangeH,v)
-	updateTRange(v)
-end
-
-local function updateTDistanceFromInput(i)
-	local s=tsDistS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-tsDistS.AbsolutePosition.X,0,s)/s
-	updateSlider(tsDistF,tsDistH,v)
-	updateTDistance(v)
-end
-
-local function startDrag(f,u)
-	return function(i)
-		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-			_G.isSliding=true
-			_G.isDragging=false
-			if f=="sp" then _G.draggingSpeed=true
-			elseif f=="j" then _G.draggingJump=true
-			elseif f=="f" then _G.draggingFlight=true
-			elseif f=="st" then _G.draggingStrafe=true
-			elseif f=="sm" then _G.draggingSmooth=true
-			elseif f=="r" then _G.draggingRange=true
-			elseif f=="ts" then _G.draggingTSpeed=true
-			elseif f=="tr" then _G.draggingTRange=true
-			elseif f=="td" then _G.draggingTDistance=true end
-			u(i)
-		end
-	end
-end
-
-spS.InputBegan:Connect(startDrag("sp",updateSpeedFromInput))
-spH.InputBegan:Connect(startDrag("sp",updateSpeedFromInput))
-jS.InputBegan:Connect(startDrag("j",updateJumpFromInput))
-jH.InputBegan:Connect(startDrag("j",updateJumpFromInput))
-fS.InputBegan:Connect(startDrag("f",updateFlightFromInput))
-fH.InputBegan:Connect(startDrag("f",updateFlightFromInput))
-stS.InputBegan:Connect(startDrag("st",updateStrafeFromInput))
-stH.InputBegan:Connect(startDrag("st",updateStrafeFromInput))
-smS.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
-smH.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
-rS.InputBegan:Connect(startDrag("r",updateRangeFromInput))
-rH.InputBegan:Connect(startDrag("r",updateRangeFromInput))
-tsSpeedS.InputBegan:Connect(startDrag("ts",updateTSpeedFromInput))
-tsSpeedH.InputBegan:Connect(startDrag("ts",updateTSpeedFromInput))
-tsRangeS.InputBegan:Connect(startDrag("tr",updateTRangeFromInput))
-tsRangeH.InputBegan:Connect(startDrag("tr",updateTRangeFromInput))
-tsDistS.InputBegan:Connect(startDrag("td",updateTDistanceFromInput))
-tsDistH.InputBegan:Connect(startDrag("td",updateTDistanceFromInput))
-
-UIS.InputChanged:Connect(function(i)
-	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateSpeedFromInput(i)
-	end
-	if _G.draggingJump and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateJumpFromInput(i)
-	end
-	if _G.draggingFlight and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateFlightFromInput(i)
-	end
-	if _G.draggingStrafe and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateStrafeFromInput(i)
-	end
-	if _G.draggingSmooth and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateSmoothFromInput(i)
-	end
-	if _G.draggingRange and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateRangeFromInput(i)
-	end
-	if _G.draggingTSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateTSpeedFromInput(i)
-	end
-	if _G.draggingTRange and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateTRangeFromInput(i)
-	end
-	if _G.draggingTDistance and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateTDistanceFromInput(i)
-	end
-end)
-
-UIS.InputEnded:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-		_G.draggingSpeed=false
-		_G.draggingJump=false
-		_G.draggingFlight=false
-		_G.draggingStrafe=false
-		_G.draggingSmooth=false
-		_G.draggingRange=false
-		_G.draggingTSpeed=false
-		_G.draggingTRange=false
-		_G.draggingTDistance=false
-		_G.isSliding=false
-	end
+	
+	updateTargetStrafe()
 end)
 
 player.CharacterAdded:Connect(function(c)
 	character=c
 	humanoid=character:WaitForChild("Humanoid")
 	root=character:WaitForChild("HumanoidRootPart")
-	_G.speedEnabled=false
-	_G.jumpEnabled=false
-	_G.flightEnabled=false
-	_G.noclipEnabled=false
-	_G.strafeEnabled=false
-	_G.airwalkEnabled=false
-	_G.clickTpEnabled=false
-	_G.airJumpEnabled=false
-	_G.aimbotEnabled=false
-	_G.targetLockEnabled=false
-	_G.wallsCheckEnabled=false
-	_G.targetStrafeEnabled=false
-	_G.lockedTarget=nil
-	_G.targetStrafeTarget=nil
-	mouse.Icon=""
-	_G.currentSpeed=16
-	_G.currentJump=50
-	_G.currentFlight=50
-	_G.currentStrafe=0
-	_G.currentSmoothness=0.15
-	_G.currentRange=500
-	_G.aimMode="Center"
-	_G.sortMode="Distance"
-	_G.aimTarget="Head"
-	_G.targetStrafeSpeed=20
-	_G.targetStrafeRange=10
-	_G.targetStrafeDistance=50
-	_G.targetStrafeMode="Circle"
-	_G.targetStrafeDir=1
-	setToggle(spTr,spK,false,false)
-	setToggle(jTr,jK,false,false)
-	setToggle(fTr,fK,false,false)
-	setToggle(nTr,nK,false,false)
-	setToggle(stTr,stK,false,false)
-	setToggle(awTr,awK,false,false)
-	setToggle(cTr,cK,false,false)
-	setToggle(ajTr,ajK,false,false)
-	setToggle(aimTr,aimK,false,false)
-	setToggle(tlTr,tlK,false,false)
-	setToggle(wcTr,wcK,false,false)
-	setToggle(tsTr,tsK,false,false)
-	updateSlider(spF,spH,0.5)
-	spT.Text="Speed: 16"
-	setColors(false,spT,spS,spF,spH)
-	updateSlider(jF,jH,0.5)
-	jT.Text="Jump: 50"
-	setColors(false,jT,jS,jF,jH)
-	updateSlider(fF,fH,0.5)
-	fT.Text="Flight: 50"
-	setColors(false,fT,fS,fF,fH)
-	updateSlider(stF,stH,0)
-	stT.Text="Strafe: 0"
-	setColors(false,stT,stS,stF,stH)
-	setColors(false,awT,nil,nil,nil)
-	setColors(false,cT,nil,nil,nil)
-	setColors(false,ajT,nil,nil,nil)
-	updateSlider(smF,smH,0.3)
-	smT.Text="Speed: 0.15"
-	updateSlider(rF,rH,0.5)
-	rT.Text="Range: 500"
-	targB.Text="Head"
-	targT.Text="Target: Head"
-	sortB.Text="Distance"
-	sortT.Text="Sort: Distance"
-	modeB.Text="Center"
-	modeT.Text="Mode: Center"
-	setAimColors(false)
-	updateSlider(tsSpeedF,tsSpeedH,0.2)
-	tsSpeedT.Text="Speed: 20"
-	updateSlider(tsRangeF,tsRangeH,0.3)
-	tsRangeT.Text="Radius: 10"
-	updateSlider(tsDistF,tsDistH,0.5)
-	tsDistT.Text="Distance: 50"
-	tsModeB.Text="Circle"
-	tsModeT.Text="Mode: Circle"
-	setTSColors(false)
 end)
