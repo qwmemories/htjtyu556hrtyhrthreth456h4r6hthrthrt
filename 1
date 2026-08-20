@@ -768,26 +768,32 @@ _G.scrollDragging=false
 _G.scrollDragStart=0
 _G.scrollStartOffset=0
 
-local SCROLL_STEP=8
-local SCROLL_SMOOTHNESS=0.08
+-- Deliberately tiny wheel step and very slow interpolation.
+local SCROLL_STEP=3
+local SCROLL_SMOOTHNESS=0.035
 
 local function getActiveContent()
-	if _G.currentCategory=="movement" then
-		return mc
-	end
-	return miscC
+	return (_G.currentCategory=="movement") and mc or miscC
 end
 
 local function getContentBottom(content)
 	local bottom=0
 	for _,obj in ipairs(content:GetChildren()) do
 		if obj:IsA("GuiObject") and obj.Visible then
-			local p=obj.Position
-			local y=p.Y.Offset + obj.AbsoluteSize.Y
+			local y=obj.Position.Y.Offset+obj.Size.Y.Offset
 			if y>bottom then bottom=y end
 		end
 	end
 	return bottom
+end
+
+local function calculateScrollMax()
+	local content=getActiveContent()
+	local viewportHeight=contentViewport.AbsoluteSize.Y
+	local contentBottom=getContentBottom(content)
+
+	-- EXACT limit: the final visible GUI object's bottom is the end of scroll.
+	return math.max(0,contentBottom-viewportHeight)
 end
 
 local function updateScrollBar()
@@ -796,11 +802,9 @@ local function updateScrollBar()
 	local content=getActiveContent()
 	local contentBottom=getContentBottom(content)
 
-	-- Only the actual visible content determines whether scrolling is needed.
-	local maxOffset=math.max(0,contentBottom-viewportHeight)
-	_G.scrollMax=maxOffset
+	_G.scrollMax=math.max(0,contentBottom-viewportHeight)
 
-	if maxOffset<=0 or not mf.Visible or _G.isHidden then
+	if _G.scrollMax<=0 or _G.isHidden or not mf.Visible then
 		scrollTrack.Visible=false
 		scrollThumb.Visible=false
 		_G.scrollOffset=0
@@ -818,36 +822,39 @@ local function updateScrollBar()
 	scrollThumb.Size=UDim2.new(1,0,0,thumbHeight)
 
 	local travel=math.max(0,trackHeight-thumbHeight)
-	local ratio=(_G.scrollMax>0) and (_G.scrollOffset/_G.scrollMax) or 0
-	scrollThumb.Position=UDim2.new(0,0,0,travel*math.clamp(ratio,0,1))
+	local ratio=math.clamp(_G.scrollOffset/_G.scrollMax,0,1)
+	scrollThumb.Position=UDim2.new(0,0,0,travel*ratio)
 end
 
 local function setScrollTarget(v)
+	-- Hard clamp. The target itself can NEVER be beyond the last module.
 	_G.scrollTarget=math.clamp(v,0,_G.scrollMax)
 end
 
 local function applyScroll()
 	local content=getActiveContent()
-	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
+
+	-- Clamp both target and current position before applying.
+	_G.scrollMax=calculateScrollMax()
 	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
+	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
+
 	content.Position=UDim2.new(0,0,-math.floor(_G.scrollOffset+0.5),0)
 	updateScrollBar()
 end
 
 local function refreshScroll()
-	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
+	_G.scrollMax=calculateScrollMax()
 	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
-	updateScrollBar()
+	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
 	applyScroll()
 end
 
-task.defer(function()
-	refreshScroll()
-end)
+task.defer(refreshScroll)
 
 UIS.InputChanged:Connect(function(i)
 	if i.UserInputType==Enum.UserInputType.MouseWheel then
-		if _G.isHidden or not mf.Visible then return end
+		if _G.isHidden or not mf.Visible or _G.scrollMax<=0 then return end
 
 		local p=i.Position
 		local vpPos=contentViewport.AbsolutePosition
@@ -856,7 +863,6 @@ UIS.InputChanged:Connect(function(i)
 		if p.X>=vpPos.X and p.X<=vpPos.X+vpSize.X
 			and p.Y>=vpPos.Y and p.Y<=vpPos.Y+vpSize.Y then
 
-			-- Very small fixed step: one wheel notch = only 8 px.
 			setScrollTarget(_G.scrollTarget-i.Position.Z*SCROLL_STEP)
 		end
 
@@ -886,19 +892,20 @@ UIS.InputEnded:Connect(function(i)
 end)
 
 RS.RenderStepped:Connect(function()
-	if not mf.Visible or _G.isHidden then
-		if scrollTrack.Visible or scrollThumb.Visible then
-			scrollTrack.Visible=false
-			scrollThumb.Visible=false
-		end
+	-- While minimized, force the scrollbar hidden but DO NOT destroy the
+	-- scroll state. This lets it return together with the content.
+	if _G.isHidden or not mf.Visible then
+		scrollTrack.Visible=false
+		scrollThumb.Visible=false
 		return
 	end
 
-	-- Recalculate the true bottom every frame so adding/removing modules
-	-- automatically updates the maximum scroll distance.
-	updateScrollBar()
+	-- Recalculate from the actual last visible module every frame.
+	_G.scrollMax=calculateScrollMax()
+	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
+	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
 
-	if math.abs(_G.scrollOffset-_G.scrollTarget)>0.02 then
+	if math.abs(_G.scrollOffset-_G.scrollTarget)>0.01 then
 		_G.scrollOffset=_G.scrollOffset+(_G.scrollTarget-_G.scrollOffset)*SCROLL_SMOOTHNESS
 	else
 		_G.scrollOffset=_G.scrollTarget
@@ -1372,8 +1379,14 @@ local function setMinimized(s)
 	tw:Play()
 	tw.Completed:Connect(function()
 		if not s then
+			-- Restore the modules first, then restore the scrollbar in the
+			-- same completion step rather than showing it early.
 			setVisible(true)
+			refreshScroll()
 			if _G.fpsConnection then _G.fpsConnection:Disconnect() _G.fpsConnection=nil end
+		else
+			scrollTrack.Visible=false
+			scrollThumb.Visible=false
 		end
 		_G.isAnimating=false
 	end)
