@@ -10,69 +10,6 @@ local PL=game:GetService("Players")
 repeat wait(0.1) until _G.speedEnabled~=nil
 wait(0.2)
 
-local function setNoclip(s)
-	if not character then return end
-	for _,p in pairs(character:GetDescendants()) do
-		if p:IsA("BasePart") then p.CanCollide=not s end
-	end
-end
-
-function _G.startFlightFunc()
-	if _G.flying or not root then return end
-	_G.flying=true
-	_G.bodyVelocity=Instance.new("BodyVelocity")
-	_G.bodyVelocity.MaxForce=Vector3.new(math.huge,math.huge,math.huge)
-	_G.bodyVelocity.Velocity=Vector3.zero
-	_G.bodyVelocity.Parent=root
-	_G.bodyGyro=Instance.new("BodyGyro")
-	_G.bodyGyro.MaxTorque=Vector3.new(math.huge,math.huge,math.huge)
-	_G.bodyGyro.P=10000
-	_G.bodyGyro.Parent=root
-	humanoid.PlatformStand=true
-	if _G.noclipEnabled then
-		setNoclip(true)
-		_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
-	end
-end
-
-function _G.stopFlightFunc()
-	_G.flying=false
-	if _G.bodyVelocity then _G.bodyVelocity:Destroy() _G.bodyVelocity=nil end
-	if _G.bodyGyro then _G.bodyGyro:Destroy() _G.bodyGyro=nil end
-	if humanoid then humanoid.PlatformStand=false end
-	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
-	setNoclip(false)
-end
-
-function _G.enableNoclipFunc()
-	if _G.flying then
-		setNoclip(true)
-		if not _G.noclipConnection then
-			_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
-		end
-	end
-end
-
-function _G.disableNoclipFunc()
-	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
-	setNoclip(false)
-end
-
-function _G.startAirwalkFunc()
-	if _G.airwalkPlatform then return end
-	_G.airwalkY=root.Position.Y-3
-	_G.airwalkPlatform=Instance.new("Part")
-	_G.airwalkPlatform.Size=Vector3.new(6,1,6)
-	_G.airwalkPlatform.Transparency=1
-	_G.airwalkPlatform.CanCollide=true
-	_G.airwalkPlatform.Anchored=true
-	_G.airwalkPlatform.Parent=workspace
-end
-
-function _G.stopAirwalkFunc()
-	if _G.airwalkPlatform then _G.airwalkPlatform:Destroy() _G.airwalkPlatform=nil end
-end
-
 local function getTargets()
 	local t={}
 	for _,p in pairs(PL:GetPlayers()) do
@@ -202,20 +139,6 @@ local function updateTargetStrafe()
 end
 
 RS.RenderStepped:Connect(function()
-	if _G.flying and _G.bodyVelocity and _G.bodyGyro and root then
-		local cam=workspace.CurrentCamera
-		local move=Vector3.zero
-		if UIS:IsKeyDown(Enum.KeyCode.W) then move=move+cam.CFrame.LookVector end
-		if UIS:IsKeyDown(Enum.KeyCode.S) then move=move-cam.CFrame.LookVector end
-		if UIS:IsKeyDown(Enum.KeyCode.A) then move=move-cam.CFrame.RightVector end
-		if UIS:IsKeyDown(Enum.KeyCode.D) then move=move+cam.CFrame.RightVector end
-		if UIS:IsKeyDown(Enum.KeyCode.Space) then move=move+Vector3.new(0,1,0) end
-		if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move=move+Vector3.new(0,-1,0) end
-		if move.Magnitude>0 then move=move.Unit*_G.currentFlight end
-		_G.bodyVelocity.Velocity=move
-		_G.bodyGyro.CFrame=cam.CFrame
-	end
-
 	if _G.aimbotEnabled then
 		local targets=getTargets()
 		local target=nil
@@ -251,24 +174,8 @@ RS.RenderStepped:Connect(function()
 	updateTargetStrafe()
 end)
 
-RS.Heartbeat:Connect(function()
-	if _G.strafeEnabled and _G.currentStrafe>0 and root and humanoid and not _G.flying then
-		local md=humanoid.MoveDirection
-		local sp=humanoid.WalkSpeed
-		local des=md*sp
-		local vel=root.AssemblyLinearVelocity
-		local st=_G.currentStrafe/100
-		root.AssemblyLinearVelocity=Vector3.new(vel.X+(des.X-vel.X)*st,vel.Y,vel.Z+(des.Z-vel.Z)*st)
-	end
-	if _G.airwalkEnabled and _G.airwalkPlatform and root then
-		_G.airwalkPlatform.CFrame=CFrame.new(root.Position.X,_G.airwalkY,root.Position.Z)
-	end
-end)
-
 player.CharacterAdded:Connect(function(c)
 	character=c
 	humanoid=character:WaitForChild("Humanoid")
 	root=character:WaitForChild("HumanoidRootPart")
-	_G.stopFlightFunc()
-	_G.stopAirwalkFunc()
 end)
