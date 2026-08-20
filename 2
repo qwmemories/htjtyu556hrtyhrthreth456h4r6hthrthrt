@@ -186,9 +186,9 @@ for index,name in ipairs(modules) do
 	label.TextXAlignment=Enum.TextXAlignment.Left
 	label.Parent=row
 
-	local minus=button(row,UDim2.new(0,18,0,22),UDim2.new(0,126,0,6),"−")
-	local plus=button(row,UDim2.new(0,18,0,22),UDim2.new(0,148,0,6),"+")
-	local key=button(row,UDim2.new(0,34,0,22),UDim2.new(0,172,0,6),"—")
+	local minus=button(row,UDim2.new(0,18,0,22),UDim2.new(0,132,0,6),"−")
+	local plus=button(row,UDim2.new(0,18,0,22),UDim2.new(0,154,0,6),"+")
+	local key=button(row,UDim2.new(0,28,0,22),UDim2.new(0,178,0,6),"—")
 
 	local sep=Instance.new("Frame")
 	sep.Size=UDim2.new(0,224,0,1)
@@ -245,6 +245,7 @@ local function setCategoryVisual(category)
 end
 
 local function switchToBind()
+	if _G.isHidden then return end
 	if _G.currentCategory=="bind" then
 		return
 	end
