@@ -73,7 +73,7 @@ sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
 mf.Size=UDim2.new(0,350,0,530)
-mf.Position=UDim2.new(0.5,-175,0.5,-265)
+mf.Position=UDim2.new(0.5,-175,0.5,-285)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
 mf.Active=true
@@ -513,6 +513,108 @@ miscC.BackgroundTransparency=1
 miscC.Visible=false
 miscC.Parent=contentViewport
 
+local keybindC=Instance.new("Frame")
+keybindC.Size=UDim2.new(0,258,0,500)
+keybindC.Position=UDim2.new(0,0,0,0)
+keybindC.BackgroundTransparency=1
+keybindC.Visible=false
+keybindC.Parent=contentViewport
+
+local keybindRows={}
+local keybinds={}
+local keybindListening=nil
+
+local function createKeybindRow(parent,name,y,toggleFunc)
+	local label=Instance.new("TextLabel")
+	label.Size=UDim2.new(0,105,0,25)
+	label.Position=UDim2.new(0,10,0,y)
+	label.BackgroundTransparency=1
+	label.Text=name
+	label.TextColor3=Color3.new(0.6,0.6,0.6)
+	label.TextSize=18
+	label.Font=Enum.Font.Gotham
+	label.TextXAlignment=Enum.TextXAlignment.Left
+	label.Parent=parent
+
+	local plus=Instance.new("TextButton")
+	plus.Size=UDim2.new(0,22,0,22)
+	plus.Position=UDim2.new(0,125,0,y+2)
+	plus.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+	plus.BackgroundTransparency=0.04
+	plus.Text="+"
+	plus.TextColor3=Color3.new(1,1,1)
+	plus.TextSize=16
+	plus.Font=Enum.Font.GothamBold
+	plus.AutoButtonColor=false
+	plus.Parent=parent
+	Instance.new("UICorner",plus).CornerRadius=UDim.new(0,5)
+
+	local minus=Instance.new("TextButton")
+	minus.Size=UDim2.new(0,22,0,22)
+	minus.Position=UDim2.new(0,151,0,y+2)
+	minus.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+	minus.BackgroundTransparency=0.04
+	minus.Text="-"
+	minus.TextColor3=Color3.new(1,1,1)
+	minus.TextSize=16
+	minus.Font=Enum.Font.GothamBold
+	minus.AutoButtonColor=false
+	minus.Parent=parent
+	Instance.new("UICorner",minus).CornerRadius=UDim.new(0,5)
+
+	local bind=Instance.new("TextButton")
+	bind.Size=UDim2.new(0,54,0,22)
+	bind.Position=UDim2.new(0,177,0,y+2)
+	bind.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+	bind.BackgroundTransparency=0.04
+	bind.Text="None"
+	bind.TextColor3=Color3.new(0.6,0.6,0.6)
+	bind.TextSize=13
+	bind.Font=Enum.Font.Gotham
+	bind.AutoButtonColor=false
+	bind.Parent=parent
+	Instance.new("UICorner",bind).CornerRadius=UDim.new(0,5)
+
+	local st=Instance.new("UIStroke")
+	st.Color=Color3.fromRGB(160,160,160)
+	st.Transparency=1
+	st.Thickness=1.5
+	st.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+	st.Parent=bind
+
+	local pst=Instance.new("UIStroke")
+	pst.Color=Color3.fromRGB(160,160,160)
+	pst.Transparency=1
+	pst.Thickness=1.5
+	pst.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+	pst.Parent=plus
+
+	local mst=Instance.new("UIStroke")
+	mst.Color=Color3.fromRGB(160,160,160)
+	mst.Transparency=1
+	mst.Thickness=1.5
+	mst.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+	mst.Parent=minus
+
+	local row={name=name,label=label,plus=plus,minus=minus,bind=bind,stroke=st,toggle=toggleFunc}
+	keybindRows[name]=row
+
+	local function listen()
+		keybindListening=name
+		bind.Text="..."
+		bind.TextColor3=Color3.new(1,1,1)
+	end
+
+	plus.MouseButton1Click:Connect(listen)
+	bind.MouseButton1Click:Connect(listen)
+	minus.MouseButton1Click:Connect(function()
+		keybinds[name]=nil
+		if keybindListening==name then keybindListening=nil end
+		bind.Text="None"
+		bind.TextColor3=Color3.new(0.6,0.6,0.6)
+	end)
+end
+
 local aimT=Instance.new("TextLabel")
 aimT.Size=UDim2.new(0.5,0,0,25)
 aimT.Position=UDim2.new(0,10,0,2)
@@ -754,124 +856,6 @@ miscL.Font=Enum.Font.GothamBold
 miscL.TextWrapped=true
 miscL.Parent=catBar
 
-local keybindC=Instance.new("Frame")
-keybindC.Size=UDim2.new(0,258,0,0)
-keybindC.Position=UDim2.new(0,0,0,0)
-keybindC.BackgroundTransparency=1
-keybindC.Visible=false
-keybindC.Parent=contentViewport
-
-local keybindRows={}
-local keybindOrder={}
-local keybindWaiting=nil
-
-local function keybindText(key)
-	if not key then return "None" end
-	local n=key.Name
-	n=n:gsub("Left","L "):gsub("Right","R ")
-	return n
-end
-
-local function rebuildKeybindLayout()
-	for index,name in ipairs(keybindOrder) do
-		local row=keybindRows[name]
-		if row then
-			row.Position=UDim2.new(0,0,0,(index-1)*38)
-		end
-	end
-	keybindC.Size=UDim2.new(0,258,0,#keybindOrder*38)
-	if _G.currentCategory=="keybind" then
-		task.defer(function() refreshScroll(false) end)
-	end
-end
-
-local function registerKeybind(name,callback)
-	if keybindRows[name] then
-		keybindRows[name].callback=callback
-		return
-	end
-
-	table.insert(keybindOrder,name)
-
-	local row=Instance.new("Frame")
-	row.Size=UDim2.new(1,0,0,34)
-	row.BackgroundTransparency=1
-	row.Parent=keybindC
-
-	local label=Instance.new("TextLabel")
-	label.Size=UDim2.new(0,105,1,0)
-	label.Position=UDim2.new(0,8,0,0)
-	label.BackgroundTransparency=1
-	label.Text=name
-	label.TextColor3=Color3.new(0.6,0.6,0.6)
-	label.TextSize=18
-	label.Font=Enum.Font.Gotham
-	label.TextXAlignment=Enum.TextXAlignment.Left
-	label.Parent=row
-
-	local add=Instance.new("TextButton")
-	add.Size=UDim2.new(0,28,0,22)
-	add.Position=UDim2.new(0,112,0,6)
-	add.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-	add.BackgroundTransparency=0.04
-	add.Text="+"
-	add.TextColor3=Color3.new(1,1,1)
-	add.TextSize=16
-	add.Font=Enum.Font.GothamBold
-	add.AutoButtonColor=false
-	add.Parent=row
-	Instance.new("UICorner",add).CornerRadius=UDim.new(0,5)
-
-	local bind=Instance.new("TextButton")
-	bind.Size=UDim2.new(0,72,0,22)
-	bind.Position=UDim2.new(0,143,0,6)
-	bind.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-	bind.BackgroundTransparency=0.04
-	bind.Text="None"
-	bind.TextColor3=Color3.new(0.7,0.7,0.7)
-	bind.TextSize=13
-	bind.Font=Enum.Font.Gotham
-	bind.AutoButtonColor=false
-	bind.Parent=row
-	Instance.new("UICorner",bind).CornerRadius=UDim.new(0,5)
-
-	local remove=Instance.new("TextButton")
-	remove.Size=UDim2.new(0,28,0,22)
-	remove.Position=UDim2.new(0,218,0,6)
-	remove.BackgroundColor3=Color3.new(0.15,0.15,0.15)
-	remove.BackgroundTransparency=0.04
-	remove.Text="-"
-	remove.TextColor3=Color3.new(1,1,1)
-	remove.TextSize=16
-	remove.Font=Enum.Font.GothamBold
-	remove.AutoButtonColor=false
-	remove.Parent=row
-	Instance.new("UICorner",remove).CornerRadius=UDim.new(0,5)
-
-	local data={row=row,label=label,add=add,bind=bind,remove=remove,callback=callback,key=nil}
-	keybindRows[name]=data
-
-	local function beginBind()
-		if keybindWaiting then
-			keybindWaiting.bind.Text=keybindText(keybindWaiting.key)
-		end
-		keybindWaiting=data
-		bind.Text="..."
-	end
-
-	add.MouseButton1Click:Connect(beginBind)
-	bind.MouseButton1Click:Connect(beginBind)
-	remove.MouseButton1Click:Connect(function()
-		if keybindWaiting==data then keybindWaiting=nil end
-		data.key=nil
-		bind.Text="None"
-	end)
-
-	rebuildKeybindLayout()
-end
-
-_G.addKeybind=registerKeybind
-
 local keybindL=Instance.new("TextButton")
 keybindL.Size=UDim2.new(1,0,0,40)
 keybindL.Position=UDim2.new(0,0,0,120)
@@ -883,13 +867,6 @@ keybindL.TextSize=14
 keybindL.Font=Enum.Font.GothamBold
 keybindL.TextWrapped=true
 keybindL.Parent=catBar
-
-local keybindSep=Instance.new("Frame")
-keybindSep.Size=UDim2.new(0,48,0,1)
-keybindSep.Position=UDim2.new(0.5,-24,0,110)
-keybindSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
-keybindSep.BorderSizePixel=0
-keybindSep.Parent=catBar
 
 local scrollTrack=Instance.new("Frame")
 scrollTrack.Size=UDim2.new(0,6,0,460)
@@ -916,8 +893,6 @@ _G.scrollDragging=false
 _G.scrollDragStartY=0
 _G.scrollDragStartCanvas=0
 
--- Custom scroll settings.
--- The native Roblox wheel is disabled so scrolling stays slow and predictable.
 local SCROLL_STEP=24
 local SCROLL_SMOOTHNESS=0.12
 
@@ -925,9 +900,7 @@ local scrollTarget=0
 local scrollCurrent=0
 
 local function activeContent()
-	if _G.currentCategory=="movement" then return mc end
-	if _G.currentCategory=="misc" then return miscC end
-	return keybindC
+	return _G.currentCategory=="movement" and mc or (_G.currentCategory=="misc" and miscC or keybindC)
 end
 
 local function contentBottom(content)
@@ -961,11 +934,9 @@ local function calculateScroll()
 	local viewportH=contentViewport.AbsoluteSize.Y
 	local bottom=contentBottom(content)
 
-	-- Canvas is never smaller than the visible viewport.
 	local canvasHeight=math.max(bottom,viewportH)
 	contentViewport.CanvasSize=UDim2.new(0,0,0,canvasHeight)
 
-	-- The absolute bottom of the last visible module determines the limit.
 	local maxScroll=math.max(0,bottom-viewportH)
 	_G.scrollMax=maxScroll
 
@@ -1032,11 +1003,8 @@ local function refreshScroll(resetPosition)
 	updateScrollBar()
 end
 
--- Native ScrollingFrame scrolling is disabled.
--- This prevents Roblox's very fast default mouse-wheel movement.
 contentViewport.ScrollingEnabled=false
 
--- Slow, smooth mouse-wheel scrolling.
 UIS.InputChanged:Connect(function(input)
 	if input.UserInputType~=Enum.UserInputType.MouseWheel then
 		return
@@ -1058,12 +1026,10 @@ UIS.InputChanged:Connect(function(input)
 		return
 	end
 
-	-- Positive Z means wheel up, negative means wheel down.
 	scrollTarget=scrollTarget-(input.Position.Z*SCROLL_STEP)
 	scrollTarget=math.clamp(scrollTarget,0,maxScroll)
 end)
 
--- Drag the custom scrollbar thumb.
 scrollThumb.InputBegan:Connect(function(input)
 	if _G.isHidden or _G.isAnimating then
 		return
@@ -1111,7 +1077,6 @@ UIS.InputEnded:Connect(function(input)
 	end
 end)
 
--- One RenderStepped loop owns the smooth scroll movement.
 RS.RenderStepped:Connect(function()
 	if _G.isHidden or _G.isAnimating or not mf.Visible then
 		scrollTrack.Visible=false
@@ -1132,7 +1097,6 @@ RS.RenderStepped:Connect(function()
 
 	scrollTarget=math.clamp(scrollTarget,0,maxScroll)
 
-	-- Smooth interpolation makes the wheel much less sharp.
 	scrollCurrent=scrollCurrent+
 		(scrollTarget-scrollCurrent)*SCROLL_SMOOTHNESS
 
@@ -1140,7 +1104,6 @@ RS.RenderStepped:Connect(function()
 		scrollCurrent=scrollTarget
 	end
 
-	-- Final hard limit: it is impossible to scroll beyond the last module.
 	scrollCurrent=math.clamp(scrollCurrent,0,maxScroll)
 
 	contentViewport.CanvasPosition=Vector2.new(0,scrollCurrent)
@@ -1149,9 +1112,7 @@ end)
 
 task.defer(function()
 	task.wait()
-	task.defer(function()
-		refreshScroll(true)
-	end)
+	refreshScroll(true)
 end)
 
 local function setToggle(t,k,on,anim)
@@ -1214,6 +1175,11 @@ hover(rH,rHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
+for _,row in pairs(keybindRows) do
+	hover(row.bind,row.stroke)
+	hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke"))
+	hover(row.minus,row.minus:FindFirstChildOfClass("UIStroke"))
+end
 
 local function setColors(en,label,slider,fill,handle)
 	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
@@ -1473,30 +1439,40 @@ local function cycleMode()
 	end
 end
 
-registerKeybind("Speed",toggleSpeed)
-registerKeybind("Jump",toggleJump)
-registerKeybind("Flight",toggleFlight)
-registerKeybind("Noclip",toggleNoclip)
-registerKeybind("Strafe",toggleStrafe)
-registerKeybind("Airwalk",toggleAirwalk)
-registerKeybind("ClickTP",toggleClickTp)
-registerKeybind("AirJump",toggleAirJump)
-registerKeybind("Aimbot",toggleAimbot)
-registerKeybind("TargetLock",toggleTargetLock)
-registerKeybind("WallsCheck",toggleWallsCheck)
+createKeybindRow(keybindC,"Speed",2,toggleSpeed)
+createKeybindRow(keybindC,"Jump",38,toggleJump)
+createKeybindRow(keybindC,"Flight",74,toggleFlight)
+createKeybindRow(keybindC,"Noclip",110,toggleNoclip)
+createKeybindRow(keybindC,"Strafe",146,toggleStrafe)
+createKeybindRow(keybindC,"Airwalk",182,toggleAirwalk)
+createKeybindRow(keybindC,"ClickTP",218,toggleClickTp)
+createKeybindRow(keybindC,"AirJump",254,toggleAirJump)
+createKeybindRow(keybindC,"Aimbot",290,toggleAimbot)
+createKeybindRow(keybindC,"TargetLock",326,toggleTargetLock)
+createKeybindRow(keybindC,"WallsCheck",362,toggleWallsCheck)
 
-UIS.InputBegan:Connect(function(input,processed)
-	if processed then return end
-	if keybindWaiting and input.UserInputType==Enum.UserInputType.Keyboard and input.KeyCode~=Enum.KeyCode.Unknown then
-		keybindWaiting.key=input.KeyCode
-		keybindWaiting.bind.Text=keybindText(input.KeyCode)
-		keybindWaiting=nil
-		return
+UIS.InputBegan:Connect(function(i,p)
+	if p then return end
+	if keybindListening then
+		if i.UserInputType==Enum.UserInputType.Keyboard and i.KeyCode~=Enum.KeyCode.Unknown then
+			local name=keybindListening
+			keybinds[name]=i.KeyCode
+			keybindListening=nil
+			local row=keybindRows[name]
+			if row then
+				row.bind.Text=i.KeyCode.Name
+				row.bind.TextColor3=Color3.new(1,1,1)
+			end
+			return
+		end
 	end
-	for _,name in ipairs(keybindOrder) do
-		local data=keybindRows[name]
-		if data and data.key==input.KeyCode and data.callback then
-			data.callback()
+
+	if i.UserInputType==Enum.UserInputType.Keyboard then
+		for name,key in pairs(keybinds) do
+			if key==i.KeyCode then
+				local row=keybindRows[name]
+				if row then row.toggle() end
+			end
 		end
 	end
 end)
@@ -1554,12 +1530,28 @@ local function switchCat(c)
 
 	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 
-	TS:Create(movL,inf,{TextTransparency=c=="movement" and 0 or 0.4}):Play()
-	TS:Create(miscL,inf,{TextTransparency=c=="misc" and 0 or 0.4}):Play()
-	TS:Create(keybindL,inf,{TextTransparency=c=="keybind" and 0 or 0.4}):Play()
-	mc.Visible=c=="movement"
-	miscC.Visible=c=="misc"
-	keybindC.Visible=c=="keybind"
+	if c=="movement" then
+		TS:Create(movL,inf,{TextTransparency=0}):Play()
+		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(keybindL,inf,{TextTransparency=0.4}):Play()
+		miscC.Visible=false
+		mc.Visible=true
+		keybindC.Visible=false
+	elseif c=="misc" then
+		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(miscL,inf,{TextTransparency=0}):Play()
+		TS:Create(keybindL,inf,{TextTransparency=0.4}):Play()
+		mc.Visible=false
+		miscC.Visible=true
+		keybindC.Visible=false
+	else
+		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(keybindL,inf,{TextTransparency=0}):Play()
+		mc.Visible=false
+		miscC.Visible=false
+		keybindC.Visible=true
+	end
 
 	task.defer(function()
 		task.wait()
@@ -1637,12 +1629,10 @@ local function setMinimized(s)
 	_G.isAnimating=true
 	_G.isHidden=s
 
-	-- Scrollbar disappears for the whole duration of the UI animation.
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
 	contentViewport.ScrollingEnabled=false
 
-	-- The normal UI is slightly shorter so there is no large empty gap below it.
 	local ts=s
 		and UDim2.new(0,350,0,30)
 		or UDim2.new(0,350,0,530)
@@ -1675,8 +1665,6 @@ local function setMinimized(s)
 	tw.Completed:Connect(function()
 		if not s then
 			setVisible(true)
-			-- Recalculate after the animation so the scrollbar appears
-			-- only when the current category actually needs it.
 			refreshScroll(true)
 		else
 			scrollTrack.Visible=false
