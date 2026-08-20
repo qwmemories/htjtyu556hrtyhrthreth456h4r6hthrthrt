@@ -106,12 +106,18 @@ local function selectTarget(targets)
 	end
 end
 
-local function isVisible(head)
+local function isVisible(part)
 	if not _G.wallsCheckEnabled then return true end
-	local r=workspace:Raycast(workspace.CurrentCamera.CFrame.Position,head.Position-workspace.CurrentCamera.CFrame.Position)
-	if r and r.Instance then
-		local hc=r.Instance:FindFirstAncestorOfClass("Model")
-		return hc and hc:FindFirstChild("Humanoid")~=nil
+	local origin=workspace.CurrentCamera.CFrame.Position
+	local direction=(part.Position-origin)
+	local ray=workspace:Raycast(origin,direction)
+	if ray and ray.Instance then
+		local hitChar=ray.Instance:FindFirstAncestorOfClass("Model")
+		if hitChar and hitChar:FindFirstChild("Humanoid") then
+			return true
+		else
+			return false
+		end
 	end
 	return true
 end
@@ -180,16 +186,3 @@ RS.Heartbeat:Connect(function()
 		local vel=root.AssemblyLinearVelocity
 		local st=_G.currentStrafe/100
 		root.AssemblyLinearVelocity=Vector3.new(vel.X+(des.X-vel.X)*st,vel.Y,vel.Z+(des.Z-vel.Z)*st)
-	end
-	if _G.airwalkEnabled and _G.airwalkPlatform and root then
-		_G.airwalkPlatform.CFrame=CFrame.new(root.Position.X,_G.airwalkY,root.Position.Z)
-	end
-end)
-
-player.CharacterAdded:Connect(function(c)
-	character=c
-	humanoid=character:WaitForChild("Humanoid")
-	root=character:WaitForChild("HumanoidRootPart")
-	_G.stopFlightFunc()
-	_G.stopAirwalkFunc()
-end)
