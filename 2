@@ -1,201 +1,340 @@
 local player=game.Players.LocalPlayer
-local character=player.Character or player.CharacterAdded:Wait()
-local humanoid=character:WaitForChild("Humanoid")
-local root=character:WaitForChild("HumanoidRootPart")
-local mouse=player:GetMouse()
 local UIS=game:GetService("UserInputService")
-local RS=game:GetService("RunService")
-local PL=game:GetService("Players")
+local TS=game:GetService("TweenService")
 
-repeat wait(0.1) until _G.speedEnabled~=nil
-wait(0.2)
+repeat task.wait() until _G.UIReady and _G.UIRefs and _G.ModuleActions
+task.wait()
 
-local function setNoclip(s)
-	if not character then return end
-	for _,p in pairs(character:GetDescendants()) do
-		if p:IsA("BasePart") then p.CanCollide=not s end
+local ui=_G.UIRefs
+local actions=_G.ModuleActions
+local mf=ui.mf
+local catBar=ui.catBar
+local contentViewport=ui.contentViewport
+local movL=ui.movL
+local miscL=ui.miscL
+
+local keybindContent=Instance.new("Frame")
+keybindContent.Size=UDim2.new(0,258,0,430)
+keybindContent.Position=UDim2.new(0,0,0,0)
+keybindContent.BackgroundTransparency=1
+keybindContent.Visible=false
+keybindContent.Parent=contentViewport
+_G.keybindContent=keybindContent
+
+local keybindTitle=Instance.new("TextLabel")
+keybindTitle.Size=UDim2.new(1,0,0,28)
+keybindTitle.Position=UDim2.new(0,10,0,0)
+keybindTitle.BackgroundTransparency=1
+keybindTitle.Text="Keybinds"
+keybindTitle.TextColor3=Color3.new(0.6,0.6,0.6)
+keybindTitle.TextSize=18
+keybindTitle.Font=Enum.Font.GothamBold
+keybindTitle.TextXAlignment=Enum.TextXAlignment.Left
+keybindTitle.Parent=keybindContent
+
+local keybindRows={}
+local bindings={}
+local captureName=nil
+
+local function stroke(parent)
+	local s=Instance.new("UIStroke")
+	s.Color=Color3.fromRGB(160,160,160)
+	s.Transparency=1
+	s.Thickness=1.5
+	s.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+	s.Parent=parent
+	return s
+end
+
+local function button(parent,size,pos,text)
+	local b=Instance.new("TextButton")
+	b.Size=size
+	b.Position=pos
+	b.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+	b.BackgroundTransparency=0.04
+	b.BorderSizePixel=0
+	b.Text=text
+	b.TextColor3=Color3.new(0.85,0.85,0.85)
+	b.TextSize=13
+	b.Font=Enum.Font.GothamBold
+	b.AutoButtonColor=false
+	b.Parent=parent
+	Instance.new("UICorner",b).CornerRadius=UDim.new(0,5)
+	local s=stroke(b)
+	b.MouseEnter:Connect(function()
+		TS:Create(s,TweenInfo.new(0.15,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Transparency=0.4}):Play()
+	end)
+	b.MouseLeave:Connect(function()
+		TS:Create(s,TweenInfo.new(0.15,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Transparency=1}):Play()
+	end)
+	return b
+end
+
+local function keyText(key)
+	if not key then
+		return "—"
+	end
+	local n=key.Name
+	local names={
+		LeftShift="LShift",
+		RightShift="RShift",
+		LeftControl="LCtrl",
+		RightControl="RCtrl",
+		LeftAlt="LAlt",
+		RightAlt="RAlt",
+		Backspace="Back",
+		RightBracket="]",
+		LeftBracket="[",
+		Semicolon=";",
+		Quote="'",
+		Comma=",",
+		Period=".",
+		Slash="/",
+		Backquote="`",
+		Minus="-",
+		Equals="=",
+		LeftSuper="LSuper",
+		RightSuper="RSuper"
+	}
+	return names[n] or n
+end
+
+local function refreshRow(name)
+	local row=keybindRows[name]
+	if not row then return end
+	row.key.Text=keyText(bindings[name])
+end
+
+local function cancelCapture()
+	if not captureName then return end
+	local row=keybindRows[captureName]
+	if row then
+		row.plus.Text="+"
+		row.key.Text=keyText(bindings[captureName])
+	end
+	captureName=nil
+	_G.keybindCapturing=false
+end
+
+local function beginCapture(name)
+	if captureName and captureName~=name then
+		cancelCapture()
+	end
+	captureName=name
+	_G.keybindCapturing=true
+	local row=keybindRows[name]
+	if row then
+		row.plus.Text="..."
+		row.key.Text="..."
 	end
 end
 
-function _G.startFlightFunc()
-	if _G.flying or not root then return end
-	_G.flying=true
-	_G.bodyVelocity=Instance.new("BodyVelocity")
-	_G.bodyVelocity.MaxForce=Vector3.new(math.huge,math.huge,math.huge)
-	_G.bodyVelocity.Velocity=Vector3.zero
-	_G.bodyVelocity.Parent=root
-	_G.bodyGyro=Instance.new("BodyGyro")
-	_G.bodyGyro.MaxTorque=Vector3.new(math.huge,math.huge,math.huge)
-	_G.bodyGyro.P=10000
-	_G.bodyGyro.Parent=root
-	humanoid.PlatformStand=true
-	if _G.noclipEnabled then
-		setNoclip(true)
-		_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+local function clearBinding(name)
+	if captureName==name then
+		captureName=nil
+		_G.keybindCapturing=false
+	end
+	bindings[name]=nil
+	refreshRow(name)
+	if keybindRows[name] then
+		keybindRows[name].plus.Text="+"
 	end
 end
 
-function _G.stopFlightFunc()
-	_G.flying=false
-	if _G.bodyVelocity then _G.bodyVelocity:Destroy() _G.bodyVelocity=nil end
-	if _G.bodyGyro then _G.bodyGyro:Destroy() _G.bodyGyro=nil end
-	if humanoid then humanoid.PlatformStand=false end
-	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
-	setNoclip(false)
-end
-
-function _G.enableNoclipFunc()
-	if _G.flying then
-		setNoclip(true)
-		if not _G.noclipConnection then
-			_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+local function setBinding(name,key)
+	for other,current in pairs(bindings) do
+		if other~=name and current==key then
+			bindings[other]=nil
+			refreshRow(other)
 		end
 	end
+	bindings[name]=key
+	refreshRow(name)
 end
 
-function _G.disableNoclipFunc()
-	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
-	setNoclip(false)
+local modules={
+	"Speed",
+	"Jump",
+	"Flight",
+	"Noclip",
+	"Strafe",
+	"Airwalk",
+	"ClickTP",
+	"AirJump",
+	"Aimbot",
+	"TargetLock",
+	"WallsCheck"
+}
+
+for index,name in ipairs(modules) do
+	local y=30+(index-1)*36
+
+	local row=Instance.new("Frame")
+	row.Size=UDim2.new(1,-8,0,34)
+	row.Position=UDim2.new(0,4,0,y)
+	row.BackgroundTransparency=1
+	row.Parent=keybindContent
+
+	local label=Instance.new("TextLabel")
+	label.Size=UDim2.new(0,105,1,0)
+	label.Position=UDim2.new(0,6,0,0)
+	label.BackgroundTransparency=1
+	label.Text=name
+	label.TextColor3=Color3.new(0.6,0.6,0.6)
+	label.TextSize=17
+	label.Font=Enum.Font.Gotham
+	label.TextXAlignment=Enum.TextXAlignment.Left
+	label.Parent=row
+
+	local plus=button(row,UDim2.new(0,28,0,24),UDim2.new(0,132,0,5),"+")
+	local key=button(row,UDim2.new(0,70,0,24),UDim2.new(0,164,0,5),"—")
+	local minus=button(row,UDim2.new(0,28,0,24),UDim2.new(0,238,0,5),"−")
+
+	local sep=Instance.new("Frame")
+	sep.Size=UDim2.new(0,224,0,1)
+	sep.Position=UDim2.new(0,6,1,-1)
+	sep.BackgroundColor3=Color3.new(0.3,0.3,0.3)
+	sep.BackgroundTransparency=0.35
+	sep.BorderSizePixel=0
+	sep.Parent=row
+
+	keybindRows[name]={plus=plus,key=key,minus=minus}
+
+	plus.MouseButton1Click:Connect(function()
+		beginCapture(name)
+	end)
+
+	key.MouseButton1Click:Connect(function()
+		beginCapture(name)
+	end)
+
+	minus.MouseButton1Click:Connect(function()
+		clearBinding(name)
+	end)
 end
 
-function _G.startAirwalkFunc()
-	if _G.airwalkPlatform then return end
-	_G.airwalkY=root.Position.Y-3
-	_G.airwalkPlatform=Instance.new("Part")
-	_G.airwalkPlatform.Size=Vector3.new(6,1,6)
-	_G.airwalkPlatform.Transparency=1
-	_G.airwalkPlatform.CanCollide=true
-	_G.airwalkPlatform.Anchored=true
-	_G.airwalkPlatform.Parent=workspace
+keybindContent.Size=UDim2.new(0,258,0,30+#modules*36)
+
+local keybindSep1=Instance.new("Frame")
+keybindSep1.Size=UDim2.new(0,48,0,1)
+keybindSep1.Position=UDim2.new(0.5,-24,0,104)
+keybindSep1.BackgroundColor3=Color3.new(0.4,0.4,0.4)
+keybindSep1.BorderSizePixel=0
+keybindSep1.Parent=catBar
+
+local keybindL=Instance.new("TextButton")
+keybindL.Size=UDim2.new(1,0,0,40)
+keybindL.Position=UDim2.new(0,0,0,114)
+keybindL.BackgroundTransparency=1
+keybindL.Text="keybind"
+keybindL.TextColor3=Color3.new(1,1,1)
+keybindL.TextTransparency=0.4
+keybindL.TextSize=14
+keybindL.Font=Enum.Font.GothamBold
+keybindL.TextWrapped=true
+keybindL.Parent=catBar
+
+local function setCategoryVisual(category)
+	local inf=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+	local mov=category=="movement" and 0 or 0.4
+	local misc=category=="misc" and 0 or 0.4
+	local key=category=="keybind" and 0 or 0.4
+	TS:Create(movL,inf,{TextTransparency=mov}):Play()
+	TS:Create(miscL,inf,{TextTransparency=misc}):Play()
+	TS:Create(keybindL,inf,{TextTransparency=key}):Play()
 end
 
-function _G.stopAirwalkFunc()
-	if _G.airwalkPlatform then _G.airwalkPlatform:Destroy() _G.airwalkPlatform=nil end
-end
-
-local function getTargets()
-	local t={}
-	for _,p in pairs(PL:GetPlayers()) do
-		if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Head") then
-			local h=p.Character:FindFirstChild("Humanoid")
-			if h and h.Health>0 then table.insert(t,p) end
+local function switchToKeybind()
+	if _G.currentCategory=="keybind" then
+		return
+	end
+	_G.currentCategory="keybind"
+	keybindContent.Visible=true
+	ui.mc.Visible=false
+	ui.miscC.Visible=false
+	ui.scrollTrack.Visible=false
+	ui.scrollThumb.Visible=false
+	setCategoryVisual("keybind")
+	contentViewport.CanvasPosition=Vector2.new(0,0)
+	task.defer(function()
+		task.wait()
+		if _G.currentCategory=="keybind" then
+			contentViewport.CanvasSize=UDim2.new(0,0,0,math.max(keybindContent.AbsoluteSize.Y,contentViewport.AbsoluteSize.Y))
 		end
-	end
-	return t
+	end)
 end
 
-local function selectTarget(targets)
-	if #targets==0 then return nil end
-	if _G.sortMode=="Distance" then
-		table.sort(targets,function(a,b)
-			local da=(a.Character.HumanoidRootPart.Position-root.Position).Magnitude
-			local db=(b.Character.HumanoidRootPart.Position-root.Position).Magnitude
-			return da<db
-		end)
-		return targets[1]
-	else
-		local mp=UIS:GetMouseLocation()
-		table.sort(targets,function(a,b)
-			local pa,oa=workspace.CurrentCamera:WorldToViewportPoint(a.Character.Head.Position)
-			local pb,ob=workspace.CurrentCamera:WorldToViewportPoint(b.Character.Head.Position)
-			if not oa then return false end
-			if not ob then return true end
-			return (Vector2.new(pa.X,pa.Y)-mp).Magnitude<(Vector2.new(pb.X,pb.Y)-mp).Magnitude
-		end)
-		return targets[1]
-	end
-end
+keybindL.MouseButton1Click:Connect(switchToKeybind)
 
-local function isVisible(part)
-	if not _G.wallsCheckEnabled then return true end
-	local origin=workspace.CurrentCamera.CFrame.Position
-	local direction=(part.Position-origin)
-	local ray=workspace:Raycast(origin,direction)
-	if ray and ray.Instance then
-		local hitChar=ray.Instance:FindFirstAncestorOfClass("Model")
-		if hitChar and hitChar:FindFirstChild("Humanoid") then
-			return true
-		else
-			return false
+movL.MouseButton1Click:Connect(function()
+	keybindContent.Visible=false
+end)
+
+miscL.MouseButton1Click:Connect(function()
+	keybindContent.Visible=false
+end)
+
+movL.MouseButton1Click:Connect(function()
+	setCategoryVisual("movement")
+end)
+
+miscL.MouseButton1Click:Connect(function()
+	setCategoryVisual("misc")
+end)
+
+UIS.InputBegan:Connect(function(input,processed)
+	if processed then
+		return
+	end
+	if not captureName then
+		local key=input.KeyCode
+		if key==Enum.KeyCode.Unknown then
+			return
 		end
-	end
-	return true
-end
-
-local function getAimPart(target)
-	if _G.aimTarget=="Head" then
-		return target.Character.Head
-	else
-		return target.Character.HumanoidRootPart
-	end
-end
-
-RS.RenderStepped:Connect(function()
-	if _G.flying and _G.bodyVelocity and _G.bodyGyro and root then
-		local cam=workspace.CurrentCamera
-		local move=Vector3.zero
-		if UIS:IsKeyDown(Enum.KeyCode.W) then move=move+cam.CFrame.LookVector end
-		if UIS:IsKeyDown(Enum.KeyCode.S) then move=move-cam.CFrame.LookVector end
-		if UIS:IsKeyDown(Enum.KeyCode.A) then move=move-cam.CFrame.RightVector end
-		if UIS:IsKeyDown(Enum.KeyCode.D) then move=move+cam.CFrame.RightVector end
-		if UIS:IsKeyDown(Enum.KeyCode.Space) then move=move+Vector3.new(0,1,0) end
-		if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move=move+Vector3.new(0,-1,0) end
-		if move.Magnitude>0 then move=move.Unit*_G.currentFlight end
-		_G.bodyVelocity.Velocity=move
-		_G.bodyGyro.CFrame=cam.CFrame
-	end
-
-	if _G.aimbotEnabled then
-		local targets=getTargets()
-		local target=nil
-		if _G.targetLockEnabled and _G.lockedTarget and _G.lockedTarget.Character and _G.lockedTarget.Character:FindFirstChild("Head") then
-			local d=(_G.lockedTarget.Character.Head.Position-root.Position).Magnitude
-			if d<=_G.currentRange then target=_G.lockedTarget else _G.lockedTarget=nil end
-		end
-		if not target then
-			target=selectTarget(targets)
-			if _G.targetLockEnabled and target then _G.lockedTarget=target end
-		end
-		if target and target.Character then
-			local aimPart=getAimPart(target)
-			if aimPart then
-				local d=(aimPart.Position-root.Position).Magnitude
-				if d<=_G.currentRange and isVisible(aimPart) then
-					local cam=workspace.CurrentCamera
-					if _G.aimMode=="Center" then
-						local goal=CFrame.new(cam.CFrame.Position,aimPart.Position)
-						cam.CFrame=cam.CFrame:Lerp(goal,_G.currentSmoothness)
-					else
-						local pos,on=cam:WorldToViewportPoint(aimPart.Position)
-						if on then
-							local mp=UIS:GetMouseLocation()
-							mousemoverel((pos.X-mp.X)*_G.currentSmoothness,(pos.Y-mp.Y)*_G.currentSmoothness)
-						end
-					end
+		for name,bound in pairs(bindings) do
+			if bound==key then
+				local action=actions[name]
+				if action then
+					pcall(action)
 				end
+				break
 			end
 		end
+		return
 	end
+
+	local key=input.KeyCode
+	if key==Enum.KeyCode.Escape then
+		cancelCapture()
+		return
+	end
+	if key==Enum.KeyCode.Unknown then
+		return
+	end
+
+	local name=captureName
+	captureName=nil
+	_G.keybindCapturing=false
+	if keybindRows[name] then
+		keybindRows[name].plus.Text="+"
+	end
+	setBinding(name,key)
 end)
 
-RS.Heartbeat:Connect(function()
-	if _G.strafeEnabled and _G.currentStrafe>0 and root and humanoid and not _G.flying then
-		local md=humanoid.MoveDirection
-		local sp=humanoid.WalkSpeed
-		local des=md*sp
-		local vel=root.AssemblyLinearVelocity
-		local st=_G.currentStrafe/100
-		root.AssemblyLinearVelocity=Vector3.new(vel.X+(des.X-vel.X)*st,vel.Y,vel.Z+(des.Z-vel.Z)*st)
+local function updateCategoryAfterAction()
+	if _G.currentCategory=="keybind" then
+		keybindContent.Visible=true
 	end
-	if _G.airwalkEnabled and _G.airwalkPlatform and root then
-		_G.airwalkPlatform.CFrame=CFrame.new(root.Position.X,_G.airwalkY,root.Position.Z)
-	end
-end)
+end
 
-player.CharacterAdded:Connect(function(c)
-	character=c
-	humanoid=character:WaitForChild("Humanoid")
-	root=character:WaitForChild("HumanoidRootPart")
-	_G.stopFlightFunc()
-	_G.stopAirwalkFunc()
-end)
+for _,name in ipairs(modules) do
+	local action=actions[name]
+	if action then
+		actions[name]=function()
+			action()
+			updateCategoryAfterAction()
+		end
+	end
+end
+
+setCategoryVisual("movement")
