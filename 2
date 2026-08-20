@@ -13,26 +13,26 @@ local contentViewport=ui.contentViewport
 local movL=ui.movL
 local miscL=ui.miscL
 
-local bindContent=Instance.new("Frame")
-bindContent.Size=UDim2.new(0,226,0,430)
-bindContent.Position=UDim2.new(0,0,0,0)
-bindContent.BackgroundTransparency=1
-bindContent.Visible=false
-bindContent.Parent=contentViewport
-_G.bindContent=bindContent
+local keybindContent=Instance.new("Frame")
+keybindContent.Size=UDim2.new(0,258,0,430)
+keybindContent.Position=UDim2.new(0,0,0,0)
+keybindContent.BackgroundTransparency=1
+keybindContent.Visible=false
+keybindContent.Parent=contentViewport
+_G.keybindContent=keybindContent
 
-local bindTitle=Instance.new("TextLabel")
-bindTitle.Size=UDim2.new(1,0,0,28)
-bindTitle.Position=UDim2.new(0,10,0,0)
-bindTitle.BackgroundTransparency=1
-bindTitle.Text="Bind"
-bindTitle.TextColor3=Color3.new(0.6,0.6,0.6)
-bindTitle.TextSize=18
-bindTitle.Font=Enum.Font.GothamBold
-bindTitle.TextXAlignment=Enum.TextXAlignment.Left
-bindTitle.Parent=bindContent
+local keybindTitle=Instance.new("TextLabel")
+keybindTitle.Size=UDim2.new(1,0,0,28)
+keybindTitle.Position=UDim2.new(0,10,0,0)
+keybindTitle.BackgroundTransparency=1
+keybindTitle.Text="Keybinds"
+keybindTitle.TextColor3=Color3.new(0.6,0.6,0.6)
+keybindTitle.TextSize=18
+keybindTitle.Font=Enum.Font.GothamBold
+keybindTitle.TextXAlignment=Enum.TextXAlignment.Left
+keybindTitle.Parent=keybindContent
 
-local bindRows={}
+local keybindRows={}
 local bindings={}
 local captureName=nil
 
@@ -100,20 +100,20 @@ local function keyText(key)
 end
 
 local function refreshRow(name)
-	local row=bindRows[name]
+	local row=keybindRows[name]
 	if not row then return end
 	row.key.Text=keyText(bindings[name])
 end
 
 local function cancelCapture()
 	if not captureName then return end
-	local row=bindRows[captureName]
+	local row=keybindRows[captureName]
 	if row then
 		row.plus.Text="+"
 		row.key.Text=keyText(bindings[captureName])
 	end
 	captureName=nil
-	_G.bindCapturing=false
+	_G.keybindCapturing=false
 end
 
 local function beginCapture(name)
@@ -121,8 +121,8 @@ local function beginCapture(name)
 		cancelCapture()
 	end
 	captureName=name
-	_G.bindCapturing=true
-	local row=bindRows[name]
+	_G.keybindCapturing=true
+	local row=keybindRows[name]
 	if row then
 		row.plus.Text="..."
 		row.key.Text="..."
@@ -132,12 +132,12 @@ end
 local function clearBinding(name)
 	if captureName==name then
 		captureName=nil
-		_G.bindCapturing=false
+		_G.keybindCapturing=false
 	end
 	bindings[name]=nil
 	refreshRow(name)
-	if bindRows[name] then
-		bindRows[name].plus.Text="+"
+	if keybindRows[name] then
+		keybindRows[name].plus.Text="+"
 	end
 end
 
@@ -173,7 +173,7 @@ for index,name in ipairs(modules) do
 	row.Size=UDim2.new(1,-8,0,34)
 	row.Position=UDim2.new(0,4,0,y)
 	row.BackgroundTransparency=1
-	row.Parent=bindContent
+	row.Parent=keybindContent
 
 	local label=Instance.new("TextLabel")
 	label.Size=UDim2.new(0,105,1,0)
@@ -186,9 +186,9 @@ for index,name in ipairs(modules) do
 	label.TextXAlignment=Enum.TextXAlignment.Left
 	label.Parent=row
 
-	local minus=button(row,UDim2.new(0,18,0,22),UDim2.new(0,132,0,6),"−")
-	local plus=button(row,UDim2.new(0,18,0,22),UDim2.new(0,154,0,6),"+")
-	local key=button(row,UDim2.new(0,28,0,22),UDim2.new(0,178,0,6),"—")
+	local plus=button(row,UDim2.new(0,28,0,24),UDim2.new(0,132,0,5),"+")
+	local key=button(row,UDim2.new(0,70,0,24),UDim2.new(0,164,0,5),"—")
+	local minus=button(row,UDim2.new(0,28,0,24),UDim2.new(0,238,0,5),"−")
 
 	local sep=Instance.new("Frame")
 	sep.Size=UDim2.new(0,224,0,1)
@@ -198,7 +198,7 @@ for index,name in ipairs(modules) do
 	sep.BorderSizePixel=0
 	sep.Parent=row
 
-	bindRows[name]={plus=plus,key=key,minus=minus}
+	keybindRows[name]={plus=plus,key=key,minus=minus}
 
 	plus.MouseButton1Click:Connect(function()
 		beginCapture(name)
@@ -213,66 +213,65 @@ for index,name in ipairs(modules) do
 	end)
 end
 
-bindContent.Size=UDim2.new(0,212,0,30+#modules*36)
+keybindContent.Size=UDim2.new(0,258,0,30+#modules*36)
 
-local bindSep1=Instance.new("Frame")
-bindSep1.Size=UDim2.new(0,48,0,1)
-bindSep1.Position=UDim2.new(0.5,-24,0,104)
-bindSep1.BackgroundColor3=Color3.new(0.4,0.4,0.4)
-bindSep1.BorderSizePixel=0
-bindSep1.Parent=catBar
+local keybindSep1=Instance.new("Frame")
+keybindSep1.Size=UDim2.new(0,48,0,1)
+keybindSep1.Position=UDim2.new(0.5,-24,0,104)
+keybindSep1.BackgroundColor3=Color3.new(0.4,0.4,0.4)
+keybindSep1.BorderSizePixel=0
+keybindSep1.Parent=catBar
 
-local bindL=Instance.new("TextButton")
-bindL.Size=UDim2.new(1,0,0,40)
-bindL.Position=UDim2.new(0,0,0,114)
-bindL.BackgroundTransparency=1
-bindL.Text="bind"
-bindL.TextColor3=Color3.new(1,1,1)
-bindL.TextTransparency=0.4
-bindL.TextSize=14
-bindL.Font=Enum.Font.GothamBold
-bindL.TextWrapped=true
-bindL.Parent=catBar
+local keybindL=Instance.new("TextButton")
+keybindL.Size=UDim2.new(1,0,0,40)
+keybindL.Position=UDim2.new(0,0,0,114)
+keybindL.BackgroundTransparency=1
+keybindL.Text="keybind"
+keybindL.TextColor3=Color3.new(1,1,1)
+keybindL.TextTransparency=0.4
+keybindL.TextSize=14
+keybindL.Font=Enum.Font.GothamBold
+keybindL.TextWrapped=true
+keybindL.Parent=catBar
 
 local function setCategoryVisual(category)
 	local inf=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 	local mov=category=="movement" and 0 or 0.4
 	local misc=category=="misc" and 0 or 0.4
-	local key=category=="bind" and 0 or 0.4
+	local key=category=="keybind" and 0 or 0.4
 	TS:Create(movL,inf,{TextTransparency=mov}):Play()
 	TS:Create(miscL,inf,{TextTransparency=misc}):Play()
-	TS:Create(bindL,inf,{TextTransparency=key}):Play()
+	TS:Create(keybindL,inf,{TextTransparency=key}):Play()
 end
 
-local function switchToBind()
-	if _G.isHidden then return end
-	if _G.currentCategory=="bind" then
+local function switchToKeybind()
+	if _G.currentCategory=="keybind" then
 		return
 	end
-	_G.currentCategory="bind"
-	bindContent.Visible=true
+	_G.currentCategory="keybind"
+	keybindContent.Visible=true
 	ui.mc.Visible=false
 	ui.miscC.Visible=false
 	ui.scrollTrack.Visible=false
 	ui.scrollThumb.Visible=false
-	setCategoryVisual("bind")
+	setCategoryVisual("keybind")
 	contentViewport.CanvasPosition=Vector2.new(0,0)
 	task.defer(function()
 		task.wait()
-		if _G.currentCategory=="bind" then
-			contentViewport.CanvasSize=UDim2.new(0,0,0,math.max(bindContent.AbsoluteSize.Y,contentViewport.AbsoluteSize.Y))
+		if _G.currentCategory=="keybind" then
+			contentViewport.CanvasSize=UDim2.new(0,0,0,math.max(keybindContent.AbsoluteSize.Y,contentViewport.AbsoluteSize.Y))
 		end
 	end)
 end
 
-bindL.MouseButton1Click:Connect(switchToBind)
+keybindL.MouseButton1Click:Connect(switchToKeybind)
 
 movL.MouseButton1Click:Connect(function()
-	bindContent.Visible=false
+	keybindContent.Visible=false
 end)
 
 miscL.MouseButton1Click:Connect(function()
-	bindContent.Visible=false
+	keybindContent.Visible=false
 end)
 
 movL.MouseButton1Click:Connect(function()
@@ -315,11 +314,27 @@ UIS.InputBegan:Connect(function(input,processed)
 
 	local name=captureName
 	captureName=nil
-	_G.bindCapturing=false
-	if bindRows[name] then
-		bindRows[name].plus.Text="+"
+	_G.keybindCapturing=false
+	if keybindRows[name] then
+		keybindRows[name].plus.Text="+"
 	end
 	setBinding(name,key)
 end)
+
+local function updateCategoryAfterAction()
+	if _G.currentCategory=="keybind" then
+		keybindContent.Visible=true
+	end
+end
+
+for _,name in ipairs(modules) do
+	local action=actions[name]
+	if action then
+		actions[name]=function()
+			action()
+			updateCategoryAfterAction()
+		end
+	end
+end
 
 setCategoryVisual("movement")
