@@ -12,6 +12,7 @@ _G.speedEnabled=false
 _G.jumpEnabled=false
 _G.flightEnabled=false
 _G.noclipEnabled=false
+_G.phaseEnabled=false
 _G.strafeEnabled=false
 _G.airwalkEnabled=false
 _G.clickTpEnabled=false
@@ -57,6 +58,7 @@ _G.flying=false
 _G.bodyVelocity=nil
 _G.bodyGyro=nil
 _G.noclipConnection=nil
+_G.phaseConnection=nil
 _G.airwalkPlatform=nil
 _G.airwalkY=0
 _G.fpsConnection=nil
@@ -505,6 +507,26 @@ ajT.TextXAlignment=Enum.TextXAlignment.Left
 ajT.Parent=mc
 
 local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
+
+local sep7=Instance.new("Frame")
+sep7.Size=UDim2.new(0.9,0,0,1)
+sep7.Position=UDim2.new(0.05,0,0,534)
+sep7.BackgroundColor3=Color3.new(0.4,0.4,0.4)
+sep7.BorderSizePixel=0
+sep7.Parent=mc
+
+local phaseT=Instance.new("TextLabel")
+phaseT.Size=UDim2.new(0.5,0,0,25)
+phaseT.Position=UDim2.new(0,10,0,544)
+phaseT.BackgroundTransparency=1
+phaseT.Text="Phase"
+phaseT.TextColor3=Color3.new(0.6,0.6,0.6)
+phaseT.TextSize=20
+phaseT.Font=Enum.Font.Gotham
+phaseT.TextXAlignment=Enum.TextXAlignment.Left
+phaseT.Parent=mc
+
+local phaseTr,phaseK,phaseSt,phaseCl=ct(mc,UDim2.new(0.75,0,0,546))
 
 local miscC=Instance.new("Frame")
 miscC.Size=UDim2.new(0,258,0,450)
@@ -1055,6 +1077,7 @@ hover(stH,stHS)
 hover(awTr,awSt)
 hover(cTr,cSt)
 hover(ajTr,ajSt)
+hover(phaseTr,phaseSt)
 hover(aimTr,aimSt)
 hover(tlTr,tlSt)
 hover(wcTr,wcSt)
@@ -1121,131 +1144,6 @@ local function setNoclip(s)
 	if not character then return end
 	for _,p in pairs(character:GetDescendants()) do
 		if p:IsA("BasePart") then p.CanCollide=not s end
-	end
-end
-
-local function stopFlight()
-	_G.flying=false
-	if _G.bodyVelocity then _G.bodyVelocity:Destroy() _G.bodyVelocity=nil end
-	if _G.bodyGyro then _G.bodyGyro:Destroy() _G.bodyGyro=nil end
-	if humanoid then humanoid.PlatformStand=false end
-	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
-	setNoclip(false)
-	updateNoclip()
-end
-
-local function startFlight()
-	if _G.flying or not root then return end
-	_G.flying=true
-	_G.bodyVelocity=Instance.new("BodyVelocity")
-	_G.bodyVelocity.MaxForce=Vector3.new(math.huge,math.huge,math.huge)
-	_G.bodyVelocity.Velocity=Vector3.zero
-	_G.bodyVelocity.Parent=root
-	_G.bodyGyro=Instance.new("BodyGyro")
-	_G.bodyGyro.MaxTorque=Vector3.new(math.huge,math.huge,math.huge)
-	_G.bodyGyro.P=10000
-	_G.bodyGyro.Parent=root
-	humanoid.PlatformStand=true
-	if _G.noclipEnabled then
-		setNoclip(true)
-		_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
-	end
-	updateNoclip()
-end
-
-local function applyFlight()
-	if _G.flightEnabled then startFlight() else stopFlight() end
-end
-
-local function startAirwalk()
-	if _G.airwalkPlatform then return end
-	_G.airwalkY=root.Position.Y-3
-	_G.airwalkPlatform=Instance.new("Part")
-	_G.airwalkPlatform.Size=Vector3.new(6,1,6)
-	_G.airwalkPlatform.Transparency=1
-	_G.airwalkPlatform.CanCollide=true
-	_G.airwalkPlatform.Anchored=true
-	_G.airwalkPlatform.Parent=workspace
-end
-
-local function stopAirwalk()
-	if _G.airwalkPlatform then _G.airwalkPlatform:Destroy() _G.airwalkPlatform=nil end
-end
-
-local function updateSpeed(v)
-	_G.currentSpeed=_G.minSpeed+(_G.maxSpeed-_G.minSpeed)*v
-	spVT.Text="Value: "..math.floor(_G.currentSpeed+0.5)
-	applySpeed()
-end
-
-local function updateJump(v)
-	_G.currentJumpStrength=_G.minJump+(_G.maxJump-_G.minJump)*v
-	jST.Text="Strength: "..math.floor(_G.currentJumpStrength+0.5)
-end
-
-local function updateFlight(v)
-	_G.currentFlight=_G.minFlight+(_G.maxFlight-_G.minFlight)*v
-	fST.Text="Speed: "..math.floor(_G.currentFlight+0.5)
-end
-
-local function updateStrafe(v)
-	_G.currentStrafe=_G.minStrafe+(_G.maxStrafe-_G.minStrafe)*v
-	stVT.Text="Value: "..math.floor(_G.currentStrafe+0.5)
-end
-
-local function updateSmooth(v)
-	_G.currentSmoothness=_G.minSmooth+(_G.maxSmooth-_G.minSmooth)*v
-	smT.Text="Speed: "..string.format("%.2f",_G.currentSmoothness)
-end
-
-local function updateRange(v)
-	_G.currentRange=_G.minRange+(_G.maxRange-_G.minRange)*v
-	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
-end
-
-local function updateSlider(f,h,v)
-	f.Size=UDim2.new(v,0,1,0)
-	h.Position=UDim2.new(v,-8,0.5,-8)
-end
-
-local function toggleSpeed()
-	_G.speedEnabled=not _G.speedEnabled
-	setToggle(spTr,spK,_G.speedEnabled,true)
-	setColors(_G.speedEnabled,spT,nil,nil,nil)
-	setColors(_G.speedEnabled,spVT,spS,spF,spH)
-	applySpeed()
-end
-
-local function toggleJump()
-	_G.jumpEnabled=not _G.jumpEnabled
-	setToggle(jTr,jK,_G.jumpEnabled,true)
-	setColors(_G.jumpEnabled,jT,nil,nil,nil)
-	setColors(_G.jumpEnabled,jST,jS,jF,jH)
-	applyJump()
-end
-
-local function toggleFlight()
-	_G.flightEnabled=not _G.flightEnabled
-	setToggle(fTr,fK,_G.flightEnabled,true)
-	setColors(_G.flightEnabled,fT,nil,nil,nil)
-	setColors(_G.flightEnabled,fST,fS,fF,fH)
-	applyFlight()
-end
-
-local function toggleNoclip()
-	if not _G.flightEnabled then return end
-	_G.noclipEnabled=not _G.noclipEnabled
-	updateNoclip()
-	if _G.noclipEnabled then
-		if _G.flying then
-			setNoclip(true)
-			if not _G.noclipConnection then
-				_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
-			end
-		end
-	else
-		if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
-		setNoclip(false)
 	end
 end
 
@@ -1340,6 +1238,7 @@ stCl.MouseButton1Click:Connect(toggleStrafe)
 awCl.MouseButton1Click:Connect(toggleAirwalk)
 cCl.MouseButton1Click:Connect(toggleClickTp)
 ajCl.MouseButton1Click:Connect(toggleAirJump)
+phaseCl.MouseButton1Click:Connect(togglePhase)
 aimCl.MouseButton1Click:Connect(toggleAimbot)
 tlCl.MouseButton1Click:Connect(toggleTargetLock)
 wcCl.MouseButton1Click:Connect(toggleWallsCheck)
@@ -1479,7 +1378,7 @@ local function setMinimized(s)
 	-- The normal UI is slightly shorter so there is no large empty gap below it.
 	local ts=s
 		and UDim2.new(0,350,0,30)
-		or UDim2.new(0,350,0,530)
+		or UDim2.new(0,350,0,515)
 
 	local tw=TS:Create(
 		mf,
@@ -1531,6 +1430,11 @@ hideBtn.MouseButton1Click:Connect(function() setMinimized(not _G.isHidden) end)
 closeBtn.MouseButton1Click:Connect(function()
 	stopFlight()
 	stopAirwalk()
+	if _G.phaseConnection then
+		_G.phaseConnection:Disconnect()
+		_G.phaseConnection=nil
+	end
+	setNoclip(false)
 	if _G.fpsConnection then _G.fpsConnection:Disconnect() end
 	mouse.Icon=""
 	sg:Destroy()
@@ -1660,6 +1564,11 @@ player.CharacterAdded:Connect(function(c)
 	_G.jumpEnabled=false
 	_G.flightEnabled=false
 	_G.noclipEnabled=false
+	_G.phaseEnabled=false
+	if _G.phaseConnection then
+		_G.phaseConnection:Disconnect()
+		_G.phaseConnection=nil
+	end
 	_G.strafeEnabled=false
 	_G.airwalkEnabled=false
 	_G.clickTpEnabled=false
@@ -1726,4 +1635,164 @@ player.CharacterAdded:Connect(function(c)
 	setAimColors(false)
 	applySpeed()
 	applyJump()
-end)
+end)local function updatePhase()
+	setColors(_G.phaseEnabled,phaseT,nil,nil,nil)
+	setToggle(phaseTr,phaseK,_G.phaseEnabled,true)
+end
+
+local function togglePhase()
+	_G.phaseEnabled=not _G.phaseEnabled
+
+	if _G.phaseEnabled then
+		setNoclip(true)
+
+		if _G.phaseConnection then
+			_G.phaseConnection:Disconnect()
+		end
+
+		_G.phaseConnection=RS.Stepped:Connect(function()
+			if _G.phaseEnabled then
+				setNoclip(true)
+			end
+		end)
+	else
+		if _G.phaseConnection then
+			_G.phaseConnection:Disconnect()
+			_G.phaseConnection=nil
+		end
+
+		-- Не включаем коллизию обратно, если Flight/Noclip
+		-- всё ещё держит её выключенной.
+		if not _G.noclipEnabled or not _G.flying then
+			setNoclip(false)
+		end
+	end
+
+	updatePhase()
+end
+
+local function stopFlight()
+	_G.flying=false
+	if _G.bodyVelocity then _G.bodyVelocity:Destroy() _G.bodyVelocity=nil end
+	if _G.bodyGyro then _G.bodyGyro:Destroy() _G.bodyGyro=nil end
+	if humanoid then humanoid.PlatformStand=false end
+	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
+	setNoclip(false)
+	updateNoclip()
+end
+
+local function startFlight()
+	if _G.flying or not root then return end
+	_G.flying=true
+	_G.bodyVelocity=Instance.new("BodyVelocity")
+	_G.bodyVelocity.MaxForce=Vector3.new(math.huge,math.huge,math.huge)
+	_G.bodyVelocity.Velocity=Vector3.zero
+	_G.bodyVelocity.Parent=root
+	_G.bodyGyro=Instance.new("BodyGyro")
+	_G.bodyGyro.MaxTorque=Vector3.new(math.huge,math.huge,math.huge)
+	_G.bodyGyro.P=10000
+	_G.bodyGyro.Parent=root
+	humanoid.PlatformStand=true
+	if _G.noclipEnabled then
+		setNoclip(true)
+		_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+	end
+	updateNoclip()
+end
+
+local function applyFlight()
+	if _G.flightEnabled then startFlight() else stopFlight() end
+end
+
+local function startAirwalk()
+	if _G.airwalkPlatform then return end
+	_G.airwalkY=root.Position.Y-3
+	_G.airwalkPlatform=Instance.new("Part")
+	_G.airwalkPlatform.Size=Vector3.new(6,1,6)
+	_G.airwalkPlatform.Transparency=1
+	_G.airwalkPlatform.CanCollide=true
+	_G.airwalkPlatform.Anchored=true
+	_G.airwalkPlatform.Parent=workspace
+end
+
+local function stopAirwalk()
+	if _G.airwalkPlatform then _G.airwalkPlatform:Destroy() _G.airwalkPlatform=nil end
+end
+
+local function updateSpeed(v)
+	_G.currentSpeed=_G.minSpeed+(_G.maxSpeed-_G.minSpeed)*v
+	spVT.Text="Value: "..math.floor(_G.currentSpeed+0.5)
+	applySpeed()
+end
+
+local function updateJump(v)
+	_G.currentJumpStrength=_G.minJump+(_G.maxJump-_G.minJump)*v
+	jST.Text="Strength: "..math.floor(_G.currentJumpStrength+0.5)
+end
+
+local function updateFlight(v)
+	_G.currentFlight=_G.minFlight+(_G.maxFlight-_G.minFlight)*v
+	fST.Text="Speed: "..math.floor(_G.currentFlight+0.5)
+end
+
+local function updateStrafe(v)
+	_G.currentStrafe=_G.minStrafe+(_G.maxStrafe-_G.minStrafe)*v
+	stVT.Text="Value: "..math.floor(_G.currentStrafe+0.5)
+end
+
+local function updateSmooth(v)
+	_G.currentSmoothness=_G.minSmooth+(_G.maxSmooth-_G.minSmooth)*v
+	smT.Text="Speed: "..string.format("%.2f",_G.currentSmoothness)
+end
+
+local function updateRange(v)
+	_G.currentRange=_G.minRange+(_G.maxRange-_G.minRange)*v
+	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
+end
+
+local function updateSlider(f,h,v)
+	f.Size=UDim2.new(v,0,1,0)
+	h.Position=UDim2.new(v,-8,0.5,-8)
+end
+
+local function toggleSpeed()
+	_G.speedEnabled=not _G.speedEnabled
+	setToggle(spTr,spK,_G.speedEnabled,true)
+	setColors(_G.speedEnabled,spT,nil,nil,nil)
+	setColors(_G.speedEnabled,spVT,spS,spF,spH)
+	applySpeed()
+end
+
+local function toggleJump()
+	_G.jumpEnabled=not _G.jumpEnabled
+	setToggle(jTr,jK,_G.jumpEnabled,true)
+	setColors(_G.jumpEnabled,jT,nil,nil,nil)
+	setColors(_G.jumpEnabled,jST,jS,jF,jH)
+	applyJump()
+end
+
+local function toggleFlight()
+	_G.flightEnabled=not _G.flightEnabled
+	setToggle(fTr,fK,_G.flightEnabled,true)
+	setColors(_G.flightEnabled,fT,nil,nil,nil)
+	setColors(_G.flightEnabled,fST,fS,fF,fH)
+	applyFlight()
+end
+
+local function toggleNoclip()
+	if not _G.flightEnabled then return end
+	_G.noclipEnabled=not _G.noclipEnabled
+	updateNoclip()
+	if _G.noclipEnabled then
+		if _G.flying then
+			setNoclip(true)
+			if not _G.noclipConnection then
+				_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+			end
+		end
+	else
+		if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
+		setNoclip(false)
+	end
+end
+
