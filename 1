@@ -72,8 +72,8 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,350,0,570)
-mf.Position=UDim2.new(0.5,-175,0.5,-285)
+mf.Size=UDim2.new(0,350,0,550)
+mf.Position=UDim2.new(0.5,-175,0.5,-275)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
 mf.Active=true
@@ -772,8 +772,8 @@ _G.scrollDragStart=0
 _G.scrollStartOffset=0
 
 -- Один шаг колеса теперь небольшой и одинаковый на всех мышах.
-local SCROLL_STEP=30
-local SCROLL_LERP=0.22
+local SCROLL_STEP=12
+local SCROLL_LERP=0.12
 local SCROLL_EPSILON=0.05
 
 local function getActiveContent()
@@ -794,10 +794,16 @@ local function updateScrollBar()
 	_G.scrollTarget=math.clamp(_G.scrollTarget,0,maxOffset)
 	_G.scrollOffset=math.clamp(_G.scrollOffset,0,maxOffset)
 
+	-- В скрытом состоянии полоса никогда не должна возвращаться.
+	if _G.isHidden then
+		scrollTrack.Visible=false
+		return
+	end
+
 	if maxOffset<=0 then
 		scrollThumb.Size=UDim2.new(1,0,1,0)
 		scrollThumb.Position=UDim2.new(0,0,0,0)
-		scrollTrack.Visible=(_G.currentCategory=="movement")
+		scrollTrack.Visible=false
 		return
 	end
 
@@ -1274,6 +1280,10 @@ local function switchCat(c)
 		mc.Visible=false
 		miscC.Visible=true
 	end
+	task.defer(function()
+		updateScrollBar()
+		applyScroll()
+	end)
 end
 
 movL.MouseButton1Click:Connect(function() switchCat("movement") end)
@@ -1318,7 +1328,11 @@ local function setVisible(s)
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
 	catBar.Visible=s
-	scrollTrack.Visible=s
+	if s then
+		updateScrollBar()
+	else
+		scrollTrack.Visible=false
+	end
 end
 
 local function startFps()
@@ -1340,7 +1354,7 @@ local function setMinimized(s)
 	if _G.isAnimating then return end
 	_G.isAnimating=true
 	_G.isHidden=s
-	local ts=s and UDim2.new(0,350,0,30) or UDim2.new(0,350,0,570)
+	local ts=s and UDim2.new(0,350,0,30) or UDim2.new(0,350,0,550)
 	local tw=TS:Create(mf,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=ts})
 	if s then
 		setVisible(false)
