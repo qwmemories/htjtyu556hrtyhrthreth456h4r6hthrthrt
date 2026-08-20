@@ -1,6 +1,3 @@
--- ============================================
--- ЧАСТЬ 1: GUI + MOVEMENT
--- ============================================
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
@@ -64,6 +61,16 @@ _G.airwalkPlatform = nil
 _G.airwalkY = 0
 _G.fpsConnection = nil
 _G.lastSpace = false
+
+-- ===== ЗАГРУЗКА ВТОРОГО ФАЙЛА =====
+task.spawn(function()
+	local success, err = pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/2"))()
+	end)
+	if not success then
+		warn("Ошибка загрузки второго файла:", err)
+	end
+end)
 
 -- ===== СОЗДАНИЕ GUI =====
 local screenGui = Instance.new("ScreenGui")
@@ -147,7 +154,6 @@ closeStroke.Thickness = 1.5
 closeStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 closeStroke.Parent = closeButton
 
--- ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
 local function createToggle(parent, position)
 	local track = Instance.new("Frame")
 	track.Size = UDim2.new(0, 46, 0, 22)
@@ -1244,10 +1250,10 @@ player.CharacterAdded:Connect(function(newChar)
 	character = newChar
 	humanoid = character:WaitForChild("Humanoid")
 	root = character:WaitForChild("HumanoidRootPart")
-	
+
 	if _G.stopFlightFunc then _G.stopFlightFunc() end
 	if _G.stopAirwalkFunc then _G.stopAirwalkFunc() end
-	
+
 	_G.speedEnabled = false
 	_G.jumpEnabled = false
 	_G.flightEnabled = false
@@ -1261,7 +1267,7 @@ player.CharacterAdded:Connect(function(newChar)
 	_G.wallsCheckEnabled = false
 	_G.lockedTarget = nil
 	mouse.Icon = ""
-	
+
 	_G.currentSpeed = 16
 	_G.currentJump = 50
 	_G.currentFlight = 50
@@ -1270,7 +1276,7 @@ player.CharacterAdded:Connect(function(newChar)
 	_G.currentRange = 500
 	_G.aimMode = "Center"
 	_G.sortMode = "Distance"
-	
+
 	setToggleState(speedTrack, speedKnob, false, false)
 	setToggleState(jumpTrack, jumpKnob, false, false)
 	setToggleState(flightTrack, flightKnob, false, false)
@@ -1282,48 +1288,48 @@ player.CharacterAdded:Connect(function(newChar)
 	setToggleState(aimbotTrack, aimbotKnob, false, false)
 	setToggleState(targetLockTrack, targetLockKnob, false, false)
 	setToggleState(wallsCheckTrack, wallsCheckKnob, false, false)
-	
+
 	speedFill.Size = UDim2.new(0.5, 0, 1, 0)
 	speedHandle.Position = UDim2.new(0.5, -8, 0.5, -8)
 	speedText.Text = "Speed: 16"
 	setModuleColors(false, speedText, speedSlider, speedFill, speedHandle)
-	
+
 	jumpFill.Size = UDim2.new(0.5, 0, 1, 0)
 	jumpHandle.Position = UDim2.new(0.5, -8, 0.5, -8)
 	jumpText.Text = "Jump: 50"
 	setModuleColors(false, jumpText, jumpSlider, jumpFill, jumpHandle)
-	
+
 	flightFill.Size = UDim2.new(0.5, 0, 1, 0)
 	flightHandle.Position = UDim2.new(0.5, -8, 0.5, -8)
 	flightText.Text = "Flight: 50"
 	setModuleColors(false, flightText, flightSlider, flightFill, flightHandle)
-	
+
 	updateNoclipVisual()
-	
+
 	strafeFill.Size = UDim2.new(0, 0, 1, 0)
 	strafeHandle.Position = UDim2.new(0, -8, 0.5, -8)
 	strafeText.Text = "Strafe: 0"
 	setModuleColors(false, strafeText, strafeSlider, strafeFill, strafeHandle)
-	
+
 	setModuleColors(false, airwalkText, nil, nil, nil)
 	setModuleColors(false, clickTpText, nil, nil, nil)
 	setModuleColors(false, airJumpText, nil, nil, nil)
-	
+
 	smoothFill.Size = UDim2.new(0.3, 0, 1, 0)
 	smoothHandle.Position = UDim2.new(0.3, -8, 0.5, -8)
 	smoothText.Text = "Speed: 0.15"
-	
+
 	rangeFill.Size = UDim2.new(0.5, 0, 1, 0)
 	rangeHandle.Position = UDim2.new(0.5, -8, 0.5, -8)
 	rangeText.Text = "Range: 500"
-	
+
 	sortButton.Text = "Distance"
 	sortText.Text = "Sort: Distance"
 	modeButton.Text = "Center"
 	modeText.Text = "Mode: Center"
-	
+
 	setAimbotModuleColors(false)
-	
+
 	if _G.speedEnabled and humanoid then humanoid.WalkSpeed = _G.currentSpeed
 	elseif humanoid then humanoid.WalkSpeed = 16 end
 	if _G.jumpEnabled and humanoid then humanoid.JumpPower = _G.currentJump
