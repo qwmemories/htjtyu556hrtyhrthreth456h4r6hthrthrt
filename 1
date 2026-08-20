@@ -72,8 +72,8 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,350,0,540)
-mf.Position=UDim2.new(0.5,-175,0.5,-270)
+mf.Size=UDim2.new(0,350,0,570)
+mf.Position=UDim2.new(0.5,-175,0.5,-285)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
 mf.Active=true
@@ -203,7 +203,7 @@ contentViewport.ClipsDescendants=true
 contentViewport.Parent=mf
 
 local mc=Instance.new("Frame")
-mc.Size=UDim2.new(0,258,0,528)
+mc.Size=UDim2.new(0,258,0,560)
 mc.Position=UDim2.new(0,0,0,0)
 mc.BackgroundTransparency=1
 mc.Parent=contentViewport
@@ -499,7 +499,7 @@ ajT.Parent=mc
 local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
 
 local miscC=Instance.new("Frame")
-miscC.Size=UDim2.new(0,258,0,300)
+miscC.Size=UDim2.new(0,258,0,450)
 miscC.Position=UDim2.new(0,0,0,0)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
@@ -757,11 +757,12 @@ scrollTrack.Parent=mf
 Instance.new("UICorner",scrollTrack).CornerRadius=UDim.new(1,0)
 
 local scrollThumb=Instance.new("Frame")
-scrollThumb.Size=UDim2.new(1,0,1,0)
+scrollThumb.Size=UDim2.new(1,0,0,100)
 scrollThumb.Position=UDim2.new(0,0,0,0)
 scrollThumb.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 scrollThumb.BorderSizePixel=0
 scrollThumb.Visible=false
+scrollThumb.Active=true
 scrollThumb.Parent=scrollTrack
 Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
 
@@ -769,47 +770,40 @@ _G.scrollOffset=0
 _G.scrollTarget=0
 _G.scrollMax=0
 _G.scrollDragging=false
-_G.scrollDragStart=0
-_G.scrollStartOffset=0
+_G.scrollDragStartY=0
+_G.scrollDragStartOffset=0
 
--- One physical wheel notch moves only 2 pixels.
--- This is intentionally extremely slow.
-local SCROLL_STEP=2
-local SCROLL_LERP=0.055
+local SCROLL_STEP=4
+local SCROLL_LERP=0.08
 
 local function getActiveContent()
 	return _G.currentCategory=="movement" and mc or miscC
 end
 
-local function getRealContentBottom(content)
+local function getContentBottom(content)
 	local bottom=0
-
 	for _,obj in ipairs(content:GetChildren()) do
 		if obj:IsA("GuiObject") and obj.Visible then
-			local bottomOfObject=obj.Position.Y.Offset+obj.AbsoluteSize.Y
-			if bottomOfObject>bottom then
-				bottom=bottomOfObject
-			end
+			local y=obj.Position.Y.Offset+obj.AbsoluteSize.Y
+			if y>bottom then bottom=y end
 		end
 	end
-
 	return bottom
 end
 
-local function recalcScroll()
+local function updateScrollMetrics()
 	local content=getActiveContent()
-	local viewportHeight=contentViewport.AbsoluteSize.Y
-	local contentBottom=getRealContentBottom(content)
+	local viewportH=contentViewport.AbsoluteSize.Y
+	local bottom=getContentBottom(content)
 
-	-- IMPORTANT:
-	-- Never use mc.Size.Y here. Only the last real visible module counts.
-	local maxOffset=math.max(0,contentBottom-viewportHeight)
+	-- The only valid scroll range is the amount by which the last
+	-- visible object extends below the viewport.
+	_G.scrollMax=math.max(0,bottom-viewportH)
 
-	_G.scrollMax=maxOffset
-	_G.scrollTarget=math.clamp(_G.scrollTarget,0,maxOffset)
-	_G.scrollOffset=math.clamp(_G.scrollOffset,0,maxOffset)
+	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
+	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
 
-	if maxOffset<=0 or _G.isHidden or _G.isAnimating or not mf.Visible then
+	if _G.scrollMax<=0 or _G.isHidden or _G.isAnimating or not mf.Visible then
 		scrollTrack.Visible=false
 		scrollThumb.Visible=false
 		_G.scrollOffset=0
@@ -821,132 +815,96 @@ local function recalcScroll()
 	scrollTrack.Visible=true
 	scrollThumb.Visible=true
 
-	local trackHeight=scrollTrack.AbsoluteSize.Y
-	local thumbHeight=math.max(36,trackHeight*(viewportHeight/math.max(contentBottom,viewportHeight)))
-	thumbHeight=math.min(trackHeight,thumbHeight)
+	local trackH=scrollTrack.AbsoluteSize.Y
+	local thumbH=math.clamp(trackH*(viewportH/math.max(bottom,viewportH)),36,trackH)
+	scrollThumb.Size=UDim2.new(1,0,0,thumbH)
 
-	scrollThumb.Size=UDim2.new(1,0,0,thumbHeight)
-
-	local travel=math.max(0,trackHeight-thumbHeight)
-	local ratio=maxOffset>0 and (_G.scrollOffset/maxOffset) or 0
+	local travel=math.max(0,trackH-thumbH)
+	local ratio=(_G.scrollMax>0) and (_G.scrollOffset/_G.scrollMax) or 0
 	scrollThumb.Position=UDim2.new(0,0,0,travel*math.clamp(ratio,0,1))
 end
 
 local function applyScroll()
 	local content=getActiveContent()
 
-	-- Hard limit every single frame.
-	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
 	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
+	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
 
 	content.Position=UDim2.new(0,0,-math.floor(_G.scrollOffset+0.5),0)
-
-	-- Keep the inactive category at the top.
-	if content==mc then
-		miscC.Position=UDim2.new(0,0,0,0)
-	else
-		mc.Position=UDim2.new(0,0,0,0)
-	end
-
-	recalcScroll()
 end
 
 local function refreshScroll()
-	_G.scrollOffset=0
-	_G.scrollTarget=0
-	recalcScroll()
+	updateScrollMetrics()
 	applyScroll()
+	updateScrollMetrics()
 end
 
-UIS.InputChanged:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseWheel then
+UIS.InputChanged:Connect(function(input)
+	if input.UserInputType==Enum.UserInputType.MouseWheel then
 		if _G.isHidden or _G.isAnimating or not mf.Visible then return end
-		if _G.scrollMax<=0 then return end
 
-		local p=i.Position
-		local vpPos=contentViewport.AbsolutePosition
-		local vpSize=contentViewport.AbsoluteSize
+		-- MouseWheel Position is the wheel delta, NOT the mouse cursor position.
+		-- Do not test X/Y here.
+		local z=input.Position.Z
+		if z==0 or _G.scrollMax<=0 then return end
 
-		if p.X>=vpPos.X and p.X<=vpPos.X+vpSize.X
-			and p.Y>=vpPos.Y and p.Y<=vpPos.Y+vpSize.Y then
+		-- Fixed tiny step: one wheel event can never jump farther than 4 px.
+		_G.scrollTarget=math.clamp(
+			_G.scrollTarget-math.sign(z)*SCROLL_STEP,
+			0,
+			_G.scrollMax
+		)
 
-			-- No multiplication by 55/100/etc.
-			-- One wheel event = 2 pixels.
-			-- Normalize the wheel delta: some input devices report 1,
-			-- others report larger values. One physical notch must always
-			-- mean the same tiny movement.
-			local direction=math.sign(i.Position.Z)
-			if direction==0 then return end
-
-			_G.scrollTarget=math.clamp(
-				_G.scrollTarget-direction*SCROLL_STEP,
-				0,
-				_G.scrollMax
-			)
-		end
-
-	elseif i.UserInputType==Enum.UserInputType.MouseMovement and _G.scrollDragging then
-		local delta=i.Position.Y-_G.scrollDragStart
-		local trackHeight=scrollTrack.AbsoluteSize.Y
-		local thumbHeight=scrollThumb.AbsoluteSize.Y
-		local travel=math.max(1,trackHeight-thumbHeight)
+	elseif input.UserInputType==Enum.UserInputType.MouseMovement and _G.scrollDragging then
+		local trackH=scrollTrack.AbsoluteSize.Y
+		local thumbH=scrollThumb.AbsoluteSize.Y
+		local travel=math.max(1,trackH-thumbH)
+		local delta=input.Position.Y-_G.scrollDragStartY
 
 		_G.scrollTarget=math.clamp(
-			_G.scrollStartOffset+(delta/travel)*_G.scrollMax,
+			_G.scrollDragStartOffset+(delta/travel)*_G.scrollMax,
 			0,
 			_G.scrollMax
 		)
 	end
 end)
 
-scrollThumb.InputBegan:Connect(function(i)
-	if not scrollThumb.Visible then return end
-
-	if i.UserInputType==Enum.UserInputType.MouseButton1
-		or i.UserInputType==Enum.UserInputType.Touch then
-
+scrollThumb.InputBegan:Connect(function(input)
+	if input.UserInputType==Enum.UserInputType.MouseButton1 then
 		_G.scrollDragging=true
-		_G.scrollDragStart=i.Position.Y
-		_G.scrollStartOffset=_G.scrollTarget
+		_G.scrollDragStartY=input.Position.Y
+		_G.scrollDragStartOffset=_G.scrollTarget
 	end
 end)
 
-UIS.InputEnded:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseButton1
-		or i.UserInputType==Enum.UserInputType.Touch then
-
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType==Enum.UserInputType.MouseButton1 then
 		_G.scrollDragging=false
 	end
 end)
 
 RS.RenderStepped:Connect(function()
-	-- During the hide/show animation the scrollbar is ALWAYS hidden.
-	-- It is restored only by the animation completion callback below.
 	if _G.isHidden or _G.isAnimating or not mf.Visible then
 		scrollTrack.Visible=false
 		scrollThumb.Visible=false
 		return
 	end
 
-	-- Recalculate from the real last module.
-	local content=getActiveContent()
-	local contentBottom=getRealContentBottom(content)
-	_G.scrollMax=math.max(0,contentBottom-contentViewport.AbsoluteSize.Y)
+	updateScrollMetrics()
 
-	-- Absolute hard clamp: there is no position below the last module.
-	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
-
-	local difference=_G.scrollTarget-_G.scrollOffset
-
-	if math.abs(difference)>0.05 then
-		_G.scrollOffset=_G.scrollOffset+difference*SCROLL_LERP
+	local delta=_G.scrollTarget-_G.scrollOffset
+	if math.abs(delta)>0.05 then
+		_G.scrollOffset=_G.scrollOffset+delta*SCROLL_LERP
 	else
 		_G.scrollOffset=_G.scrollTarget
 	end
 
+	-- Final hard clamp every frame.
 	_G.scrollOffset=math.clamp(_G.scrollOffset,0,_G.scrollMax)
+	_G.scrollTarget=math.clamp(_G.scrollTarget,0,_G.scrollMax)
 
 	applyScroll()
+	updateScrollMetrics()
 end)
 
 local function setToggle(t,k,on,anim)
@@ -1377,7 +1335,6 @@ local function setVisible(s)
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
 	catBar.Visible=s
-	-- Scrollbar visibility is decided by recalcScroll(), never by this function.
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
 end
@@ -1403,16 +1360,15 @@ local function setMinimized(s)
 	_G.isAnimating=true
 	_G.isHidden=s
 
-	local ts=s and UDim2.new(0,350,0,30) or UDim2.new(0,350,0,540)
+	scrollTrack.Visible=false
+	scrollThumb.Visible=false
+
+	local ts=s and UDim2.new(0,350,0,30) or UDim2.new(0,350,0,570)
 	local tw=TS:Create(
 		mf,
 		TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
 		{Size=ts}
 	)
-
-	-- Hide the scrollbar immediately when collapsing.
-	scrollTrack.Visible=false
-	scrollThumb.Visible=false
 
 	if s then
 		setVisible(false)
@@ -1436,10 +1392,8 @@ local function setMinimized(s)
 		_G.isAnimating=false
 
 		if not s then
-			-- First restore the content.
 			setVisible(true)
-
-			-- Recalculate ONLY NOW, after the opening animation is finished.
+			-- Only after the opening animation has finished.
 			refreshScroll()
 
 			if _G.fpsConnection then
