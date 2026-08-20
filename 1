@@ -799,49 +799,64 @@ local function updateCanvasAndBar()
 	local viewportH=contentViewport.AbsoluteSize.Y
 	local bottom=contentBottom(content)
 
-	-- Canvas is exactly as tall as the last real GUI object.
-	-- There is no artificial 560/450 pixel tail.
+	-- Set CanvasSize only when refreshing the content, not every RenderStepped.
+	-- Rewriting CanvasSize every frame can make Roblox snap CanvasPosition.
 	contentViewport.CanvasSize=UDim2.new(0,0,0,bottom)
 
 	local maxScroll=math.max(0,bottom-viewportH)
 	_G.scrollMax=maxScroll
 
-	-- Hard-stop CanvasPosition at the exact end.
-	local y=math.clamp(contentViewport.CanvasPosition.Y,0,maxScroll)
-	if math.abs(y-contentViewport.CanvasPosition.Y)>0.01 then
-		contentViewport.CanvasPosition=Vector2.new(0,y)
-	end
-
 	if maxScroll<=0 or _G.isHidden or _G.isAnimating or not mf.Visible then
 		scrollTrack.Visible=false
 		scrollThumb.Visible=false
-		contentViewport.CanvasPosition=Vector2.new(0,0)
+		if contentViewport.CanvasPosition.Y~=0 then
+			contentViewport.CanvasPosition=Vector2.new(0,0)
+		end
 		return
+	end
+
+	-- Only clamp if Roblox somehow reports a value outside the legal range.
+	local y=math.clamp(contentViewport.CanvasPosition.Y,0,maxScroll)
+	if math.abs(y-contentViewport.CanvasPosition.Y)>0.01 then
+		contentViewport.CanvasPosition=Vector2.new(0,y)
 	end
 
 	scrollTrack.Visible=true
 	scrollThumb.Visible=true
 
 	local trackH=scrollTrack.AbsoluteSize.Y
-	local thumbH=math.clamp(trackH*(viewportH/math.max(bottom,viewportH)),36,trackH)
+	local thumbH=math.clamp(
+		trackH*(viewportH/math.max(bottom,viewportH)),
+		36,
+		trackH
+	)
 	scrollThumb.Size=UDim2.new(1,0,0,thumbH)
 
 	local travel=math.max(0,trackH-thumbH)
-	local ratio=y/maxScroll
-	scrollThumb.Position=UDim2.new(0,0,0,travel*math.clamp(ratio,0,1))
+	local ratio=maxScroll>0 and (y/maxScroll) or 0
+	scrollThumb.Position=UDim2.new(
+		0,0,0,
+		travel*math.clamp(ratio,0,1)
+	)
+end
+
+-- Refresh only after layout/category/visibility changes.
+local function refreshScroll()
+	local content=activeContent()
+	local bottom=contentBottom(content)
+	local viewportH=contentViewport.AbsoluteSize.Y
+
+	contentViewport.CanvasSize=UDim2.new(0,0,0,bottom)
+	_G.scrollMax=math.max(0,bottom-viewportH)
+
+	-- Start the selected category at the top.
+	contentViewport.CanvasPosition=Vector2.new(0,0)
+
+	updateCanvasAndBar()
 end
 
 -- Native ScrollingFrame handles the mouse wheel itself.
 -- We only synchronize the custom scrollbar with CanvasPosition.
-contentViewport:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
-	if _G.isHidden or _G.isAnimating or not mf.Visible then
-		scrollTrack.Visible=false
-		scrollThumb.Visible=false
-		return
-	end
-	updateCanvasAndBar()
-end)
-
 scrollThumb.InputBegan:Connect(function(input)
 	if input.UserInputType==Enum.UserInputType.MouseButton1 then
 		_G.scrollDragging=true
@@ -887,7 +902,42 @@ RS.RenderStepped:Connect(function()
 	end
 
 	contentViewport.ScrollingEnabled=true
-	updateCanvasAndBar()
+
+	-- Do NOT touch CanvasSize here.
+	-- Roblox owns CanvasPosition while the user scrolls.
+	local maxScroll=_G.scrollMax
+	if maxScroll<=0 then
+		scrollTrack.Visible=false
+		scrollThumb.Visible=false
+		return
+	end
+
+	local y=math.clamp(contentViewport.CanvasPosition.Y,0,maxScroll)
+
+	-- Only correct impossible overscroll; otherwise leave CanvasPosition alone.
+	if math.abs(y-contentViewport.CanvasPosition.Y)>0.01 then
+		contentViewport.CanvasPosition=Vector2.new(0,y)
+	end
+
+	scrollTrack.Visible=true
+	scrollThumb.Visible=true
+
+	local viewportH=contentViewport.AbsoluteSize.Y
+	local bottom=math.max(viewportH,contentViewport.CanvasSize.Y.Offset)
+	local trackH=scrollTrack.AbsoluteSize.Y
+	local thumbH=math.clamp(
+		trackH*(viewportH/bottom),
+		36,
+		trackH
+	)
+	scrollThumb.Size=UDim2.new(1,0,0,thumbH)
+
+	local travel=math.max(0,trackH-thumbH)
+	local ratio=y/maxScroll
+	scrollThumb.Position=UDim2.new(
+		0,0,0,
+		travel*math.clamp(ratio,0,1)
+	)
 end)
 
 local function setToggle(t,k,on,anim)
