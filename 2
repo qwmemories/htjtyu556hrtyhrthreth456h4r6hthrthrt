@@ -186,3 +186,16 @@ RS.Heartbeat:Connect(function()
 		local vel=root.AssemblyLinearVelocity
 		local st=_G.currentStrafe/100
 		root.AssemblyLinearVelocity=Vector3.new(vel.X+(des.X-vel.X)*st,vel.Y,vel.Z+(des.Z-vel.Z)*st)
+	end
+	if _G.airwalkEnabled and _G.airwalkPlatform and root then
+		_G.airwalkPlatform.CFrame=CFrame.new(root.Position.X,_G.airwalkY,root.Position.Z)
+	end
+end)
+
+player.CharacterAdded:Connect(function(c)
+	character=c
+	humanoid=character:WaitForChild("Humanoid")
+	root=character:WaitForChild("HumanoidRootPart")
+	_G.stopFlightFunc()
+	_G.stopAirwalkFunc()
+end)
