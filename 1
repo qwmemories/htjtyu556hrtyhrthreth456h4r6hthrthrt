@@ -72,8 +72,8 @@ local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
-mf.Size=UDim2.new(0,360,0,570)
-mf.Position=UDim2.new(0.5,-180,0.5,-285)
+mf.Size=UDim2.new(0,350,0,570)
+mf.Position=UDim2.new(0.5,-175,0.5,-285)
 mf.BackgroundColor3=Color3.new(0,0,0)
 mf.BackgroundTransparency=0.3
 mf.Active=true
@@ -195,11 +195,18 @@ local function ass(s,h)
 	return ss,hs
 end
 
+local contentViewport=Instance.new("Frame")
+contentViewport.Size=UDim2.new(0,258,0,460)
+contentViewport.Position=UDim2.new(0,90,0,35)
+contentViewport.BackgroundTransparency=1
+contentViewport.ClipsDescendants=true
+contentViewport.Parent=mf
+
 local mc=Instance.new("Frame")
-mc.Size=UDim2.new(0,258,0,520)
-mc.Position=UDim2.new(0,0,0,30)
+mc.Size=UDim2.new(0,258,0,560)
+mc.Position=UDim2.new(0,0,0,0)
 mc.BackgroundTransparency=1
-mc.Parent=mf
+mc.Parent=contentViewport
 
 local spT=Instance.new("TextLabel")
 spT.Size=UDim2.new(0.5,0,0,25)
@@ -493,43 +500,10 @@ local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
 
 local miscC=Instance.new("Frame")
 miscC.Size=UDim2.new(0,258,0,450)
-miscC.Position=UDim2.new(0,0,0,30)
+miscC.Position=UDim2.new(0,0,0,0)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
-miscC.Parent=mf
-
-local contentViewport=Instance.new("Frame")
-contentViewport.Size=UDim2.new(0,260,0,500)
-contentViewport.Position=UDim2.new(0,92,0,35)
-contentViewport.BackgroundTransparency=1
-contentViewport.ClipsDescendants=true
-contentViewport.Parent=mf
-
-mc.Parent=contentViewport
-mc.Position=UDim2.new(0,0,0,0)
 miscC.Parent=contentViewport
-miscC.Position=UDim2.new(0,0,0,0)
-
-local scrollBar=Instance.new("Frame")
-scrollBar.Size=UDim2.new(0,7,0,420)
-scrollBar.Position=UDim2.new(1,-12,0,88)
-scrollBar.BackgroundColor3=Color3.new(0.16,0.16,0.16)
-scrollBar.BackgroundTransparency=0.25
-scrollBar.BorderSizePixel=0
-scrollBar.Parent=mf
-Instance.new("UICorner",scrollBar).CornerRadius=UDim.new(1,0)
-
-local scrollThumb=Instance.new("Frame")
-scrollThumb.Size=UDim2.new(1,90,0,1)
-scrollThumb.Position=UDim2.new(0,-41,0,0)
-scrollThumb.BackgroundColor3=Color3.new(0.65,0.65,0.65)
-scrollThumb.BorderSizePixel=0
-scrollThumb.Parent=scrollBar
-Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
-
-_G.scrollOffset=0
-_G.scrollTarget=0
-_G.scrollMax=math.max(0,mc.Size.Y.Offset-contentViewport.Size.Y.Offset)
 
 local aimT=Instance.new("TextLabel")
 aimT.Size=UDim2.new(0.5,0,0,25)
@@ -736,8 +710,8 @@ wcT.Parent=miscC
 local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
 
 local catBar=Instance.new("Frame")
-catBar.Size=UDim2.new(0,86,1,-70)
-catBar.Position=UDim2.new(0,2,0,35)
+catBar.Size=UDim2.new(0,82,1,-70)
+catBar.Position=UDim2.new(0,4,0,35)
 catBar.BackgroundTransparency=1
 catBar.Parent=mf
 
@@ -748,55 +722,123 @@ movL.BackgroundTransparency=1
 movL.Text="movement"
 movL.TextColor3=Color3.new(1,1,1)
 movL.TextTransparency=0
-movL.TextSize=15
+movL.TextSize=14
 movL.Font=Enum.Font.GothamBold
-movL.TextWrapped=false
+movL.TextWrapped=true
 movL.Parent=catBar
 
 local catSep=Instance.new("Frame")
-catSep.Size=UDim2.new(0,52,0,1)
-catSep.Position=UDim2.new(0.5,-26,0,52)
+catSep.Size=UDim2.new(0,48,0,1)
+catSep.Position=UDim2.new(0.5,-24,0,54)
 catSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 catSep.BorderSizePixel=0
 catSep.Parent=catBar
 
 local miscL=Instance.new("TextButton")
 miscL.Size=UDim2.new(1,0,0,40)
-miscL.Position=UDim2.new(0,0,0,60)
+miscL.Position=UDim2.new(0,0,0,64)
 miscL.BackgroundTransparency=1
 miscL.Text="misc"
 miscL.TextColor3=Color3.new(1,1,1)
 miscL.TextTransparency=0.4
-miscL.TextSize=15
+miscL.TextSize=14
 miscL.Font=Enum.Font.GothamBold
-miscL.TextWrapped=false
+miscL.TextWrapped=true
 miscL.Parent=catBar
 
+local scrollTrack=Instance.new("Frame")
+scrollTrack.Size=UDim2.new(0,6,0,460)
+scrollTrack.Position=UDim2.new(1,-10,0,35)
+scrollTrack.BackgroundColor3=Color3.new(0.16,0.16,0.16)
+scrollTrack.BackgroundTransparency=0.25
+scrollTrack.BorderSizePixel=0
+scrollTrack.Parent=mf
+Instance.new("UICorner",scrollTrack).CornerRadius=UDim.new(1,0)
+
+local scrollThumb=Instance.new("Frame")
+scrollThumb.BackgroundColor3=Color3.new(0.6,0.6,0.6)
+scrollThumb.BorderSizePixel=0
+scrollThumb.Parent=scrollTrack
+Instance.new("UICorner",scrollThumb).CornerRadius=UDim.new(1,0)
+
+_G.scrollOffset=0
+_G.scrollTarget=0
+_G.scrollMax=100
+_G.scrollDragging=false
+_G.scrollDragStart=0
+_G.scrollStartOffset=0
+
 local function updateScrollBar()
-	local contentHeight=mc.Size.Y.Offset
 	local viewportHeight=contentViewport.AbsoluteSize.Y
-	local trackHeight=scrollBar.AbsoluteSize.Y
-	_G.scrollMax=math.max(0,contentHeight-viewportHeight)
-	if _G.scrollMax<=0 then
-		_G.scrollOffset=0
-		_G.scrollTarget=0
-		scrollThumb.Size=UDim2.new(1,90,0,trackHeight)
-		scrollThumb.Position=UDim2.new(0,-41,0,0)
+	local contentHeight=mc.AbsoluteSize.Y
+	local trackHeight=scrollTrack.AbsoluteSize.Y
+	local maxOffset=math.max(0,contentHeight-viewportHeight)
+	_G.scrollMax=maxOffset
+	if maxOffset<=0 then
+		scrollThumb.Size=UDim2.new(1,0,1,0)
+		scrollThumb.Position=UDim2.new(0,0,0,0)
 		return
 	end
-	local thumbHeight=math.max(50,trackHeight*(viewportHeight/contentHeight))
-	scrollThumb.Size=UDim2.new(1,90,0,thumbHeight)
-	local maxThumbY=math.max(0,trackHeight-thumbHeight)
-	local thumbY=maxThumbY*(_G.scrollOffset/_G.scrollMax)
-	scrollThumb.Position=UDim2.new(0,-41,0,thumbY)
+	local thumbHeight=math.max(40,trackHeight*(viewportHeight/contentHeight))
+	scrollThumb.Size=UDim2.new(1,0,0,thumbHeight)
+	local travel=math.max(0,trackHeight-thumbHeight)
+	local ratio=_G.scrollOffset/maxOffset
+	scrollThumb.Position=UDim2.new(0,0,0,travel*ratio)
+end
+
+local function setScrollTarget(v)
+	_G.scrollTarget=math.clamp(v,0,_G.scrollMax)
 end
 
 local function applyScroll()
 	local y=-_G.scrollOffset
-	mc.Position=UDim2.new(0,0,0,y)
-	miscC.Position=UDim2.new(0,0,0,y)
+	mc.Position=UDim2.new(0,0,y)
+	miscC.Position=UDim2.new(0,0,y)
 	updateScrollBar()
 end
+
+task.defer(function()
+	updateScrollBar()
+	applyScroll()
+end)
+
+UIS.InputChanged:Connect(function(i)
+	if i.UserInputType==Enum.UserInputType.MouseWheel then
+		local p=i.Position
+		local vpPos=contentViewport.AbsolutePosition
+		local vpSize=contentViewport.AbsoluteSize
+		if p.X>=vpPos.X and p.X<=vpPos.X+vpSize.X and p.Y>=vpPos.Y and p.Y<=vpPos.Y+vpSize.Y then
+			setScrollTarget(_G.scrollTarget-i.Position.Z*55)
+		end
+	elseif i.UserInputType==Enum.UserInputType.MouseMovement and _G.scrollDragging then
+		local delta=i.Position.Y-_G.scrollDragStart
+		local trackHeight=scrollTrack.AbsoluteSize.Y
+		local thumbHeight=scrollThumb.AbsoluteSize.Y
+		local travel=math.max(1,trackHeight-thumbHeight)
+		setScrollTarget(_G.scrollStartOffset+(delta/travel)*_G.scrollMax)
+	end
+end)
+
+scrollThumb.InputBegan:Connect(function(i)
+	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+		_G.scrollDragging=true
+		_G.scrollDragStart=i.Position.Y
+		_G.scrollStartOffset=_G.scrollTarget
+	end
+end)
+
+UIS.InputEnded:Connect(function(i)
+	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+		_G.scrollDragging=false
+	end
+end)
+
+RS.RenderStepped:Connect(function()
+	if math.abs(_G.scrollOffset-_G.scrollTarget)>0.05 then
+		_G.scrollOffset=_G.scrollOffset+(_G.scrollTarget-_G.scrollOffset)*0.18
+		applyScroll()
+	end
+end)
 
 local function setToggle(t,k,on,anim)
 	local pos=on and UDim2.new(1,-20,0.5,-9) or UDim2.new(0,2,0.5,-9)
@@ -989,13 +1031,8 @@ local function updateRange(v)
 end
 
 local function updateSlider(f,h,v)
-	v=math.clamp(v,0,1)
-	local track=h.Parent
-	local width=track.AbsoluteSize.X
-	if width<=16 then return end
-	local x=8+(width-16)*v
-	f.Size=UDim2.new(0,x,1,0)
-	h.Position=UDim2.new(0,x,0.5,-8)
+	f.Size=UDim2.new(v,0,1,0)
+	h.Position=UDim2.new(v,-8,0.5,-8)
 end
 
 local function toggleSpeed()
@@ -1166,6 +1203,7 @@ end)
 local function switchCat(c)
 	if _G.currentCategory==c then return end
 	_G.currentCategory=c
+	_G.scrollTarget=0
 	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 	if c=="movement" then
 		TS:Create(movL,inf,{TextTransparency=0}):Play()
@@ -1216,17 +1254,13 @@ RS.RenderStepped:Connect(function()
 			mf.Position=UDim2.new(c.X.Scale,c.X.Offset+dx*0.18,c.Y.Scale,c.Y.Offset+dy*0.18)
 		end
 	end
-	if math.abs(_G.scrollOffset-_G.scrollTarget)>0.05 then
-		_G.scrollOffset=_G.scrollOffset+(_G.scrollTarget-_G.scrollOffset)*0.18
-		applyScroll()
-	end
 end)
 
 local function setVisible(s)
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
 	catBar.Visible=s
-	scrollBar.Visible=s
+	scrollTrack.Visible=s
 end
 
 local function startFps()
@@ -1248,7 +1282,7 @@ local function setMinimized(s)
 	if _G.isAnimating then return end
 	_G.isAnimating=true
 	_G.isHidden=s
-	local ts=s and UDim2.new(0,360,0,30) or UDim2.new(0,360,0,570)
+	local ts=s and UDim2.new(0,350,0,30) or UDim2.new(0,350,0,570)
 	local tw=TS:Create(mf,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=ts})
 	if s then
 		setVisible(false)
@@ -1277,55 +1311,50 @@ closeBtn.MouseButton1Click:Connect(function()
 	sg:Destroy()
 end)
 
-task.defer(function()
-	updateScrollBar()
-	applyScroll()
-end)
-
 local function updateSpeedFromInput(i)
 	local s=spS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-spS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-spS.AbsolutePosition.X,0,s)/s
 	updateSlider(spF,spH,v)
 	updateSpeed(v)
 end
 
 local function updateJumpFromInput(i)
 	local s=jS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-jS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-jS.AbsolutePosition.X,0,s)/s
 	updateSlider(jF,jH,v)
 	updateJump(v)
 end
 
 local function updateFlightFromInput(i)
 	local s=fS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-fS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-fS.AbsolutePosition.X,0,s)/s
 	updateSlider(fF,fH,v)
 	updateFlight(v)
 end
 
 local function updateStrafeFromInput(i)
 	local s=stS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-stS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-stS.AbsolutePosition.X,0,s)/s
 	updateSlider(stF,stH,v)
 	updateStrafe(v)
 end
 
 local function updateSmoothFromInput(i)
 	local s=smS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-smS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-smS.AbsolutePosition.X,0,s)/s
 	updateSlider(smF,smH,v)
 	updateSmooth(v)
 end
 
 local function updateRangeFromInput(i)
 	local s=rS.AbsoluteSize.X
-	if s<=16 then return end
-	local v=math.clamp(i.Position.X-rS.AbsolutePosition.X-8,0,s-16)/(s-16)
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-rS.AbsolutePosition.X,0,s)/s
 	updateSlider(rF,rH,v)
 	updateRange(v)
 end
@@ -1360,9 +1389,6 @@ rS.InputBegan:Connect(startDrag("r",updateRangeFromInput))
 rH.InputBegan:Connect(startDrag("r",updateRangeFromInput))
 
 UIS.InputChanged:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseWheel and not _G.isHidden then
-		_G.scrollTarget=math.clamp(_G.scrollTarget-i.Position.Z*45,0,_G.scrollMax)
-	end
 	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
 		updateSpeedFromInput(i)
 	end
@@ -1396,12 +1422,11 @@ UIS.InputEnded:Connect(function(i)
 end)
 
 player.CharacterAdded:Connect(function(c)
+	_G.scrollOffset=0
+	_G.scrollTarget=0
 	character=c
 	humanoid=character:WaitForChild("Humanoid")
 	root=character:WaitForChild("HumanoidRootPart")
-	_G.scrollOffset=0
-	_G.scrollTarget=0
-	applyScroll()
 	stopFlight()
 	stopAirwalk()
 	_G.speedEnabled=false
