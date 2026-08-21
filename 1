@@ -68,7 +68,15 @@ task.spawn(function()
 	end)
 end)
 
+-- SINGLETON: не даём скрипту создавать несколько одинаковых окон
+local oldGui=player.PlayerGui:FindFirstChild("ScriptUI")
+if oldGui then
+	oldGui:Destroy()
+end
+
 local sg=Instance.new("ScreenGui")
+sg.Name="ScriptUI"
+sg.ResetOnSpawn=false
 sg.Parent=player.PlayerGui
 
 local mf=Instance.new("Frame")
