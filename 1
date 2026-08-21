@@ -524,7 +524,7 @@ local bindRows={}
 local binds={}
 local bindListening=nil
 
-local function createBindRow(parent,name,y,toggleFunc)
+local function createKeybindRow(parent,name,y,toggleFunc)
 	local label=Instance.new("TextLabel")
 	label.Size=UDim2.new(0,105,0,25)
 	label.Position=UDim2.new(0,10,0,y)
@@ -600,28 +600,27 @@ local function createBindRow(parent,name,y,toggleFunc)
 	bindRows[name]=row
 
 	local function setBindVisual(bound,animate)
-		local c=bound and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-		local inf=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+		local color=bound and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+		local info=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 		if animate then
-			TS:Create(bind,inf,{TextColor3=c}):Play()
-			TS:Create(plus,inf,{TextColor3=c}):Play()
-			TS:Create(minus,inf,{TextColor3=c}):Play()
+			TS:Create(label,info,{TextColor3=color}):Play()
 		else
-			bind.TextColor3=c
-			plus.TextColor3=c
-			minus.TextColor3=c
+			label.TextColor3=color
 		end
+		plus.TextColor3=Color3.new(0.6,0.6,0.6)
+		minus.TextColor3=Color3.new(0.6,0.6,0.6)
 	end
 
 	row.setBindVisual=setBindVisual
-	setBindVisual(false,false)
+
+	hover(bind,st)
+	hover(plus,pst)
+	hover(minus,mst)
 
 	local function listen()
 		bindListening=name
 		bind.Text="..."
 		bind.TextColor3=Color3.new(1,1,1)
-		plus.TextColor3=Color3.new(1,1,1)
-		minus.TextColor3=Color3.new(1,1,1)
 	end
 
 	plus.MouseButton1Click:Connect(listen)
@@ -630,6 +629,7 @@ local function createBindRow(parent,name,y,toggleFunc)
 		binds[name]=nil
 		if bindListening==name then bindListening=nil end
 		bind.Text="None"
+		bind.TextColor3=Color3.new(0.6,0.6,0.6)
 		setBindVisual(false,true)
 	end)
 end
@@ -877,7 +877,7 @@ miscL.Parent=catBar
 
 local bindSep=Instance.new("Frame")
 bindSep.Size=UDim2.new(0,48,0,1)
-bindSep.Position=UDim2.new(0.5,-24,0,110) -- разделитель между misc и bind
+bindSep.Position=UDim2.new(0.5,-24,0,110)
 bindSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 bindSep.BorderSizePixel=0
 bindSep.Parent=catBar
@@ -1202,7 +1202,6 @@ hover(rH,rHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
-
 local function setColors(en,label,slider,fill,handle)
 	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
 	local sc=en and Color3.new(0.5,0.5,0.5) or Color3.new(0.3,0.3,0.3)
@@ -1337,6 +1336,20 @@ local function updateSlider(f,h,v)
 	h.Position=UDim2.new(v,-8,0.5,-8)
 end
 
+local function valueToAlpha(value,minValue,maxValue)
+	if maxValue==minValue then return 0 end
+	return math.clamp((value-minValue)/(maxValue-minValue),0,1)
+end
+
+local function initializeDefaultValues()
+	updateSpeed(valueToAlpha(_G.currentSpeed,_G.minSpeed,_G.maxSpeed))
+	updateJump(valueToAlpha(_G.currentJumpStrength,_G.minJump,_G.maxJump))
+	updateFlight(valueToAlpha(_G.currentFlight,_G.minFlight,_G.maxFlight))
+	updateStrafe(valueToAlpha(_G.currentStrafe,_G.minStrafe,_G.maxStrafe))
+	updateSmooth(valueToAlpha(_G.currentSmoothness,_G.minSmooth,_G.maxSmooth))
+	updateRange(valueToAlpha(_G.currentRange,_G.minRange,_G.maxRange))
+end
+
 local function toggleSpeed()
 	_G.speedEnabled=not _G.speedEnabled
 	setToggle(spTr,spK,_G.speedEnabled,true)
@@ -1363,18 +1376,21 @@ end
 
 local function toggleNoclip()
 	_G.noclipEnabled=not _G.noclipEnabled
-	updateNoclip()
-	if _G.noclipEnabled then
-		if _G.flying then
-			setNoclip(true)
-			if not _G.noclipConnection then
-				_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
-			end
+
+	if _G.noclipEnabled and _G.flightEnabled and _G.flying then
+		setNoclip(true)
+		if not _G.noclipConnection then
+			_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
 		end
-	else
-		if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
+	elseif not _G.noclipEnabled then
+		if _G.noclipConnection then
+			_G.noclipConnection:Disconnect()
+			_G.noclipConnection=nil
+		end
 		setNoclip(false)
 	end
+
+	updateNoclip()
 end
 
 local function toggleStrafe()
@@ -1460,23 +1476,20 @@ local function cycleMode()
 	end
 end
 
-createBindRow(bindC,"Speed",2,toggleSpeed)
-createBindRow(bindC,"Jump",38,toggleJump)
-createBindRow(bindC,"Flight",74,toggleFlight)
-createBindRow(bindC,"Noclip",110,toggleNoclip)
-createBindRow(bindC,"Strafe",146,toggleStrafe)
-createBindRow(bindC,"Airwalk",182,toggleAirwalk)
-createBindRow(bindC,"ClickTP",218,toggleClickTp)
-createBindRow(bindC,"AirJump",254,toggleAirJump)
-createBindRow(bindC,"Aimbot",290,toggleAimbot)
-createBindRow(bindC,"TargetLock",326,toggleTargetLock)
-createBindRow(bindC,"WallsCheck",362,toggleWallsCheck)
+createKeybindRow(bindC,"Speed",2,toggleSpeed)
+createKeybindRow(bindC,"Jump",38,toggleJump)
+createKeybindRow(bindC,"Flight",74,toggleFlight)
+createKeybindRow(bindC,"Noclip",110,toggleNoclip)
+createKeybindRow(bindC,"Strafe",146,toggleStrafe)
+createKeybindRow(bindC,"Airwalk",182,toggleAirwalk)
+createKeybindRow(bindC,"ClickTP",218,toggleClickTp)
+createKeybindRow(bindC,"AirJump",254,toggleAirJump)
+createKeybindRow(bindC,"Aimbot",290,toggleAimbot)
+createKeybindRow(bindC,"TargetLock",326,toggleTargetLock)
+createKeybindRow(bindC,"WallsCheck",362,toggleWallsCheck)
 
--- Hover-обводка для всех кнопок bind подключается после их создания.
 for _,row in pairs(bindRows) do
-	hover(row.bind,row.stroke)
-	hover(row.plus,row.plusStroke)
-	hover(row.minus,row.minusStroke)
+	row.setBindVisual(false,false)
 end
 
 UIS.InputBegan:Connect(function(i,p)
@@ -1489,6 +1502,7 @@ UIS.InputBegan:Connect(function(i,p)
 			local row=bindRows[name]
 			if row then
 				row.bind.Text=i.KeyCode.Name
+				row.bind.TextColor3=Color3.new(1,1,1)
 				row.setBindVisual(true,true)
 			end
 			return
@@ -1867,34 +1881,23 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(aimTr,aimK,false,false)
 	setToggle(tlTr,tlK,false,false)
 	setToggle(wcTr,wcK,false,false)
-	updateSlider(spF,spH,0.08)
+	initializeDefaultValues()
 	spT.Text="Speed"
-	spVT.Text="Value: 16"
+	jT.Text="Jump"
+	fT.Text="Flight"
+	stT.Text="Strafe"
 	setColors(false,spT,nil,nil,nil)
 	setColors(false,spVT,spS,spF,spH)
-	updateSlider(jF,jH,0.25)
-	jT.Text="Jump"
-	jST.Text="Strength: 50"
 	setColors(false,jT,nil,nil,nil)
 	setColors(false,jST,jS,jF,jH)
-	updateSlider(fF,fH,0.25)
-	fT.Text="Flight"
-	fST.Text="Speed: 50"
 	setColors(false,fT,nil,nil,nil)
 	setColors(false,fST,fS,fF,fH)
 	updateNoclip()
-	updateSlider(stF,stH,0)
-	stT.Text="Strafe"
-	stVT.Text="Value: 0"
 	setColors(false,stT,nil,nil,nil)
 	setColors(false,stVT,stS,stF,stH)
 	setColors(false,awT,nil,nil,nil)
 	setColors(false,cT,nil,nil,nil)
 	setColors(false,ajT,nil,nil,nil)
-	updateSlider(smF,smH,0.3)
-	smT.Text="Speed: 0.15"
-	updateSlider(rF,rH,0.5)
-	rT.Text="Range: 500"
 	targB.Text="Head"
 	targT.Text="Target:"
 	sortB.Text="Distance"
@@ -1902,16 +1905,6 @@ player.CharacterAdded:Connect(function(c)
 	modeB.Text="Center"
 	modeT.Text="Mode:"
 	setAimColors(false)
-	for name,row in pairs(bindRows) do
-		local key=binds[name]
-		if key then
-			row.bind.Text=key.Name
-			row.setBindVisual(true,false)
-		else
-			row.bind.Text="None"
-			row.setBindVisual(false,false)
-		end
-	end
 	applySpeed()
 	applyJump()
 end)
