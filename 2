@@ -10,11 +10,6 @@ local PL=game:GetService("Players")
 repeat wait(0.1) until _G.speedEnabled~=nil
 wait(0.2)
 
--- Timer variables
-_G.timerEnabled = _G.timerEnabled or false
-_G.currentTimer = _G.currentTimer or 0
-_G.timerValue = _G.timerValue or 0
-
 local function setNoclip(s)
 	if not character then return end
 	for _,p in pairs(character:GetDescendants()) do
@@ -51,6 +46,7 @@ end
 
 function _G.enableNoclipFunc()
 	_G.noclipEnabled=true
+	-- Noclip is only applied while Flight is active.
 	if _G.flying then
 		setNoclip(true)
 		if not _G.noclipConnection then
@@ -201,17 +197,6 @@ RS.Heartbeat:Connect(function()
 	if _G.airwalkEnabled and _G.airwalkPlatform and root then
 		_G.airwalkPlatform.CFrame=CFrame.new(root.Position.X,_G.airwalkY,root.Position.Z)
 	end
-	
-	-- Timer logic
-	if _G.timerEnabled then
-		_G.timerValue = _G.timerValue + RS.Heartbeat:Wait()
-		if _G.timerValue >= _G.currentTimer and _G.currentTimer > 0 then
-			_G.timerValue = 0
-			-- Здесь можно добавить логику по достижении таймера
-			-- Например: запустить звук, телепортировать, и т.д.
-			_G.timerEnabled = false
-		end
-	end
 end)
 
 player.CharacterAdded:Connect(function(c)
@@ -220,6 +205,4 @@ player.CharacterAdded:Connect(function(c)
 	root=character:WaitForChild("HumanoidRootPart")
 	_G.stopFlightFunc()
 	_G.stopAirwalkFunc()
-	_G.timerValue = 0
-	_G.timerEnabled = false
 end)
