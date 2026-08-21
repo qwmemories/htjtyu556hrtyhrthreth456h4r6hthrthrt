@@ -7,71 +7,8 @@ local UIS=game:GetService("UserInputService")
 local RS=game:GetService("RunService")
 local PL=game:GetService("Players")
 
-if _G.speedEnabled==nil then
-	_G.speedEnabled=false
-end
-
-_G.blinkEnabled=_G.blinkEnabled or false
-_G.currentBacktime=_G.currentBacktime or 1.0
-_G.blinkCooldown=false
-_G.blinkReturnCFrame=nil
-_G.blinkToken=0
-
-function _G.performBlink()
-	-- One Blink cannot be started while the previous Blink is waiting to return.
-	if not _G.blinkEnabled or _G.blinkCooldown then
-		return false
-	end
-
-	if not root or not root.Parent or not mouse.Hit then
-		return false
-	end
-
-	local origin=root.CFrame
-	local hitPosition=mouse.Hit.Position
-	local backtime=math.clamp(tonumber(_G.currentBacktime) or 0,0,25)
-
-	_G.blinkCooldown=true
-	_G.blinkReturnCFrame=origin
-	_G.blinkToken=_G.blinkToken+1
-	local token=_G.blinkToken
-
-	-- Teleport to the mouse position while keeping the current facing direction.
-	local destination=hitPosition+Vector3.new(0,3,0)
-	root.CFrame=CFrame.new(destination,destination+origin.LookVector)
-
-	task.delay(backtime,function()
-		if token~=_G.blinkToken then
-			return
-		end
-
-		local returnCFrame=_G.blinkReturnCFrame
-		_G.blinkReturnCFrame=nil
-
-		if returnCFrame and root and root.Parent then
-			root.CFrame=returnCFrame
-		end
-
-		_G.blinkCooldown=false
-	end)
-
-	return true
-end
-
--- Blink uses the mouse only when the module is enabled.
-mouse.Button1Down:Connect(function()
-	_G.performBlink()
-end)
-
--- If the player respawns during the Backtime, cancel the old Blink state.
-player.CharacterAdded:Connect(function(c)
-	character=c
-	humanoid=character:WaitForChild("Humanoid")
-	root=character:WaitForChild("HumanoidRootPart")
-	_G.blinkReturnCFrame=nil
-	_G.blinkCooldown=false
-	_G.blinkToken=_G.blinkToken+1
-end)
+repeat wait(0.1) until _G.speedEnabled~=nil
+wait(0.2)
 
 local function setNoclip(s)
 	if not character then return end
@@ -266,8 +203,6 @@ player.CharacterAdded:Connect(function(c)
 	character=c
 	humanoid=character:WaitForChild("Humanoid")
 	root=character:WaitForChild("HumanoidRootPart")
-	_G.blinkCooldown=false
-	_G.blinkReturnCFrame=nil
 	_G.stopFlightFunc()
 	_G.stopAirwalkFunc()
 end)
