@@ -599,6 +599,24 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 	local row={name=name,label=label,plus=plus,minus=minus,bind=bind,stroke=st,toggle=toggleFunc}
 	bindRows[name]=row
 
+	local function setBindState(hasBind,animate)
+		local textColor=hasBind and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+		local inf=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+		if animate then
+			TS:Create(label,inf,{TextColor3=textColor}):Play()
+			TS:Create(plus,inf,{TextColor3=textColor}):Play()
+			TS:Create(minus,inf,{TextColor3=textColor}):Play()
+			TS:Create(bind,inf,{TextColor3=textColor}):Play()
+		else
+			label.TextColor3=textColor
+			plus.TextColor3=textColor
+			minus.TextColor3=textColor
+			bind.TextColor3=textColor
+		end
+	end
+
+	setBindState(false,false)
+
 	local function listen()
 		bindListening=name
 		bind.Text="..."
@@ -611,7 +629,7 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 		binds[name]=nil
 		if bindListening==name then bindListening=nil end
 		bind.Text="None"
-		bind.TextColor3=Color3.new(0.6,0.6,0.6)
+		setBindState(false,true)
 	end)
 end
 
@@ -1148,11 +1166,6 @@ end
 
 hover(hideBtn,hideSt)
 
-for _,row in pairs(bindRows) do
-    if row.bind and row.stroke then hover(row.bind,row.stroke) end
-    if row.plus and row.plus:FindFirstChildOfClass("UIStroke") then hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke")) end
-    if row.minus and row.minus:FindFirstChildOfClass("UIStroke") then hover(row.minus,row.minus:FindFirstChildOfClass("UIStroke")) end
-end
 hover(closeBtn,closeSt)
 hover(spTr,spSt)
 hover(spS,spSS)
@@ -1188,12 +1201,6 @@ hover(rH,rHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
-for _,row in pairs(bindRows) do
-	hover(row.bind,row.stroke)
-	hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke"))
-	hover(row.minus,row.minus:FindFirstChildOfClass("UIStroke"))
-end
-
 local function setColors(en,label,slider,fill,handle)
 	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
 	local sc=en and Color3.new(0.5,0.5,0.5) or Color3.new(0.3,0.3,0.3)
@@ -1223,9 +1230,10 @@ local function setAimColors(en)
 end
 
 local function updateNoclip()
-	local en=_G.flightEnabled and _G.noclipEnabled
-	setColors(en,nT,nil,nil,nil)
-	setToggle(nTr,nK,en,true)
+	local configured=_G.noclipEnabled
+	local active=_G.flightEnabled and configured
+	setColors(active,nT,nil,nil,nil)
+	setToggle(nTr,nK,configured,true)
 end
 
 local function applySpeed()
@@ -1463,6 +1471,12 @@ createKeybindRow(bindC,"Aimbot",290,toggleAimbot)
 createKeybindRow(bindC,"TargetLock",326,toggleTargetLock)
 createKeybindRow(bindC,"WallsCheck",362,toggleWallsCheck)
 
+for _,row in pairs(bindRows) do
+	hover(row.bind,row.stroke)
+	hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke"))
+	hover(row.minus,row.minus:FindFirstChildOfClass("UIStroke"))
+end
+
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
 	if bindListening then
@@ -1473,7 +1487,11 @@ UIS.InputBegan:Connect(function(i,p)
 			local row=bindRows[name]
 			if row then
 				row.bind.Text=i.KeyCode.Name
-				row.bind.TextColor3=Color3.new(1,1,1)
+				local inf=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+				TS:Create(row.label,inf,{TextColor3=Color3.new(1,1,1)}):Play()
+				TS:Create(row.plus,inf,{TextColor3=Color3.new(1,1,1)}):Play()
+				TS:Create(row.minus,inf,{TextColor3=Color3.new(1,1,1)}):Play()
+				TS:Create(row.bind,inf,{TextColor3=Color3.new(1,1,1)}):Play()
 			end
 			return
 		end
