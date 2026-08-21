@@ -10,6 +10,11 @@ local PL=game:GetService("Players")
 repeat wait(0.1) until _G.speedEnabled~=nil
 wait(0.2)
 
+-- Timer variables
+_G.timerEnabled = _G.timerEnabled or false
+_G.currentTimer = _G.currentTimer or 0
+_G.timerValue = _G.timerValue or 0
+
 local function setNoclip(s)
 	if not character then return end
 	for _,p in pairs(character:GetDescendants()) do
@@ -185,24 +190,6 @@ RS.RenderStepped:Connect(function()
 end)
 
 RS.Heartbeat:Connect(function()
-	if _G.speedEnabled and _G.currentSpeed > 0 and root and humanoid and not _G.flying then
-		local vel=root.AssemblyLinearVelocity
-		local moveDir=humanoid.MoveDirection
-		local speedMult = _G.currentSpeed / 16
-		if moveDir.Magnitude > 0 then
-			local currentSpeed = vel.Magnitude
-			local targetSpeed = 16 * speedMult
-			if currentSpeed < targetSpeed then
-				local boost = (targetSpeed - currentSpeed) * 0.3
-				local newVel = vel + (moveDir.Unit * boost)
-				local newSpeed = newVel.Magnitude
-				if newSpeed > targetSpeed then
-					newVel = newVel.Unit * targetSpeed
-				end
-				root.AssemblyLinearVelocity = newVel
-			end
-		end
-	end
 	if _G.strafeEnabled and _G.currentStrafe>0 and root and humanoid and not _G.flying then
 		local md=humanoid.MoveDirection
 		local sp=humanoid.WalkSpeed
@@ -214,6 +201,17 @@ RS.Heartbeat:Connect(function()
 	if _G.airwalkEnabled and _G.airwalkPlatform and root then
 		_G.airwalkPlatform.CFrame=CFrame.new(root.Position.X,_G.airwalkY,root.Position.Z)
 	end
+	
+	-- Timer logic
+	if _G.timerEnabled then
+		_G.timerValue = _G.timerValue + RS.Heartbeat:Wait()
+		if _G.timerValue >= _G.currentTimer and _G.currentTimer > 0 then
+			_G.timerValue = 0
+			-- Здесь можно добавить логику по достижении таймера
+			-- Например: запустить звук, телепортировать, и т.д.
+			_G.timerEnabled = false
+		end
+	end
 end)
 
 player.CharacterAdded:Connect(function(c)
@@ -222,4 +220,6 @@ player.CharacterAdded:Connect(function(c)
 	root=character:WaitForChild("HumanoidRootPart")
 	_G.stopFlightFunc()
 	_G.stopAirwalkFunc()
+	_G.timerValue = 0
+	_G.timerEnabled = false
 end)
