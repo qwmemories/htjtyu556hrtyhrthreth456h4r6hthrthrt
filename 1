@@ -514,7 +514,7 @@ miscC.Visible=false
 miscC.Parent=contentViewport
 
 local bindC=Instance.new("Frame")
-bindC.Size=UDim2.new(0,258,0,330)
+bindC.Size=UDim2.new(0,258,0,500)
 bindC.Position=UDim2.new(0,0,0,0)
 bindC.BackgroundTransparency=1
 bindC.Visible=false
@@ -1223,9 +1223,15 @@ local function setAimColors(en)
 end
 
 local function updateNoclip()
-	local en=_G.flightEnabled and _G.noclipEnabled
-	setColors(en,nT,nil,nil,nil)
-	setToggle(nTr,nK,en,true)
+	-- Noclip is a setting of Flight, so its state can be changed
+	-- even while Flight itself is disabled. It only takes effect
+	-- when Flight is actually running.
+	setToggle(nTr,nK,_G.noclipEnabled,true)
+	if _G.flightEnabled then
+		setColors(_G.noclipEnabled,nT,nil,nil,nil)
+	else
+		setColors(false,nT,nil,nil,nil)
+	end
 end
 
 local function applySpeed()
@@ -1454,11 +1460,11 @@ end
 createKeybindRow(bindC,"Speed",2,toggleSpeed)
 createKeybindRow(bindC,"Jump",38,toggleJump)
 createKeybindRow(bindC,"Flight",74,toggleFlight)
-createKeybindRow(bindC,"Strafe",110,toggleStrafe)
-createKeybindRow(bindC,"Airwalk",146,toggleAirwalk)
-createKeybindRow(bindC,"ClickTP",182,toggleClickTp)
-createKeybindRow(bindC,"AirJump",218,toggleAirJump)
-createKeybindRow(bindC,"Aimbot",254,toggleAimbot)
+createKeybindRow(bindC,"Strafe",146,toggleStrafe)
+createKeybindRow(bindC,"Airwalk",182,toggleAirwalk)
+createKeybindRow(bindC,"ClickTP",218,toggleClickTp)
+createKeybindRow(bindC,"AirJump",254,toggleAirJump)
+createKeybindRow(bindC,"Aimbot",290,toggleAimbot)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
