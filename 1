@@ -524,7 +524,7 @@ local bindRows={}
 local binds={}
 local bindListening=nil
 
-local function createBindRow(parent,name,y,toggleFunc)
+local function createKeybindRow(parent,name,y,toggleFunc)
 	local label=Instance.new("TextLabel")
 	label.Size=UDim2.new(0,105,0,25)
 	label.Position=UDim2.new(0,10,0,y)
@@ -596,32 +596,13 @@ local function createBindRow(parent,name,y,toggleFunc)
 	mst.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 	mst.Parent=minus
 
-	local row={name=name,label=label,plus=plus,minus=minus,bind=bind,stroke=st,plusStroke=pst,minusStroke=mst,toggle=toggleFunc}
+	local row={name=name,label=label,plus=plus,minus=minus,bind=bind,stroke=st,toggle=toggleFunc}
 	bindRows[name]=row
-
-	local function setBindVisual(bound,animate)
-		local c=bound and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-		local inf=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-		if animate then
-			TS:Create(bind,inf,{TextColor3=c}):Play()
-			TS:Create(plus,inf,{TextColor3=c}):Play()
-			TS:Create(minus,inf,{TextColor3=c}):Play()
-		else
-			bind.TextColor3=c
-			plus.TextColor3=c
-			minus.TextColor3=c
-		end
-	end
-
-	row.setBindVisual=setBindVisual
-	setBindVisual(false,false)
 
 	local function listen()
 		bindListening=name
 		bind.Text="..."
 		bind.TextColor3=Color3.new(1,1,1)
-		plus.TextColor3=Color3.new(1,1,1)
-		minus.TextColor3=Color3.new(1,1,1)
 	end
 
 	plus.MouseButton1Click:Connect(listen)
@@ -630,7 +611,7 @@ local function createBindRow(parent,name,y,toggleFunc)
 		binds[name]=nil
 		if bindListening==name then bindListening=nil end
 		bind.Text="None"
-		setBindVisual(false,true)
+		bind.TextColor3=Color3.new(0.6,0.6,0.6)
 	end)
 end
 
@@ -877,7 +858,7 @@ miscL.Parent=catBar
 
 local bindSep=Instance.new("Frame")
 bindSep.Size=UDim2.new(0,48,0,1)
-bindSep.Position=UDim2.new(0.5,-24,0,110) -- разделитель между misc и bind
+bindSep.Position=UDim2.new(0.5,-24,0,110)
 bindSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
 bindSep.BorderSizePixel=0
 bindSep.Parent=catBar
@@ -1167,6 +1148,11 @@ end
 
 hover(hideBtn,hideSt)
 
+for _,row in pairs(bindRows) do
+    if row.bind and row.stroke then hover(row.bind,row.stroke) end
+    if row.plus and row.plus:FindFirstChildOfClass("UIStroke") then hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke")) end
+    if row.minus and row.minus:FindFirstChildOfClass("UIStroke") then hover(row.minus,row.minus:FindFirstChildOfClass("UIStroke")) end
+end
 hover(closeBtn,closeSt)
 hover(spTr,spSt)
 hover(spS,spSS)
@@ -1202,6 +1188,11 @@ hover(rH,rHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
+for _,row in pairs(bindRows) do
+	hover(row.bind,row.stroke)
+	hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke"))
+	hover(row.minus,row.minus:FindFirstChildOfClass("UIStroke"))
+end
 
 local function setColors(en,label,slider,fill,handle)
 	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
@@ -1460,24 +1451,17 @@ local function cycleMode()
 	end
 end
 
-createBindRow(bindC,"Speed",2,toggleSpeed)
-createBindRow(bindC,"Jump",38,toggleJump)
-createBindRow(bindC,"Flight",74,toggleFlight)
-createBindRow(bindC,"Noclip",110,toggleNoclip)
-createBindRow(bindC,"Strafe",146,toggleStrafe)
-createBindRow(bindC,"Airwalk",182,toggleAirwalk)
-createBindRow(bindC,"ClickTP",218,toggleClickTp)
-createBindRow(bindC,"AirJump",254,toggleAirJump)
-createBindRow(bindC,"Aimbot",290,toggleAimbot)
-createBindRow(bindC,"TargetLock",326,toggleTargetLock)
-createBindRow(bindC,"WallsCheck",362,toggleWallsCheck)
-
--- Hover-обводка для всех кнопок bind подключается после их создания.
-for _,row in pairs(bindRows) do
-	hover(row.bind,row.stroke)
-	hover(row.plus,row.plusStroke)
-	hover(row.minus,row.minusStroke)
-end
+createKeybindRow(bindC,"Speed",2,toggleSpeed)
+createKeybindRow(bindC,"Jump",38,toggleJump)
+createKeybindRow(bindC,"Flight",74,toggleFlight)
+createKeybindRow(bindC,"Noclip",110,toggleNoclip)
+createKeybindRow(bindC,"Strafe",146,toggleStrafe)
+createKeybindRow(bindC,"Airwalk",182,toggleAirwalk)
+createKeybindRow(bindC,"ClickTP",218,toggleClickTp)
+createKeybindRow(bindC,"AirJump",254,toggleAirJump)
+createKeybindRow(bindC,"Aimbot",290,toggleAimbot)
+createKeybindRow(bindC,"TargetLock",326,toggleTargetLock)
+createKeybindRow(bindC,"WallsCheck",362,toggleWallsCheck)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
@@ -1489,7 +1473,7 @@ UIS.InputBegan:Connect(function(i,p)
 			local row=bindRows[name]
 			if row then
 				row.bind.Text=i.KeyCode.Name
-				row.setBindVisual(true,true)
+				row.bind.TextColor3=Color3.new(1,1,1)
 			end
 			return
 		end
@@ -1902,16 +1886,6 @@ player.CharacterAdded:Connect(function(c)
 	modeB.Text="Center"
 	modeT.Text="Mode:"
 	setAimColors(false)
-	for name,row in pairs(bindRows) do
-		local key=binds[name]
-		if key then
-			row.bind.Text=key.Name
-			row.setBindVisual(true,false)
-		else
-			row.bind.Text="None"
-			row.setBindVisual(false,false)
-		end
-	end
 	applySpeed()
 	applyJump()
 end)
