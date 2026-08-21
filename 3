@@ -1,1 +1,1205 @@
+-- ui.lua - UI Rendering
+local ui = {}
 
+function ui:Init(player, mouse, UIS, RS)
+    self.player = player
+    self.mouse = mouse
+    self.UIS = UIS
+    self.RS = RS
+    self.PL = game:GetService("Players")
+    self.TS = game:GetService("TweenService")
+    
+    -- Состояние UI
+    self.isHidden = false
+    self.isAnimating = false
+    self.isDragging = false
+    self.isSliding = false
+    self.dragStart = nil
+    self.startPos = nil
+    self.targetPos = nil
+    self.currentCategory = "movement"
+    
+    -- Состояние слайдеров
+    self.draggingSpeed = false
+    self.draggingJump = false
+    self.draggingFlight = false
+    self.draggingStrafe = false
+    self.draggingSmooth = false
+    self.draggingRange = false
+    
+    self.minSpeed, self.maxSpeed = 0, 500
+    self.minJump, self.maxJump = 0, 500
+    self.minFlight, self.maxFlight = 0, 500
+    self.minStrafe, self.maxStrafe = 0, 100
+    self.minSmooth, self.maxSmooth = 0.01, 1
+    self.minRange, self.maxRange = 10, 1000
+    
+    self.scrollMax = 0
+    self.scrollDragging = false
+    self.scrollDragStartY = 0
+    self.scrollDragStartCanvas = 0
+    self.scrollTarget = 0
+    self.scrollCurrent = 0
+    
+    self.fpsConnection = nil
+    self.bindListening = nil
+    self.binds = {}
+    self.bindRows = {}
+    
+    -- Callback'и для логики
+    self.callbacks = {}
+    
+    self:CreateUI()
+    self:SetupInputs()
+    self:SetupScroll()
+end
+
+function ui:SetLogicCallbacks(callbacks)
+    self.callbacks = callbacks
+end
+
+function ui:CreateUI()
+    local player = self.player
+    local sg = Instance.new("ScreenGui")
+    sg.Parent = player.PlayerGui
+    self.sg = sg
+    
+    -- Основное окно
+    local mf = Instance.new("Frame")
+    mf.Size = UDim2.new(0, 350, 0, 530)
+    mf.Position = UDim2.new(0.5, -175, 0.5, -285)
+    mf.BackgroundColor3 = Color3.new(0, 0, 0)
+    mf.BackgroundTransparency = 0.3
+    mf.Active = true
+    mf.Parent = sg
+    Instance.new("UICorner", mf).CornerRadius = UDim.new(0, 10)
+    self.mf = mf
+    
+    local ms = Instance.new("UIStroke")
+    ms.Color = Color3.new(1, 1, 1)
+    ms.Transparency = 0.78
+    ms.Thickness = 1.5
+    ms.Parent = mf
+    self.ms = ms
+    
+    -- Title
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(0, 80, 0, 25)
+    title.Position = UDim2.new(0, 10, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "script"
+    title.TextColor3 = Color3.new(1, 1, 1)
+    title.TextScaled = true
+    title.Font = Enum.Font.GothamBold
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = mf
+    self.title = title
+    
+    -- FPS
+    local fpsLabel = Instance.new("TextLabel")
+    fpsLabel.Size = UDim2.new(0, 100, 0, 25)
+    fpsLabel.Position = UDim2.new(0, 90, 0, 0)
+    fpsLabel.BackgroundTransparency = 1
+    fpsLabel.Text = "fps 0"
+    fpsLabel.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    fpsLabel.TextSize = 18
+    fpsLabel.Font = Enum.Font.Gotham
+    fpsLabel.TextXAlignment = Enum.TextXAlignment.Left
+    fpsLabel.TextTransparency = 1
+    fpsLabel.Parent = mf
+    self.fpsLabel = fpsLabel
+    
+    -- Кнопки
+    self:CreateButtons(mf)
+    
+    -- Content
+    self:CreateContent(mf)
+    
+    -- Category bar
+    self:CreateCategoryBar(mf)
+    
+    -- Scroll
+    self:CreateScroll(mf)
+end
+
+function ui:CreateButtons(parent)
+    -- Hide button
+    local hideBtn = Instance.new("TextButton")
+    hideBtn.Size = UDim2.new(0, 22, 0, 22)
+    hideBtn.Position = UDim2.new(1, -52, 0, 4)
+    hideBtn.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+    hideBtn.BackgroundTransparency = 0.04
+    hideBtn.Text = "−"
+    hideBtn.TextColor3 = Color3.new(1, 1, 1)
+    hideBtn.TextScaled = true
+    hideBtn.Font = Enum.Font.GothamBold
+    hideBtn.AutoButtonColor = false
+    hideBtn.Parent = parent
+    Instance.new("UICorner", hideBtn).CornerRadius = UDim.new(0, 5)
+    self.hideBtn = hideBtn
+    
+    local hideSt = Instance.new("UIStroke")
+    hideSt.Color = Color3.fromRGB(160, 160, 160)
+    hideSt.Transparency = 1
+    hideSt.Thickness = 1.5
+    hideSt.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    hideSt.Parent = hideBtn
+    
+    -- Close button
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 22, 0, 22)
+    closeBtn.Position = UDim2.new(1, -28, 0, 4)
+    closeBtn.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+    closeBtn.BackgroundTransparency = 0.04
+    closeBtn.Text = "×"
+    closeBtn.TextColor3 = Color3.new(1, 1, 1)
+    closeBtn.TextScaled = true
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.AutoButtonColor = false
+    closeBtn.Parent = parent
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 5)
+    self.closeBtn = closeBtn
+    
+    local closeSt = Instance.new("UIStroke")
+    closeSt.Color = Color3.fromRGB(160, 160, 160)
+    closeSt.Transparency = 1
+    closeSt.Thickness = 1.5
+    closeSt.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    closeSt.Parent = closeBtn
+    
+    -- События
+    hideBtn.MouseButton1Click:Connect(function() 
+        self:SetMinimized(not self.isHidden) 
+    end)
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        if self.callbacks.stopFlight then 
+            self.callbacks.stopFlight() 
+        end
+        self.sg:Destroy()
+    end)
+end
+
+function ui:CreateContent(parent)
+    local contentViewport = Instance.new("ScrollingFrame")
+    contentViewport.Size = UDim2.new(0, 258, 0, 460)
+    contentViewport.Position = UDim2.new(0, 90, 0, 35)
+    contentViewport.BackgroundTransparency = 1
+    contentViewport.BorderSizePixel = 0
+    contentViewport.ClipsDescendants = true
+    contentViewport.Active = true
+    contentViewport.ScrollingEnabled = true
+    contentViewport.ScrollingDirection = Enum.ScrollingDirection.Y
+    contentViewport.ElasticBehavior = Enum.ElasticBehavior.Never
+    contentViewport.ScrollBarThickness = 0
+    contentViewport.CanvasSize = UDim2.new(0, 0, 0, 0)
+    contentViewport.CanvasPosition = Vector2.new(0, 0)
+    contentViewport.Parent = parent
+    self.contentViewport = contentViewport
+    
+    -- Movement content
+    self.mc = self:CreateMovementContent(contentViewport)
+    
+    -- Misc content
+    self.miscC = self:CreateMiscContent(contentViewport)
+    
+    -- Bind content
+    self.bindC = self:CreateBindContent(contentViewport)
+end
+
+function ui:CreateMovementContent(parent)
+    local mc = Instance.new("Frame")
+    mc.Size = UDim2.new(0, 258, 0, 560)
+    mc.Position = UDim2.new(0, 0, 0, 0)
+    mc.BackgroundTransparency = 1
+    mc.Parent = parent
+    local y = 0
+    
+    -- Speed
+    y = self:CreateSlider(mc, "Speed", "Value: 16", y, "sp", 0.032, self.minSpeed, self.maxSpeed)
+    y = y + 10
+    y = self:CreateSeparator(mc, y)
+    
+    -- Jump
+    y = self:CreateSlider(mc, "Jump", "Strength: 50", y, "j", 0.1, self.minJump, self.maxJump)
+    y = y + 10
+    y = self:CreateSeparator(mc, y)
+    
+    -- Flight
+    y = self:CreateSlider(mc, "Flight", "Speed: 50", y, "f", 0.1, self.minFlight, self.maxFlight)
+    y = y + 10
+    y = self:CreateSeparator(mc, y)
+    
+    -- Noclip
+    y = self:CreateToggle(mc, "Noclip", y, "n")
+    y = y + 10
+    y = self:CreateSeparator(mc, y)
+    
+    -- Strafe
+    y = self:CreateSlider(mc, "Strafe", "Value: 0", y, "st", 0, self.minStrafe, self.maxStrafe)
+    y = y + 10
+    y = self:CreateSeparator(mc, y)
+    
+    -- Airwalk
+    y = self:CreateToggle(mc, "Airwalk", y, "aw")
+    y = y + 10
+    y = self:CreateSeparator(mc, y)
+    
+    -- ClickTP
+    y = self:CreateToggle(mc, "ClickTP", y, "c")
+    y = y + 10
+    y = self:CreateSeparator(mc, y)
+    
+    -- AirJump
+    y = self:CreateToggle(mc, "AirJump", y, "aj")
+    
+    return mc
+end
+
+function ui:CreateMiscContent(parent)
+    local miscC = Instance.new("Frame")
+    miscC.Size = UDim2.new(0, 258, 0, 450)
+    miscC.Position = UDim2.new(0, 0, 0, 0)
+    miscC.BackgroundTransparency = 1
+    miscC.Visible = false
+    miscC.Parent = parent
+    local y = 0
+    
+    -- Aimbot
+    y = self:CreateToggle(miscC, "Aimbot", y, "aim")
+    y = y + 10
+    
+    -- Smoothness
+    y = self:CreateSlider(miscC, "Speed: 0.15", nil, y, "sm", 0.3, self.minSmooth, self.maxSmooth)
+    y = y + 10
+    
+    -- Range
+    y = self:CreateSlider(miscC, "Range: 500", nil, y, "r", 0.5, self.minRange, self.maxRange)
+    y = y + 10
+    
+    -- Target
+    y = self:CreateDropdown(miscC, "Target:", "Head", y, "targ")
+    y = y + 10
+    
+    -- Sort
+    y = self:CreateDropdown(miscC, "Sort:", "Distance", y, "sort")
+    y = y + 10
+    
+    -- Mode
+    y = self:CreateDropdown(miscC, "Mode:", "Center", y, "mode")
+    y = y + 10
+    
+    -- TargetLock
+    y = self:CreateToggle(miscC, "TargetLock", y, "tl")
+    y = y + 10
+    
+    -- WallsCheck
+    y = self:CreateToggle(miscC, "WallsCheck", y, "wc")
+    
+    return miscC
+end
+
+function ui:CreateBindContent(parent)
+    local bindC = Instance.new("Frame")
+    bindC.Size = UDim2.new(0, 258, 0, 500)
+    bindC.Position = UDim2.new(0, 0, 0, 0)
+    bindC.BackgroundTransparency = 1
+    bindC.Visible = false
+    bindC.Parent = parent
+    
+    local names = {"Speed", "Jump", "Flight", "Strafe", "Airwalk", "ClickTP", "AirJump", "Aimbot"}
+    for i, name in ipairs(names) do
+        self:CreateKeybindRow(bindC, name, (i-1)*36 + 2)
+    end
+    
+    return bindC
+end
+
+function ui:CreateSlider(parent, labelText, valueText, y, id, defaultValue, minVal, maxVal)
+    local y = y + 2
+    
+    -- Label
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.5, 0, 0, 25)
+    label.Position = UDim2.new(0, 10, 0, y)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    label.TextSize = 20
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = parent
+    
+    -- Toggle
+    local toggleFrame, toggleKnob, toggleStroke, toggleClick = self:CreateToggleElement(parent, UDim2.new(0.75, 0, 0, y + 4))
+    
+    -- Value label
+    local value = nil
+    if valueText then
+        value = Instance.new("TextLabel")
+        value.Size = UDim2.new(0.5, 0, 0, 25)
+        value.Position = UDim2.new(0, 10, 0, y + 32)
+        value.BackgroundTransparency = 1
+        value.Text = valueText
+        value.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+        value.TextSize = 18
+        value.Font = Enum.Font.Gotham
+        value.TextXAlignment = Enum.TextXAlignment.Left
+        value.Parent = parent
+    end
+    
+    local sliderY = y + (valueText and 62 or 34)
+    
+    -- Slider
+    local slider = Instance.new("Frame")
+    slider.Size = UDim2.new(0.85, 0, 0, 8)
+    slider.Position = UDim2.new(0.075, 0, 0, sliderY)
+    slider.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    slider.BorderSizePixel = 0
+    slider.Parent = parent
+    Instance.new("UICorner", slider).CornerRadius = UDim.new(0, 4)
+    
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(defaultValue, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.new(0.6, 0.6, 0.6)
+    fill.BorderSizePixel = 0
+    fill.Parent = slider
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 4)
+    
+    local handle = Instance.new("Frame")
+    handle.Size = UDim2.new(0, 16, 0, 16)
+    handle.Position = UDim2.new(defaultValue, -8, 0.5, -8)
+    handle.BackgroundColor3 = Color3.new(0.6, 0.6, 0.6)
+    handle.BorderSizePixel = 0
+    handle.Parent = slider
+    Instance.new("UICorner", handle).CornerRadius = UDim.new(0, 8)
+    
+    -- Сохраняем элементы
+    local sliderData = {
+        label = label,
+        value = value,
+        slider = slider,
+        fill = fill,
+        handle = handle,
+        toggleFrame = toggleFrame,
+        toggleKnob = toggleKnob,
+        toggleClick = toggleClick,
+        id = id,
+        minVal = minVal,
+        maxVal = maxVal
+    }
+    
+    self.sliders = self.sliders or {}
+    self.sliders[id] = sliderData
+    
+    -- Обработчики для слайдера
+    local function updateSlider(v)
+        fill.Size = UDim2.new(v, 0, 1, 0)
+        handle.Position = UDim2.new(v, -8, 0.5, -8)
+    end
+    
+    local function updateValue(v)
+        local val = minVal + (maxVal - minVal) * v
+        if id == "sp" and self.callbacks.updateSpeed then 
+            self.callbacks.updateSpeed(v)
+            if value then value.Text = "Value: " .. math.floor(val + 0.5) end
+        elseif id == "j" and self.callbacks.updateJump then 
+            self.callbacks.updateJump(v)
+            if value then value.Text = "Strength: " .. math.floor(val + 0.5) end
+        elseif id == "f" and self.callbacks.updateFlight then 
+            self.callbacks.updateFlight(v)
+            if value then value.Text = "Speed: " .. math.floor(val + 0.5) end
+        elseif id == "st" and self.callbacks.updateStrafe then 
+            self.callbacks.updateStrafe(v)
+            if value then value.Text = "Value: " .. math.floor(val + 0.5) end
+        elseif id == "sm" and self.callbacks.updateSmooth then 
+            self.callbacks.updateSmooth(v)
+            if value then value.Text = "Speed: " .. string.format("%.2f", val) end
+        elseif id == "r" and self.callbacks.updateRange then 
+            self.callbacks.updateRange(v)
+            if value then value.Text = "Range: " .. math.floor(val + 0.5) end
+        end
+    end
+    
+    local function getSliderValue(input)
+        local s = slider.AbsoluteSize.X
+        if s <= 0 then return 0 end
+        return math.clamp((input.Position.X - slider.AbsolutePosition.X) / s, 0, 1)
+    end
+    
+    local function onSliderInput(input)
+        local v = getSliderValue(input)
+        updateSlider(v)
+        updateValue(v)
+    end
+    
+    slider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            self.isSliding = true
+            self.isDragging = false
+            local dragKey = "dragging" .. id:upper()
+            self[dragKey] = true
+            onSliderInput(input)
+        end
+    end)
+    
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            self.isSliding = true
+            self.isDragging = false
+            local dragKey = "dragging" .. id:upper()
+            self[dragKey] = true
+            onSliderInput(input)
+        end
+    end)
+    
+    return y + 90
+end
+
+function ui:CreateToggle(parent, text, y, id)
+    local y = y + 2
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.5, 0, 0, 25)
+    label.Position = UDim2.new(0, 10, 0, y)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    label.TextSize = 20
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = parent
+    
+    local toggleFrame, toggleKnob, toggleStroke, toggleClick = self:CreateToggleElement(parent, UDim2.new(0.75, 0, 0, y + 4))
+    
+    self.toggles = self.toggles or {}
+    self.toggles[id] = {
+        label = label,
+        toggleFrame = toggleFrame,
+        toggleKnob = toggleKnob,
+        toggleClick = toggleClick
+    }
+    
+    local callbackName = "toggle" .. id:upper()
+    if id == "n" then callbackName = "toggleNoclip" end
+    if id == "aw" then callbackName = "toggleAirwalk" end
+    if id == "c" then callbackName = "toggleClickTp" end
+    if id == "aj" then callbackName = "toggleAirJump" end
+    if id == "aim" then callbackName = "toggleAimbot" end
+    if id == "tl" then callbackName = "toggleTargetLock" end
+    if id == "wc" then callbackName = "toggleWallsCheck" end
+    
+    toggleClick.MouseButton1Click:Connect(function()
+        if self.callbacks[callbackName] then
+            self.callbacks[callbackName]()
+        end
+    end)
+    
+    return y + 40
+end
+
+function ui:CreateToggleElement(parent, position)
+    local t = Instance.new("Frame")
+    t.Size = UDim2.new(0, 46, 0, 22)
+    t.Position = position
+    t.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+    t.BackgroundTransparency = 0.04
+    t.BorderSizePixel = 0
+    t.Parent = parent
+    Instance.new("UICorner", t).CornerRadius = UDim.new(1, 0)
+    
+    local ts = Instance.new("UIStroke")
+    ts.Color = Color3.fromRGB(160, 160, 160)
+    ts.Transparency = 1
+    ts.Thickness = 1.5
+    ts.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    ts.Parent = t
+    
+    local k = Instance.new("Frame")
+    k.Size = UDim2.new(0, 18, 0, 18)
+    k.Position = UDim2.new(0, 2, 0.5, -9)
+    k.BackgroundColor3 = Color3.new(0.6, 0.6, 0.6)
+    k.BorderSizePixel = 0
+    k.Parent = t
+    Instance.new("UICorner", k).CornerRadius = UDim.new(1, 0)
+    
+    local c = Instance.new("TextButton")
+    c.Size = UDim2.new(1, 0, 1, 0)
+    c.BackgroundTransparency = 1
+    c.Text = ""
+    c.Parent = t
+    
+    return t, k, ts, c
+end
+
+function ui:CreateDropdown(parent, labelText, defaultText, y, id)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.5, 0, 0, 25)
+    label.Position = UDim2.new(0, 10, 0, y + 2)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    label.TextSize = 18
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = parent
+    
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.35, 0, 0, 22)
+    btn.Position = UDim2.new(0.6, 0, 0, y + 3)
+    btn.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+    btn.BackgroundTransparency = 0.04
+    btn.Text = defaultText
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.TextSize = 14
+    btn.Font = Enum.Font.Gotham
+    btn.AutoButtonColor = false
+    btn.Parent = parent
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(160, 160, 160)
+    stroke.Transparency = 1
+    stroke.Thickness = 1.5
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = btn
+    
+    self.dropdowns = self.dropdowns or {}
+    self.dropdowns[id] = {
+        label = label,
+        btn = btn,
+        stroke = stroke
+    }
+    
+    local callbackName = "cycle" .. id:sub(1,1):upper() .. id:sub(2)
+    btn.MouseButton1Click:Connect(function()
+        if self.callbacks[callbackName] then
+            self.callbacks[callbackName]()
+        end
+    end)
+    
+    return y + 36
+end
+
+function ui:CreateSeparator(parent, y)
+    local sep = Instance.new("Frame")
+    sep.Size = UDim2.new(0.9, 0, 0, 1)
+    sep.Position = UDim2.new(0.05, 0, 0, y + 2)
+    sep.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
+    sep.BorderSizePixel = 0
+    sep.Parent = parent
+    return y + 6
+end
+
+function ui:CreateKeybindRow(parent, name, y)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 105, 0, 25)
+    label.Position = UDim2.new(0, 10, 0, y)
+    label.BackgroundTransparency = 1
+    label.Text = name
+    label.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    label.TextSize = 18
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = parent
+    
+    local plus = Instance.new("TextButton")
+    plus.Size = UDim2.new(0, 22, 0, 22)
+    plus.Position = UDim2.new(0, 125, 0, y + 2)
+    plus.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+    plus.BackgroundTransparency = 0.04
+    plus.Text = "+"
+    plus.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    plus.TextSize = 16
+    plus.Font = Enum.Font.GothamBold
+    plus.AutoButtonColor = false
+    plus.Parent = parent
+    Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 5)
+    
+    local minus = Instance.new("TextButton")
+    minus.Size = UDim2.new(0, 22, 0, 22)
+    minus.Position = UDim2.new(0, 151, 0, y + 2)
+    minus.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+    minus.BackgroundTransparency = 0.04
+    minus.Text = "-"
+    minus.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    minus.TextSize = 16
+    minus.Font = Enum.Font.GothamBold
+    minus.AutoButtonColor = false
+    minus.Parent = parent
+    Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 5)
+    
+    local bind = Instance.new("TextButton")
+    bind.Size = UDim2.new(0, 54, 0, 22)
+    bind.Position = UDim2.new(0, 177, 0, y + 2)
+    bind.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+    bind.BackgroundTransparency = 0.04
+    bind.Text = "None"
+    bind.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    bind.TextSize = 13
+    bind.Font = Enum.Font.Gotham
+    bind.AutoButtonColor = false
+    bind.Parent = parent
+    Instance.new("UICorner", bind).CornerRadius = UDim.new(0, 5)
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(160, 160, 160)
+    stroke.Transparency = 1
+    stroke.Thickness = 1.5
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = bind
+    
+    self.bindRows[name] = {
+        name = name,
+        label = label,
+        plus = plus,
+        minus = minus,
+        bind = bind,
+        stroke = stroke
+    }
+    
+    local callbackName = "toggle" .. name:gsub(" ", "")
+    if name == "ClickTP" then callbackName = "toggleClickTp" end
+    
+    local function listen()
+        self.bindListening = name
+        bind.Text = "..."
+        bind.TextColor3 = Color3.new(1, 1, 1)
+    end
+    
+    plus.MouseButton1Click:Connect(listen)
+    bind.MouseButton1Click:Connect(listen)
+    
+    minus.MouseButton1Click:Connect(function()
+        self.binds[name] = nil
+        if self.bindListening == name then self.bindListening = nil end
+        bind.Text = "None"
+        bind.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    end)
+end
+
+function ui:CreateCategoryBar(parent)
+    local catBar = Instance.new("Frame")
+    catBar.Size = UDim2.new(0, 82, 1, -70)
+    catBar.Position = UDim2.new(0, 4, 0, 35)
+    catBar.BackgroundTransparency = 1
+    catBar.Parent = parent
+    
+    local movL = Instance.new("TextButton")
+    movL.Size = UDim2.new(1, 0, 0, 40)
+    movL.Position = UDim2.new(0, 0, 0, 8)
+    movL.BackgroundTransparency = 1
+    movL.Text = "movement"
+    movL.TextColor3 = Color3.new(1, 1, 1)
+    movL.TextTransparency = 0
+    movL.TextSize = 14
+    movL.Font = Enum.Font.GothamBold
+    movL.TextWrapped = true
+    movL.Parent = catBar
+    self.movL = movL
+    
+    local catSep = Instance.new("Frame")
+    catSep.Size = UDim2.new(0, 48, 0, 1)
+    catSep.Position = UDim2.new(0.5, -24, 0, 54)
+    catSep.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
+    catSep.BorderSizePixel = 0
+    catSep.Parent = catBar
+    
+    local miscL = Instance.new("TextButton")
+    miscL.Size = UDim2.new(1, 0, 0, 40)
+    miscL.Position = UDim2.new(0, 0, 0, 64)
+    miscL.BackgroundTransparency = 1
+    miscL.Text = "misc"
+    miscL.TextColor3 = Color3.new(1, 1, 1)
+    miscL.TextTransparency = 0.4
+    miscL.TextSize = 14
+    miscL.Font = Enum.Font.GothamBold
+    miscL.TextWrapped = true
+    miscL.Parent = catBar
+    self.miscL = miscL
+    
+    local bindSep = Instance.new("Frame")
+    bindSep.Size = UDim2.new(0, 48, 0, 1)
+    bindSep.Position = UDim2.new(0.5, -24, 0, 110)
+    bindSep.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
+    bindSep.BorderSizePixel = 0
+    bindSep.Parent = catBar
+    
+    local bindL = Instance.new("TextButton")
+    bindL.Size = UDim2.new(1, 0, 0, 40)
+    bindL.Position = UDim2.new(0, 0, 0, 120)
+    bindL.BackgroundTransparency = 1
+    bindL.Text = "bind"
+    bindL.TextColor3 = Color3.new(1, 1, 1)
+    bindL.TextTransparency = 0.4
+    bindL.TextSize = 14
+    bindL.Font = Enum.Font.GothamBold
+    bindL.TextWrapped = true
+    bindL.Parent = catBar
+    self.bindL = bindL
+    
+    movL.MouseButton1Click:Connect(function() 
+        self:SwitchCategory("movement") 
+    end)
+    miscL.MouseButton1Click:Connect(function() 
+        self:SwitchCategory("misc") 
+    end)
+    bindL.MouseButton1Click:Connect(function() 
+        self:SwitchCategory("bind") 
+    end)
+end
+
+function ui:CreateScroll(parent)
+    local scrollTrack = Instance.new("Frame")
+    scrollTrack.Size = UDim2.new(0, 6, 0, 460)
+    scrollTrack.Position = UDim2.new(1, -10, 0, 35)
+    scrollTrack.BackgroundColor3 = Color3.new(0.16, 0.16, 0.16)
+    scrollTrack.BackgroundTransparency = 0.25
+    scrollTrack.BorderSizePixel = 0
+    scrollTrack.Visible = false
+    scrollTrack.Parent = parent
+    Instance.new("UICorner", scrollTrack).CornerRadius = UDim.new(1, 0)
+    self.scrollTrack = scrollTrack
+    
+    local scrollThumb = Instance.new("Frame")
+    scrollThumb.Size = UDim2.new(1, 0, 1, 0)
+    scrollThumb.Position = UDim2.new(0, 0, 0, 0)
+    scrollThumb.BackgroundColor3 = Color3.new(0.6, 0.6, 0.6)
+    scrollThumb.BorderSizePixel = 0
+    scrollThumb.Active = true
+    scrollThumb.Visible = false
+    scrollThumb.Parent = scrollTrack
+    Instance.new("UICorner", scrollThumb).CornerRadius = UDim.new(1, 0)
+    self.scrollThumb = scrollThumb
+end
+
+function ui:SetupInputs()
+    local UIS = self.UIS
+    local mouse = self.mouse
+    
+    -- Drag window
+    self.mf.InputBegan:Connect(function(i)
+        if self.isSliding then return end
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            self.isDragging = true
+            self.dragStart = i.Position
+            self.startPos = self.mf.Position
+            self.targetPos = self.mf.Position
+        end
+    end)
+    
+    UIS.InputChanged:Connect(function(i)
+        if self.isDragging and not self.isSliding and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            local d = i.Position - self.dragStart
+            self.targetPos = UDim2.new(
+                self.startPos.X.Scale, 
+                self.startPos.X.Offset + d.X,
+                self.startPos.Y.Scale, 
+                self.startPos.Y.Offset + d.Y
+            )
+        end
+        
+        -- Slider dragging
+        if self.draggingSpeed or self.draggingJump or self.draggingFlight or self.draggingStrafe or self.draggingSmooth or self.draggingRange then
+            for id, data in pairs(self.sliders) do
+                local dragKey = "dragging" .. id:upper()
+                if self[dragKey] then
+                    local s = data.slider.AbsoluteSize.X
+                    if s > 0 then
+                        local v = math.clamp((i.Position.X - data.slider.AbsolutePosition.X) / s, 0, 1)
+                        data.fill.Size = UDim2.new(v, 0, 1, 0)
+                        data.handle.Position = UDim2.new(v, -8, 0.5, -8)
+                        if id == "sp" and self.callbacks.updateSpeed then 
+                            self.callbacks.updateSpeed(v)
+                            if data.value then data.value.Text = "Value: " .. math.floor(self.minSpeed + (self.maxSpeed - self.minSpeed) * v + 0.5) end
+                        elseif id == "j" and self.callbacks.updateJump then 
+                            self.callbacks.updateJump(v)
+                            if data.value then data.value.Text = "Strength: " .. math.floor(self.minJump + (self.maxJump - self.minJump) * v + 0.5) end
+                        elseif id == "f" and self.callbacks.updateFlight then 
+                            self.callbacks.updateFlight(v)
+                            if data.value then data.value.Text = "Speed: " .. math.floor(self.minFlight + (self.maxFlight - self.minFlight) * v + 0.5) end
+                        elseif id == "st" and self.callbacks.updateStrafe then 
+                            self.callbacks.updateStrafe(v)
+                            if data.value then data.value.Text = "Value: " .. math.floor(self.minStrafe + (self.maxStrafe - self.minStrafe) * v + 0.5) end
+                        elseif id == "sm" and self.callbacks.updateSmooth then 
+                            self.callbacks.updateSmooth(v)
+                            if data.value then data.value.Text = "Speed: " .. string.format("%.2f", self.minSmooth + (self.maxSmooth - self.minSmooth) * v) end
+                        elseif id == "r" and self.callbacks.updateRange then 
+                            self.callbacks.updateRange(v)
+                            if data.value then data.value.Text = "Range: " .. math.floor(self.minRange + (self.maxRange - self.minRange) * v + 0.5) end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    
+    UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            self.isDragging = false
+            self.isSliding = false
+            self.draggingSpeed = false
+            self.draggingJump = false
+            self.draggingFlight = false
+            self.draggingStrafe = false
+            self.draggingSmooth = false
+            self.draggingRange = false
+        end
+    end)
+    
+    -- Drag update
+    self.RS.RenderStepped:Connect(function()
+        if self.targetPos then
+            local c = self.mf.Position
+            local dx = self.targetPos.X.Offset - c.X.Offset
+            local dy = self.targetPos.Y.Offset - c.Y.Offset
+            if math.abs(dx) > 0.5 or math.abs(dy) > 0.5 then
+                self.mf.Position = UDim2.new(
+                    c.X.Scale, c.X.Offset + dx * 0.18,
+                    c.Y.Scale, c.Y.Offset + dy * 0.18
+                )
+            end
+        end
+    end)
+    
+    -- Keybinds
+    UIS.InputBegan:Connect(function(i, p)
+        if p then return end
+        if self.bindListening then
+            if i.UserInputType == Enum.UserInputType.Keyboard and i.KeyCode ~= Enum.KeyCode.Unknown then
+                local name = self.bindListening
+                self.binds[name] = i.KeyCode
+                self.bindListening = nil
+                local row = self.bindRows[name]
+                if row then
+                    row.bind.Text = i.KeyCode.Name
+                    row.bind.TextColor3 = Color3.new(1, 1, 1)
+                end
+                return
+            end
+        end
+        
+        if i.UserInputType == Enum.UserInputType.Keyboard then
+            for name, key in pairs(self.binds) do
+                if key == i.KeyCode then
+                    local callbackName = "toggle" .. name:gsub(" ", "")
+                    if name == "ClickTP" then callbackName = "toggleClickTp" end
+                    if self.callbacks[callbackName] then
+                        self.callbacks[callbackName]()
+                    end
+                end
+            end
+        end
+    end)
+end
+
+function ui:SetupScroll()
+    local contentViewport = self.contentViewport
+    contentViewport.ScrollingEnabled = false
+    
+    local SCROLL_STEP = 24
+    local SCROLL_SMOOTHNESS = 0.12
+    
+    local function activeContent()
+        if self.currentCategory == "movement" then return self.mc
+        elseif self.currentCategory == "misc" then return self.miscC
+        else return self.bindC end
+    end
+    
+    local function contentBottom(content)
+        local bottom = 0
+        for _, obj in ipairs(content:GetChildren()) do
+            if obj:IsA("GuiObject") and obj.Visible then
+                local y = obj.Position.Y.Offset + obj.AbsoluteSize.Y
+                if y > bottom then bottom = y end
+            end
+        end
+        return bottom
+    end
+    
+    local function isMouseOverViewport()
+        local p = self.UIS:GetMouseLocation()
+        local pos = contentViewport.AbsolutePosition
+        local size = contentViewport.AbsoluteSize
+        return p.X >= pos.X and p.X <= pos.X + size.X and p.Y >= pos.Y and p.Y <= pos.Y + size.Y
+    end
+    
+    local function calculateScroll()
+        local content = activeContent()
+        local viewportH = contentViewport.AbsoluteSize.Y
+        local bottom = contentBottom(content)
+        local canvasHeight = math.max(bottom, viewportH)
+        contentViewport.CanvasSize = UDim2.new(0, 0, 0, canvasHeight)
+        local maxScroll = math.max(0, bottom - viewportH)
+        self.scrollMax = maxScroll
+        return bottom, viewportH, maxScroll
+    end
+    
+    local function updateScrollBar()
+        if self.isHidden or self.isAnimating or not self.mf.Visible then
+            self.scrollTrack.Visible = false
+            self.scrollThumb.Visible = false
+            return
+        end
+        
+        local bottom, viewportH, maxScroll = calculateScroll()
+        
+        if maxScroll <= 0 then
+            self.scrollTarget = 0
+            self.scrollCurrent = 0
+            contentViewport.CanvasPosition = Vector2.new(0, 0)
+            self.scrollTrack.Visible = false
+            self.scrollThumb.Visible = false
+            return
+        end
+        
+        self.scrollTarget = math.clamp(self.scrollTarget, 0, maxScroll)
+        self.scrollCurrent = math.clamp(self.scrollCurrent, 0, maxScroll)
+        
+        contentViewport.CanvasPosition = Vector2.new(0, self.scrollCurrent)
+        
+        self.scrollTrack.Visible = true
+        self.scrollThumb.Visible = true
+        
+        local trackH = self.scrollTrack.AbsoluteSize.Y
+        local thumbH = math.clamp(trackH * (viewportH / math.max(bottom, viewportH)), 36, trackH)
+        self.scrollThumb.Size = UDim2.new(1, 0, 0, thumbH)
+        
+        local travel = math.max(0, trackH - thumbH)
+        local ratio = maxScroll > 0 and self.scrollCurrent / maxScroll or 0
+        self.scrollThumb.Position = UDim2.new(0, 0, 0, travel * math.clamp(ratio, 0, 1))
+    end
+    
+    function self:RefreshScroll(resetPosition)
+        calculateScroll()
+        if resetPosition then
+            self.scrollTarget = 0
+            self.scrollCurrent = 0
+        end
+        contentViewport.CanvasPosition = Vector2.new(0, self.scrollCurrent)
+        updateScrollBar()
+    end
+    
+    -- Mouse wheel
+    self.UIS.InputChanged:Connect(function(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseWheel then return end
+        if self.isHidden or self.isAnimating or not self.mf.Visible then return end
+        if not isMouseOverViewport() then return end
+        
+        local _, _, maxScroll = calculateScroll()
+        if maxScroll <= 0 then return end
+        
+        self.scrollTarget = math.clamp(self.scrollTarget - (input.Position.Z * SCROLL_STEP), 0, maxScroll)
+    end)
+    
+    -- Scroll thumb drag
+    self.scrollThumb.InputBegan:Connect(function(input)
+        if self.isHidden or self.isAnimating then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            self.scrollDragging = true
+            self.scrollDragStartY = input.Position.Y
+            self.scrollDragStartCanvas = self.scrollCurrent
+        end
+    end)
+    
+    self.UIS.InputChanged:Connect(function(input)
+        if not self.scrollDragging then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+        if not self.scrollTrack.Visible then return end
+        
+        local trackH = self.scrollTrack.AbsoluteSize.Y
+        local thumbH = self.scrollThumb.AbsoluteSize.Y
+        local travel = math.max(1, trackH - thumbH)
+        local delta = input.Position.Y - self.scrollDragStartY
+        
+        self.scrollTarget = math.clamp(self.scrollDragStartCanvas + (delta / travel) * self.scrollMax, 0, self.scrollMax)
+        self.scrollCurrent = self.scrollTarget
+        contentViewport.CanvasPosition = Vector2.new(0, self.scrollCurrent)
+        updateScrollBar()
+    end)
+    
+    self.UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            self.scrollDragging = false
+        end
+    end)
+    
+    -- Render loop for scroll
+    self.RS.RenderStepped:Connect(function()
+        if self.isHidden or self.isAnimating or not self.mf.Visible then
+            self.scrollTrack.Visible = false
+            self.scrollThumb.Visible = false
+            return
+        end
+        
+        local _, _, maxScroll = calculateScroll()
+        if maxScroll <= 0 then
+            self.scrollTarget = 0
+            self.scrollCurrent = 0
+            contentViewport.CanvasPosition = Vector2.new(0, 0)
+            self.scrollTrack.Visible = false
+            self.scrollThumb.Visible = false
+            return
+        end
+        
+        self.scrollTarget = math.clamp(self.scrollTarget, 0, maxScroll)
+        self.scrollCurrent = self.scrollCurrent + (self.scrollTarget - self.scrollCurrent) * SCROLL_SMOOTHNESS
+        
+        if math.abs(self.scrollCurrent - self.scrollTarget) < 0.1 then
+            self.scrollCurrent = self.scrollTarget
+        end
+        
+        self.scrollCurrent = math.clamp(self.scrollCurrent, 0, maxScroll)
+        contentViewport.CanvasPosition = Vector2.new(0, self.scrollCurrent)
+        updateScrollBar()
+    end)
+end
+
+function ui:SwitchCategory(c)
+    if self.currentCategory == c then return end
+    
+    self.currentCategory = c
+    self.scrollTarget = 0
+    self.scrollCurrent = 0
+    self.contentViewport.CanvasPosition = Vector2.new(0, 0)
+    self.scrollTrack.Visible = false
+    self.scrollThumb.Visible = false
+    
+    local inf = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    
+    if c == "movement" then
+        self.TS:Create(self.movL, inf, {TextTransparency = 0}):Play()
+        self.TS:Create(self.miscL, inf, {TextTransparency = 0.4}):Play()
+        self.TS:Create(self.bindL, inf, {TextTransparency = 0.4}):Play()
+        self.miscC.Visible = false
+        self.mc.Visible = true
+        self.bindC.Visible = false
+    elseif c == "misc" then
+        self.TS:Create(self.movL, inf, {TextTransparency = 0.4}):Play()
+        self.TS:Create(self.miscL, inf, {TextTransparency = 0}):Play()
+        self.TS:Create(self.bindL, inf, {TextTransparency = 0.4}):Play()
+        self.mc.Visible = false
+        self.miscC.Visible = true
+        self.bindC.Visible = false
+    else
+        self.TS:Create(self.movL, inf, {TextTransparency = 0.4}):Play()
+        self.TS:Create(self.miscL, inf, {TextTransparency = 0.4}):Play()
+        self.TS:Create(self.bindL, inf, {TextTransparency = 0}):Play()
+        self.mc.Visible = false
+        self.miscC.Visible = false
+        self.bindC.Visible = true
+    end
+    
+    task.defer(function()
+        task.wait()
+        self:RefreshScroll(true)
+    end)
+end
+
+function ui:SetMinimized(s)
+    if self.isAnimating then return end
+    
+    self.isAnimating = true
+    self.isHidden = s
+    
+    self.scrollTrack.Visible = false
+    self.scrollThumb.Visible = false
+    self.contentViewport.ScrollingEnabled = false
+    
+    local ts = s and UDim2.new(0, 350, 0, 30) or UDim2.new(0, 350, 0, 530)
+    
+    local tw = self.TS:Create(
+        self.mf,
+        TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Size = ts}
+    )
+    
+    if s then
+        self.mc.Visible = false
+        self.miscC.Visible = false
+        self.bindC.Visible = false
+        
+        self:StartFps()
+        
+        self.TS:Create(
+            self.fpsLabel,
+            TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {TextTransparency = 0}
+        ):Play()
+    else
+        self.TS:Create(
+            self.fpsLabel,
+            TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {TextTransparency = 1}
+        ):Play()
+    end
+    
+    tw:Play()
+    
+    tw.Completed:Connect(function()
+        if not s then
+            self.mc.Visible = self.currentCategory == "movement"
+            self.miscC.Visible = self.currentCategory == "misc"
+            self.bindC.Visible = self.currentCategory == "bind"
+            self:RefreshScroll(true)
+        end
+        self.isAnimating = false
+    end)
+end
+
+function ui:StartFps()
+    if self.fpsConnection then return end
+    local f = 0
+    local l = tick()
+    self.fpsConnection = self.RS.RenderStepped:Connect(function()
+        f = f + 1
+        local n = tick()
+        if n - l >= 0.016 then
+            self.fpsLabel.Text = "fps " .. math.floor(f / (n - l))
+            f = 0
+            l = n
+        end
+    end)
+end
+
+function ui:SetToggle(id, on, anim)
+    local data = self.toggles and self.toggles[id]
+    if not data then return end
+    
+    local pos = on and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+    local tc = on and Color3.new(0.5, 0.5, 0.5) or Color3.new(0.15, 0.15, 0.15)
+    local kc = on and Color3.new(1, 1, 1) or Color3.new(0.6, 0.6, 0.6)
+    
+    if anim then
+        local inf = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        self.TS:Create(data.toggleKnob, inf, {Position = pos, BackgroundColor3 = kc}):Play()
+        self.TS:Create(data.toggleFrame, inf, {BackgroundColor3 = tc}):Play()
+    else
+        data.toggleKnob.Position = pos
+        data.toggleKnob.BackgroundColor3 = kc
+        data.toggleFrame.BackgroundColor3 = tc
+    end
+end
+
+function ui:OnCharacterAdded(c)
+    self:SetToggle("sp", false, false)
+    self:SetToggle("j", false, false)
+    self:SetToggle("f", false, false)
+    self:SetToggle("n", false, false)
+    self:SetToggle("st", false, false)
+    self:SetToggle("aw", false, false)
+    self:SetToggle("c", false, false)
+    self:SetToggle("aj", false, false)
+    self:SetToggle("aim", false, false)
+    self:SetToggle("tl", false, false)
+    self:SetToggle("wc", false, false)
+end
+
+function ui:Start()
+    task.defer(function()
+        task.wait()
+        self:RefreshScroll(true)
+    end)
+end
+
+return ui
