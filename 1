@@ -20,6 +20,8 @@ _G.aimbotEnabled=false
 _G.targetLockEnabled=false
 _G.wallsCheckEnabled=false
 _G.aimTarget="Head"
+_G.timerEnabled=false
+_G.timerSpeed=1.0
 
 _G.currentSpeed=16
 _G.currentJumpStrength=50
@@ -507,7 +509,7 @@ ajT.Parent=mc
 local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
 
 local miscC=Instance.new("Frame")
-miscC.Size=UDim2.new(0,258,0,450)
+miscC.Size=UDim2.new(0,258,0,460)
 miscC.Position=UDim2.new(0,0,0,0)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
@@ -818,6 +820,55 @@ wcT.TextXAlignment=Enum.TextXAlignment.Left
 wcT.Parent=miscC
 
 local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
+
+local timerT=Instance.new("TextLabel")
+timerT.Size=UDim2.new(0.5,0,0,25)
+timerT.Position=UDim2.new(0,10,0,332)
+timerT.BackgroundTransparency=1
+timerT.Text="Timer"
+timerT.TextColor3=Color3.new(0.6,0.6,0.6)
+timerT.TextSize=20
+timerT.Font=Enum.Font.Gotham
+timerT.TextXAlignment=Enum.TextXAlignment.Left
+timerT.Parent=miscC
+
+local timerTr,timerK,timerSt,timerCl=ct(miscC,UDim2.new(0.75,0,0,334))
+
+local timerVT=Instance.new("TextLabel")
+timerVT.Size=UDim2.new(0.5,0,0,25)
+timerVT.Position=UDim2.new(0,10,0,366)
+timerVT.BackgroundTransparency=1
+timerVT.Text="Speed: 1.0x"
+timerVT.TextColor3=Color3.new(0.6,0.6,0.6)
+timerVT.TextSize=18
+timerVT.Font=Enum.Font.Gotham
+timerVT.TextXAlignment=Enum.TextXAlignment.Left
+timerVT.Parent=miscC
+
+local timerS=Instance.new("Frame")
+timerS.Size=UDim2.new(0.85,0,0,8)
+timerS.Position=UDim2.new(0.075,0,0,396)
+timerS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
+timerS.BorderSizePixel=0
+timerS.Parent=miscC
+Instance.new("UICorner",timerS).CornerRadius=UDim.new(0,4)
+
+local timerF=Instance.new("Frame")
+timerF.Size=UDim2.new(0.037,0,1,0)
+timerF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
+timerF.BorderSizePixel=0
+timerF.Parent=timerS
+Instance.new("UICorner",timerF).CornerRadius=UDim.new(0,4)
+
+local timerH=Instance.new("Frame")
+timerH.Size=UDim2.new(0,16,0,16)
+timerH.Position=UDim2.new(0.037,-8,0.5,-8)
+timerH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
+timerH.BorderSizePixel=0
+timerH.Parent=timerS
+Instance.new("UICorner",timerH).CornerRadius=UDim.new(0,8)
+
+local timerSS,timerHS=ass(timerS,timerH)
 
 local catBar=Instance.new("Frame")
 catBar.Size=UDim2.new(0,82,1,-70)
@@ -1173,6 +1224,9 @@ hover(ajTr,ajSt)
 hover(aimTr,aimSt)
 hover(tlTr,tlSt)
 hover(wcTr,wcSt)
+hover(timerTr,timerSt)
+hover(timerS,timerSS)
+hover(timerH,timerHS)
 hover(spS,spSS)
 hover(spH,spHS)
 hover(jS,jSS)
@@ -1326,6 +1380,41 @@ local function updateRange(v)
 	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
 end
 
+local function updateTimerUI()
+	local speed=_G.timerSpeed or 1.0
+	local percent=(speed-0.1)/(25.0-0.1)
+	updateSlider(timerF,timerH,math.clamp(percent,0,1))
+	timerVT.Text="Speed: "..string.format("%.1fx",speed)
+end
+
+local function updateTimerStateUI()
+	local enabled=_G.timerEnabled==true
+	setToggle(timerTr,timerK,enabled,true)
+	setColors(enabled,timerT,nil,nil,nil)
+	setColors(enabled,timerVT,timerS,timerF,timerH)
+	updateTimerUI()
+end
+
+local function toggleTimer()
+	if _G.toggleTimerFunc then
+		_G.toggleTimerFunc()
+	end
+	updateTimerStateUI()
+end
+
+local function updateTimerFromInput(i)
+	local s=timerS.AbsoluteSize.X
+	if s<=0 then return end
+	local v=math.clamp(i.Position.X-timerS.AbsolutePosition.X,0,s)/s
+	local speed=0.1+(v*(25.0-0.1))
+	if _G.setTimerSpeedFunc then
+		_G.setTimerSpeedFunc(speed)
+	else
+		_G.timerSpeed=speed
+	end
+	updateTimerUI()
+end
+
 local function updateSlider(f,h,v)
 	f.Size=UDim2.new(v,0,1,0)
 	h.Position=UDim2.new(v,-8,0.5,-8)
@@ -1462,6 +1551,7 @@ createKeybindRow(bindC,"Airwalk",146,toggleAirwalk)
 createKeybindRow(bindC,"ClickTP",182,toggleClickTp)
 createKeybindRow(bindC,"AirJump",218,toggleAirJump)
 createKeybindRow(bindC,"Aimbot",254,toggleAimbot)
+createKeybindRow(bindC,"Timer",290,toggleTimer)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
@@ -1500,6 +1590,7 @@ ajCl.MouseButton1Click:Connect(toggleAirJump)
 aimCl.MouseButton1Click:Connect(toggleAimbot)
 tlCl.MouseButton1Click:Connect(toggleTargetLock)
 wcCl.MouseButton1Click:Connect(toggleWallsCheck)
+timerCl.MouseButton1Click:Connect(toggleTimer)
 targB.MouseButton1Click:Connect(cycleTarget)
 sortB.MouseButton1Click:Connect(cycleSort)
 modeB.MouseButton1Click:Connect(cycleMode)
@@ -1746,6 +1837,10 @@ local function updateRangeFromInput(i)
 	updateRange(v)
 end
 
+local function updateTimerFromInputAndSlider(i)
+	updateTimerFromInput(i)
+end
+
 local function startDrag(f,u)
 	return function(i)
 		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
@@ -1756,7 +1851,8 @@ local function startDrag(f,u)
 			elseif f=="f" then _G.draggingFlight=true
 			elseif f=="st" then _G.draggingStrafe=true
 			elseif f=="sm" then _G.draggingSmooth=true
-			elseif f=="r" then _G.draggingRange=true end
+			elseif f=="r" then _G.draggingRange=true
+			elseif f=="timer" then _G.draggingTimer=true end
 			u(i)
 		end
 	end
@@ -1774,6 +1870,8 @@ smS.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
 smH.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
 rS.InputBegan:Connect(startDrag("r",updateRangeFromInput))
 rH.InputBegan:Connect(startDrag("r",updateRangeFromInput))
+timerS.InputBegan:Connect(startDrag("timer",updateTimerFromInput))
+timerH.InputBegan:Connect(startDrag("timer",updateTimerFromInput))
 
 UIS.InputChanged:Connect(function(i)
 	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
@@ -1794,6 +1892,9 @@ UIS.InputChanged:Connect(function(i)
 	if _G.draggingRange and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
 		updateRangeFromInput(i)
 	end
+	if _G.draggingTimer and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+		updateTimerFromInput(i)
+	end
 end)
 
 UIS.InputEnded:Connect(function(i)
@@ -1804,6 +1905,7 @@ UIS.InputEnded:Connect(function(i)
 		_G.draggingStrafe=false
 		_G.draggingSmooth=false
 		_G.draggingRange=false
+		_G.draggingTimer=false
 		_G.isSliding=false
 	end
 end)
@@ -1886,6 +1988,7 @@ player.CharacterAdded:Connect(function(c)
 	modeB.Text="Center"
 	modeT.Text="Mode:"
 	setAimColors(false)
+	updateTimerStateUI()
 	applySpeed()
 	applyJump()
 end)
@@ -1902,3 +2005,4 @@ updateFlight(0.1)
 updateStrafe(0)
 updateSmooth(0.3)
 updateRange(0.5)
+updateTimerStateUI()
