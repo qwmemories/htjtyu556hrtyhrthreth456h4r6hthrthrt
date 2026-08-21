@@ -20,8 +20,6 @@ _G.aimbotEnabled=false
 _G.targetLockEnabled=false
 _G.wallsCheckEnabled=false
 _G.aimTarget="Head"
-_G.timerEnabled=false
-_G.timerValue=1.0
 
 _G.currentSpeed=16
 _G.currentJumpStrength=50
@@ -29,7 +27,6 @@ _G.currentFlight=50
 _G.currentStrafe=0
 _G.currentSmoothness=0.15
 _G.currentRange=500
-_G.currentTimerValue=1.0
 _G.aimMode="Center"
 _G.sortMode="Distance"
 
@@ -49,7 +46,6 @@ _G.minFlight,_G.maxFlight=0,500
 _G.minStrafe,_G.maxStrafe=0,100
 _G.minSmooth,_G.maxSmooth=0.01,1
 _G.minRange,_G.maxRange=10,1000
-_G.minTimer,_G.maxTimer=0.01,50
 
 _G.draggingSpeed=false
 _G.draggingJump=false
@@ -57,7 +53,6 @@ _G.draggingFlight=false
 _G.draggingStrafe=false
 _G.draggingSmooth=false
 _G.draggingRange=false
-_G.draggingTimer=false
 _G.flying=false
 _G.bodyVelocity=nil
 _G.bodyGyro=nil
@@ -66,7 +61,6 @@ _G.airwalkPlatform=nil
 _G.airwalkY=0
 _G.fpsConnection=nil
 _G.lastSpace=false
-_G.timerConnection=nil
 
 task.spawn(function()
 	pcall(function()
@@ -513,14 +507,14 @@ ajT.Parent=mc
 local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
 
 local miscC=Instance.new("Frame")
-miscC.Size=UDim2.new(0,258,0,580)
+miscC.Size=UDim2.new(0,258,0,450)
 miscC.Position=UDim2.new(0,0,0,0)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
 miscC.Parent=contentViewport
 
 local bindC=Instance.new("Frame")
-bindC.Size=UDim2.new(0,258,0,580)
+bindC.Size=UDim2.new(0,258,0,500)
 bindC.Position=UDim2.new(0,0,0,0)
 bindC.BackgroundTransparency=1
 bindC.Visible=false
@@ -824,62 +818,6 @@ wcT.TextXAlignment=Enum.TextXAlignment.Left
 wcT.Parent=miscC
 
 local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
-
-local sep7=Instance.new("Frame")
-sep7.Size=UDim2.new(0.9,0,0,1)
-sep7.Position=UDim2.new(0.05,0,0,328)
-sep7.BackgroundColor3=Color3.new(0.4,0.4,0.4)
-sep7.BorderSizePixel=0
-sep7.Parent=miscC
-
-local timerT=Instance.new("TextLabel")
-timerT.Size=UDim2.new(0.5,0,0,25)
-timerT.Position=UDim2.new(0,10,0,338)
-timerT.BackgroundTransparency=1
-timerT.Text="Timer"
-timerT.TextColor3=Color3.new(0.6,0.6,0.6)
-timerT.TextSize=20
-timerT.Font=Enum.Font.Gotham
-timerT.TextXAlignment=Enum.TextXAlignment.Left
-timerT.Parent=miscC
-
-local timerTr,timerK,timerSt,timerCl=ct(miscC,UDim2.new(0.75,0,0,340))
-
-local timerVT=Instance.new("TextLabel")
-timerVT.Size=UDim2.new(0.5,0,0,25)
-timerVT.Position=UDim2.new(0,10,0,370)
-timerVT.BackgroundTransparency=1
-timerVT.Text="Value: 1.00"
-timerVT.TextColor3=Color3.new(0.6,0.6,0.6)
-timerVT.TextSize=18
-timerVT.Font=Enum.Font.Gotham
-timerVT.TextXAlignment=Enum.TextXAlignment.Left
-timerVT.Parent=miscC
-
-local timerS=Instance.new("Frame")
-timerS.Size=UDim2.new(0.85,0,0,8)
-timerS.Position=UDim2.new(0.075,0,0,400)
-timerS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-timerS.BorderSizePixel=0
-timerS.Parent=miscC
-Instance.new("UICorner",timerS).CornerRadius=UDim.new(0,4)
-
-local timerF=Instance.new("Frame")
-timerF.Size=UDim2.new(0.02,0,1,0)
-timerF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-timerF.BorderSizePixel=0
-timerF.Parent=timerS
-Instance.new("UICorner",timerF).CornerRadius=UDim.new(0,4)
-
-local timerH=Instance.new("Frame")
-timerH.Size=UDim2.new(0,16,0,16)
-timerH.Position=UDim2.new(0.02,-8,0.5,-8)
-timerH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-timerH.BorderSizePixel=0
-timerH.Parent=timerS
-Instance.new("UICorner",timerH).CornerRadius=UDim.new(0,8)
-
-local timerSS,timerHS=ass(timerS,timerH)
 
 local catBar=Instance.new("Frame")
 catBar.Size=UDim2.new(0,82,1,-70)
@@ -1250,9 +1188,6 @@ hover(rH,rHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
-hover(timerTr,timerSt)
-hover(timerS,timerSS)
-hover(timerH,timerHS)
 for _,row in pairs(bindRows) do
 	hover(row.bind,row.stroke)
 	hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke"))
@@ -1285,11 +1220,6 @@ local function setAimColors(en)
 	targB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
 	sortB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
 	modeB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
-end
-
-local function setTimerColors(en)
-	setColors(en,timerT,nil,nil,nil)
-	setColors(en,timerVT,timerS,timerF,timerH)
 end
 
 local function updateNoclip()
@@ -1396,14 +1326,6 @@ local function updateRange(v)
 	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
 end
 
-local function updateTimer(v)
-	_G.currentTimerValue=_G.minTimer+(_G.maxTimer-_G.minTimer)*v
-	timerVT.Text="Value: "..string.format("%.2f",_G.currentTimerValue)
-	if _G.timerEnabled then
-		_G.timerValue=_G.currentTimerValue
-	end
-end
-
 local function updateSlider(f,h,v)
 	f.Size=UDim2.new(v,0,1,0)
 	h.Position=UDim2.new(v,-8,0.5,-8)
@@ -1496,24 +1418,6 @@ local function toggleWallsCheck()
 	if _G.aimbotEnabled then setColors(_G.wallsCheckEnabled,wcT,nil,nil,nil) end
 end
 
-local function toggleTimer()
-	_G.timerEnabled=not _G.timerEnabled
-	setToggle(timerTr,timerK,_G.timerEnabled,true)
-	setTimerColors(_G.timerEnabled)
-	if _G.timerEnabled then
-		_G.timerValue=_G.currentTimerValue
-		if _G.timerConnection then _G.timerConnection:Disconnect() end
-		_G.timerConnection=RS.Heartbeat:Connect(function(delta)
-			if _G.timerEnabled and _G.timerValue~=1 then
-				wait(_G.timerValue)
-			end
-		end)
-	else
-		_G.timerValue=1.0
-		if _G.timerConnection then _G.timerConnection:Disconnect() _G.timerConnection=nil end
-	end
-end
-
 local function cycleTarget()
 	if _G.aimTarget=="Head" then
 		_G.aimTarget="Body"
@@ -1558,7 +1462,6 @@ createKeybindRow(bindC,"Airwalk",146,toggleAirwalk)
 createKeybindRow(bindC,"ClickTP",182,toggleClickTp)
 createKeybindRow(bindC,"AirJump",218,toggleAirJump)
 createKeybindRow(bindC,"Aimbot",254,toggleAimbot)
-createKeybindRow(bindC,"Timer",290,toggleTimer)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
@@ -1597,7 +1500,6 @@ ajCl.MouseButton1Click:Connect(toggleAirJump)
 aimCl.MouseButton1Click:Connect(toggleAimbot)
 tlCl.MouseButton1Click:Connect(toggleTargetLock)
 wcCl.MouseButton1Click:Connect(toggleWallsCheck)
-timerCl.MouseButton1Click:Connect(toggleTimer)
 targB.MouseButton1Click:Connect(cycleTarget)
 sortB.MouseButton1Click:Connect(cycleSort)
 modeB.MouseButton1Click:Connect(cycleMode)
@@ -1792,7 +1694,6 @@ closeBtn.MouseButton1Click:Connect(function()
 	stopFlight()
 	stopAirwalk()
 	if _G.fpsConnection then _G.fpsConnection:Disconnect() end
-	if _G.timerConnection then _G.timerConnection:Disconnect() end
 	mouse.Icon=""
 	sg:Destroy()
 end)
@@ -1845,14 +1746,6 @@ local function updateRangeFromInput(i)
 	updateRange(v)
 end
 
-local function updateTimerFromInput(i)
-	local s=timerS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-timerS.AbsolutePosition.X,0,s)/s
-	updateSlider(timerF,timerH,v)
-	updateTimer(v)
-end
-
 local function startDrag(f,u)
 	return function(i)
 		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
@@ -1863,8 +1756,7 @@ local function startDrag(f,u)
 			elseif f=="f" then _G.draggingFlight=true
 			elseif f=="st" then _G.draggingStrafe=true
 			elseif f=="sm" then _G.draggingSmooth=true
-			elseif f=="r" then _G.draggingRange=true
-			elseif f=="tm" then _G.draggingTimer=true end
+			elseif f=="r" then _G.draggingRange=true end
 			u(i)
 		end
 	end
@@ -1882,8 +1774,6 @@ smS.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
 smH.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
 rS.InputBegan:Connect(startDrag("r",updateRangeFromInput))
 rH.InputBegan:Connect(startDrag("r",updateRangeFromInput))
-timerS.InputBegan:Connect(startDrag("tm",updateTimerFromInput))
-timerH.InputBegan:Connect(startDrag("tm",updateTimerFromInput))
 
 UIS.InputChanged:Connect(function(i)
 	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
@@ -1904,9 +1794,6 @@ UIS.InputChanged:Connect(function(i)
 	if _G.draggingRange and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
 		updateRangeFromInput(i)
 	end
-	if _G.draggingTimer and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateTimerFromInput(i)
-	end
 end)
 
 UIS.InputEnded:Connect(function(i)
@@ -1917,7 +1804,6 @@ UIS.InputEnded:Connect(function(i)
 		_G.draggingStrafe=false
 		_G.draggingSmooth=false
 		_G.draggingRange=false
-		_G.draggingTimer=false
 		_G.isSliding=false
 	end
 end)
@@ -1932,7 +1818,6 @@ player.CharacterAdded:Connect(function(c)
 	root=character:WaitForChild("HumanoidRootPart")
 	stopFlight()
 	stopAirwalk()
-	if _G.timerConnection then _G.timerConnection:Disconnect() _G.timerConnection=nil end
 	_G.speedEnabled=false
 	_G.jumpEnabled=false
 	_G.flightEnabled=false
@@ -1944,7 +1829,6 @@ player.CharacterAdded:Connect(function(c)
 	_G.aimbotEnabled=false
 	_G.targetLockEnabled=false
 	_G.wallsCheckEnabled=false
-	_G.timerEnabled=false
 	_G.lockedTarget=nil
 	mouse.Icon=""
 	_G.currentSpeed=16
@@ -1953,7 +1837,6 @@ player.CharacterAdded:Connect(function(c)
 	_G.currentStrafe=0
 	_G.currentSmoothness=0.15
 	_G.currentRange=500
-	_G.currentTimerValue=1.0
 	_G.aimMode="Center"
 	_G.sortMode="Distance"
 	_G.aimTarget="Head"
@@ -1968,7 +1851,6 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(aimTr,aimK,false,false)
 	setToggle(tlTr,tlK,false,false)
 	setToggle(wcTr,wcK,false,false)
-	setToggle(timerTr,timerK,false,false)
 	updateSlider(spF,spH,0.032)
 	spT.Text="Speed"
 	spVT.Text="Value: 16"
@@ -2003,9 +1885,6 @@ player.CharacterAdded:Connect(function(c)
 	sortT.Text="Sort:"
 	modeB.Text="Center"
 	modeT.Text="Mode:"
-	updateSlider(timerF,timerH,0.02)
-	timerVT.Text="Value: 1.00"
-	setTimerColors(false)
 	setAimColors(false)
 	applySpeed()
 	applyJump()
@@ -2017,11 +1896,9 @@ updateSlider(fF,fH,0.1)
 updateSlider(stF,stH,0)
 updateSlider(smF,smH,0.3)
 updateSlider(rF,rH,0.5)
-updateSlider(timerF,timerH,0.02)
 updateSpeed(0.032)
 updateJump(0.1)
 updateFlight(0.1)
 updateStrafe(0)
 updateSmooth(0.3)
 updateRange(0.5)
-updateTimer(0.02)
