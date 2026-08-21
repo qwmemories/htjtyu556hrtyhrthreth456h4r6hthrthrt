@@ -19,7 +19,6 @@ _G.airJumpEnabled=false
 _G.aimbotEnabled=false
 _G.targetLockEnabled=false
 _G.wallsCheckEnabled=false
-_G.timerEnabled=false
 _G.aimTarget="Head"
 
 _G.currentSpeed=16
@@ -28,7 +27,6 @@ _G.currentFlight=50
 _G.currentStrafe=0
 _G.currentSmoothness=0.15
 _G.currentRange=500
-_G.currentTimerSpeed=1.0
 _G.aimMode="Center"
 _G.sortMode="Distance"
 
@@ -48,7 +46,6 @@ _G.minFlight,_G.maxFlight=0,500
 _G.minStrafe,_G.maxStrafe=0,100
 _G.minSmooth,_G.maxSmooth=0.01,1
 _G.minRange,_G.maxRange=10,1000
-_G.minTimer,_G.maxTimer=0.1,25
 
 _G.draggingSpeed=false
 _G.draggingJump=false
@@ -56,7 +53,6 @@ _G.draggingFlight=false
 _G.draggingStrafe=false
 _G.draggingSmooth=false
 _G.draggingRange=false
-_G.draggingTimer=false
 _G.flying=false
 _G.bodyVelocity=nil
 _G.bodyGyro=nil
@@ -511,7 +507,7 @@ ajT.Parent=mc
 local ajTr,ajK,ajSt,ajCl=ct(mc,UDim2.new(0.75,0,0,506))
 
 local miscC=Instance.new("Frame")
-miscC.Size=UDim2.new(0,258,0,550)
+miscC.Size=UDim2.new(0,258,0,450)
 miscC.Position=UDim2.new(0,0,0,0)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
@@ -822,55 +818,6 @@ wcT.TextXAlignment=Enum.TextXAlignment.Left
 wcT.Parent=miscC
 
 local wcTr,wcK,wcSt,wcCl=ct(miscC,UDim2.new(0.75,0,0,298))
-
-local timerT=Instance.new("TextLabel")
-timerT.Size=UDim2.new(0.5,0,0,25)
-timerT.Position=UDim2.new(0,10,0,334)
-timerT.BackgroundTransparency=1
-timerT.Text="Timer"
-timerT.TextColor3=Color3.new(0.6,0.6,0.6)
-timerT.TextSize=20
-timerT.Font=Enum.Font.Gotham
-timerT.TextXAlignment=Enum.TextXAlignment.Left
-timerT.Parent=miscC
-
-local timerTr,timerK,timerSt,timerCl=ct(miscC,UDim2.new(0.75,0,0,336))
-
-local timerST=Instance.new("TextLabel")
-timerST.Size=UDim2.new(0.5,0,0,25)
-timerST.Position=UDim2.new(0,10,0,372)
-timerST.BackgroundTransparency=1
-timerST.Text="Speed: 1.0x"
-timerST.TextColor3=Color3.new(0.6,0.6,0.6)
-timerST.TextSize=18
-timerST.Font=Enum.Font.Gotham
-timerST.TextXAlignment=Enum.TextXAlignment.Left
-timerST.Parent=miscC
-
-local timerS=Instance.new("Frame")
-timerS.Size=UDim2.new(0.85,0,0,8)
-timerS.Position=UDim2.new(0.075,0,0,402)
-timerS.BackgroundColor3=Color3.new(0.3,0.3,0.3)
-timerS.BorderSizePixel=0
-timerS.Parent=miscC
-Instance.new("UICorner",timerS).CornerRadius=UDim.new(0,4)
-
-local timerF=Instance.new("Frame")
-timerF.Size=UDim2.new(0.5,0,1,0)
-timerF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-timerF.BorderSizePixel=0
-timerF.Parent=timerS
-Instance.new("UICorner",timerF).CornerRadius=UDim.new(0,4)
-
-local timerH=Instance.new("Frame")
-timerH.Size=UDim2.new(0,16,0,16)
-timerH.Position=UDim2.new(0.5,-8,0.5,-8)
-timerH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
-timerH.BorderSizePixel=0
-timerH.Parent=timerS
-Instance.new("UICorner",timerH).CornerRadius=UDim.new(0,8)
-
-local timerSS,timerHS=ass(timerS,timerH)
 
 local catBar=Instance.new("Frame")
 catBar.Size=UDim2.new(0,82,1,-70)
@@ -1226,7 +1173,6 @@ hover(ajTr,ajSt)
 hover(aimTr,aimSt)
 hover(tlTr,tlSt)
 hover(wcTr,wcSt)
-hover(timerTr,timerSt)
 hover(spS,spSS)
 hover(spH,spHS)
 hover(jS,jSS)
@@ -1239,8 +1185,6 @@ hover(smS,smSS)
 hover(smH,smHS)
 hover(rS,rSS)
 hover(rH,rHS)
-hover(timerS,timerSS)
-hover(timerH,timerHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
@@ -1270,7 +1214,6 @@ local function setAimColors(en)
 	setColors(en,modeT,nil,nil,nil)
 	setColors(en,tlT,nil,nil,nil)
 	setColors(en,wcT,nil,nil,nil)
-	setColors(en,timerT,timerS,timerF,timerH)
 	targB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
 	sortB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
 	modeB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
@@ -1383,11 +1326,6 @@ local function updateRange(v)
 	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
 end
 
-local function updateTimer(v)
-	_G.currentTimerSpeed=_G.minTimer+(_G.maxTimer-_G.minTimer)*v
-	timerST.Text="Speed: "..string.format("%.1fx",_G.currentTimerSpeed)
-end
-
 local function updateSlider(f,h,v)
 	f.Size=UDim2.new(v,0,1,0)
 	h.Position=UDim2.new(v,-8,0.5,-8)
@@ -1480,13 +1418,6 @@ local function toggleWallsCheck()
 	if _G.aimbotEnabled then setColors(_G.wallsCheckEnabled,wcT,nil,nil,nil) end
 end
 
-local function toggleTimer()
-	_G.timerEnabled=not _G.timerEnabled
-	setToggle(timerTr,timerK,_G.timerEnabled,true)
-	setColors(_G.timerEnabled,timerT,nil,nil,nil)
-	setColors(_G.timerEnabled,timerST,timerS,timerF,timerH)
-end
-
 local function cycleTarget()
 	if _G.aimTarget=="Head" then
 		_G.aimTarget="Body"
@@ -1531,7 +1462,6 @@ createKeybindRow(bindC,"Airwalk",146,toggleAirwalk)
 createKeybindRow(bindC,"ClickTP",182,toggleClickTp)
 createKeybindRow(bindC,"AirJump",218,toggleAirJump)
 createKeybindRow(bindC,"Aimbot",254,toggleAimbot)
-createKeybindRow(bindC,"Timer",290,toggleTimer)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
@@ -1570,7 +1500,6 @@ ajCl.MouseButton1Click:Connect(toggleAirJump)
 aimCl.MouseButton1Click:Connect(toggleAimbot)
 tlCl.MouseButton1Click:Connect(toggleTargetLock)
 wcCl.MouseButton1Click:Connect(toggleWallsCheck)
-timerCl.MouseButton1Click:Connect(toggleTimer)
 targB.MouseButton1Click:Connect(cycleTarget)
 sortB.MouseButton1Click:Connect(cycleSort)
 modeB.MouseButton1Click:Connect(cycleMode)
@@ -1817,14 +1746,6 @@ local function updateRangeFromInput(i)
 	updateRange(v)
 end
 
-local function updateTimerFromInput(i)
-	local s=timerS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-timerS.AbsolutePosition.X,0,s)/s
-	updateSlider(timerF,timerH,v)
-	updateTimer(v)
-end
-
 local function startDrag(f,u)
 	return function(i)
 		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
@@ -1835,8 +1756,7 @@ local function startDrag(f,u)
 			elseif f=="f" then _G.draggingFlight=true
 			elseif f=="st" then _G.draggingStrafe=true
 			elseif f=="sm" then _G.draggingSmooth=true
-			elseif f=="r" then _G.draggingRange=true
-			elseif f=="tm" then _G.draggingTimer=true end
+			elseif f=="r" then _G.draggingRange=true end
 			u(i)
 		end
 	end
@@ -1854,8 +1774,6 @@ smS.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
 smH.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
 rS.InputBegan:Connect(startDrag("r",updateRangeFromInput))
 rH.InputBegan:Connect(startDrag("r",updateRangeFromInput))
-timerS.InputBegan:Connect(startDrag("tm",updateTimerFromInput))
-timerH.InputBegan:Connect(startDrag("tm",updateTimerFromInput))
 
 UIS.InputChanged:Connect(function(i)
 	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
@@ -1876,9 +1794,6 @@ UIS.InputChanged:Connect(function(i)
 	if _G.draggingRange and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
 		updateRangeFromInput(i)
 	end
-	if _G.draggingTimer and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-		updateTimerFromInput(i)
-	end
 end)
 
 UIS.InputEnded:Connect(function(i)
@@ -1889,7 +1804,6 @@ UIS.InputEnded:Connect(function(i)
 		_G.draggingStrafe=false
 		_G.draggingSmooth=false
 		_G.draggingRange=false
-		_G.draggingTimer=false
 		_G.isSliding=false
 	end
 end)
@@ -1915,7 +1829,6 @@ player.CharacterAdded:Connect(function(c)
 	_G.aimbotEnabled=false
 	_G.targetLockEnabled=false
 	_G.wallsCheckEnabled=false
-	_G.timerEnabled=false
 	_G.lockedTarget=nil
 	mouse.Icon=""
 	_G.currentSpeed=16
@@ -1924,7 +1837,6 @@ player.CharacterAdded:Connect(function(c)
 	_G.currentStrafe=0
 	_G.currentSmoothness=0.15
 	_G.currentRange=500
-	_G.currentTimerSpeed=1.0
 	_G.aimMode="Center"
 	_G.sortMode="Distance"
 	_G.aimTarget="Head"
@@ -1939,7 +1851,6 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(aimTr,aimK,false,false)
 	setToggle(tlTr,tlK,false,false)
 	setToggle(wcTr,wcK,false,false)
-	setToggle(timerTr,timerK,false,false)
 	updateSlider(spF,spH,0.032)
 	spT.Text="Speed"
 	spVT.Text="Value: 16"
@@ -1968,8 +1879,6 @@ player.CharacterAdded:Connect(function(c)
 	smT.Text="Speed: 0.15"
 	updateSlider(rF,rH,0.5)
 	rT.Text="Range: 500"
-	updateSlider(timerF,timerH,0.5)
-	timerST.Text="Speed: 1.0x"
 	targB.Text="Head"
 	targT.Text="Target:"
 	sortB.Text="Distance"
@@ -1987,11 +1896,9 @@ updateSlider(fF,fH,0.1)
 updateSlider(stF,stH,0)
 updateSlider(smF,smH,0.3)
 updateSlider(rF,rH,0.5)
-updateSlider(timerF,timerH,0.5)
 updateSpeed(0.032)
 updateJump(0.1)
 updateFlight(0.1)
 updateStrafe(0)
 updateSmooth(0.3)
 updateRange(0.5)
-updateTimer(0.5)
