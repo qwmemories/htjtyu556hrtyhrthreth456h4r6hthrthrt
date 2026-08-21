@@ -249,7 +249,7 @@ spS.Parent=mc
 Instance.new("UICorner",spS).CornerRadius=UDim.new(0,4)
 
 local spF=Instance.new("Frame")
-spF.Size=UDim2.new(0,0,1,0)
+spF.Size=UDim2.new(0.032,0,1,0)
 spF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spF.BorderSizePixel=0
 spF.Parent=spS
@@ -257,7 +257,7 @@ Instance.new("UICorner",spF).CornerRadius=UDim.new(0,4)
 
 local spH=Instance.new("Frame")
 spH.Size=UDim2.new(0,16,0,16)
-spH.Position=UDim2.new(0,8,0.5,-8)
+spH.Position=UDim2.new(0.032,-8,0.5,-8)
 spH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 spH.BorderSizePixel=0
 spH.Parent=spS
@@ -305,7 +305,7 @@ jS.Parent=mc
 Instance.new("UICorner",jS).CornerRadius=UDim.new(0,4)
 
 local jF=Instance.new("Frame")
-jF.Size=UDim2.new(0,0,1,0)
+jF.Size=UDim2.new(0.1,0,1,0)
 jF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jF.BorderSizePixel=0
 jF.Parent=jS
@@ -313,7 +313,7 @@ Instance.new("UICorner",jF).CornerRadius=UDim.new(0,4)
 
 local jH=Instance.new("Frame")
 jH.Size=UDim2.new(0,16,0,16)
-jH.Position=UDim2.new(0,8,0.5,-8)
+jH.Position=UDim2.new(0.1,-8,0.5,-8)
 jH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 jH.BorderSizePixel=0
 jH.Parent=jS
@@ -361,7 +361,7 @@ fS.Parent=mc
 Instance.new("UICorner",fS).CornerRadius=UDim.new(0,4)
 
 local fF=Instance.new("Frame")
-fF.Size=UDim2.new(0,0,1,0)
+fF.Size=UDim2.new(0.1,0,1,0)
 fF.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fF.BorderSizePixel=0
 fF.Parent=fS
@@ -369,7 +369,7 @@ Instance.new("UICorner",fF).CornerRadius=UDim.new(0,4)
 
 local fH=Instance.new("Frame")
 fH.Size=UDim2.new(0,16,0,16)
-fH.Position=UDim2.new(0,8,0.5,-8)
+fH.Position=UDim2.new(0.1,-8,0.5,-8)
 fH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 fH.BorderSizePixel=0
 fH.Parent=fS
@@ -438,7 +438,7 @@ Instance.new("UICorner",stF).CornerRadius=UDim.new(0,4)
 
 local stH=Instance.new("Frame")
 stH.Size=UDim2.new(0,16,0,16)
-stH.Position=UDim2.new(0,8,0.5,-8)
+stH.Position=UDim2.new(0,-8,0.5,-8)
 stH.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 stH.BorderSizePixel=0
 stH.Parent=stS
@@ -1223,9 +1223,6 @@ local function setAimColors(en)
 end
 
 local function updateNoclip()
-	-- Noclip is a setting of Flight, so its state can be changed
-	-- even while Flight itself is disabled. It only takes effect
-	-- when Flight is actually running.
 	setToggle(nTr,nK,_G.noclipEnabled,true)
 	if _G.flightEnabled then
 		setColors(_G.noclipEnabled,nT,nil,nil,nil)
@@ -1854,17 +1851,17 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(aimTr,aimK,false,false)
 	setToggle(tlTr,tlK,false,false)
 	setToggle(wcTr,wcK,false,false)
-	updateSlider(spF,spH,0.08)
+	updateSlider(spF,spH,0.032)
 	spT.Text="Speed"
 	spVT.Text="Value: 16"
 	setColors(false,spT,nil,nil,nil)
 	setColors(false,spVT,spS,spF,spH)
-	updateSlider(jF,jH,0.25)
+	updateSlider(jF,jH,0.1)
 	jT.Text="Jump"
 	jST.Text="Strength: 50"
 	setColors(false,jT,nil,nil,nil)
 	setColors(false,jST,jS,jF,jH)
-	updateSlider(fF,fH,0.25)
+	updateSlider(fF,fH,0.1)
 	fT.Text="Flight"
 	fST.Text="Speed: 50"
 	setColors(false,fT,nil,nil,nil)
@@ -1892,3 +1889,16 @@ player.CharacterAdded:Connect(function(c)
 	applySpeed()
 	applyJump()
 end)
+
+updateSlider(spF,spH,0.032)
+updateSlider(jF,jH,0.1)
+updateSlider(fF,fH,0.1)
+updateSlider(stF,stH,0)
+updateSlider(smF,smH,0.3)
+updateSlider(rF,rH,0.5)
+updateSpeed(0.032)
+updateJump(0.1)
+updateFlight(0.1)
+updateStrafe(0)
+updateSmooth(0.3)
+updateRange(0.5)
