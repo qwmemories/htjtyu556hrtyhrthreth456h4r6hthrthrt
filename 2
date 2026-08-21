@@ -198,21 +198,6 @@ RS.Heartbeat:Connect(function()
 	end
 end)
 
-local timerValue=1.0
-local lastTime=0
-
-RS.Heartbeat:Connect(function(delta)
-	if _G.timerEnabled then
-		timerValue=_G.currentTimerValue
-	end
-end)
-
-RS.RenderStepped:Connect(function()
-	if _G.timerEnabled and timerValue~=1 then
-		game:GetService("RunService").RenderStepped:Wait()
-	end
-end)
-
 player.CharacterAdded:Connect(function(c)
 	character=c
 	humanoid=character:WaitForChild("Humanoid")
