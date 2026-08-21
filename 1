@@ -66,11 +66,41 @@ _G.airwalkY=0
 _G.fpsConnection=nil
 _G.lastSpace=false
 
-task.spawn(function()
-	pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/2"))()
-	end)
+-- Load the module before creating the GUI, so Blink is ready when the first click happens.
+-- Put the second script in your GitHub repository as a file named `2`.
+local MODULE_URL="https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/2"
+local moduleLoaded=false
+
+local okHttp,source=pcall(function()
+	return game:HttpGet(MODULE_URL)
 end)
+
+if not okHttp or type(source)~="string" or source=="" then
+	warn("[CoreGui] Modules: failed to download 2 from GitHub")
+else
+	local compiler=loadstring
+	if type(compiler)~="function" then
+		compiler=load
+	end
+
+	if type(compiler)~="function" then
+		warn("[CoreGui] Modules: loadstring/load is unavailable in this executor")
+	else
+		local chunk,compileError=compiler(source)
+		if type(chunk)~="function" then
+			warn("[CoreGui] Modules compile error: ",tostring(compileError))
+		else
+			local okRun,runError=pcall(chunk)
+			if not okRun then
+				warn("[CoreGui] Modules runtime error: ",tostring(runError))
+			else
+				moduleLoaded=true
+			end
+		end
+	end
+end
+
+_G.modulesLoaded=moduleLoaded
 
 local sg=Instance.new("ScreenGui")
 sg.Parent=player.PlayerGui
@@ -1452,6 +1482,10 @@ local function toggleClickTp()
 	if _G.clickTpEnabled then mouse.Icon="rbxassetid://6065121748" else mouse.Icon="" end
 end
 local function toggleBlink()
+	if not _G.modulesLoaded or type(_G.performBlink)~="function" then
+		warn("[CoreGui] Blink: module 2 is not loaded")
+		return
+	end
 	_G.blinkEnabled=not _G.blinkEnabled
 	setToggle(blinkTr,blinkK,_G.blinkEnabled,true)
 	setColors(_G.blinkEnabled,blinkT,nil,nil,nil)
@@ -1913,6 +1947,7 @@ player.CharacterAdded:Connect(function(c)
 	_G.strafeEnabled=false
 	_G.airwalkEnabled=false
 	_G.clickTpEnabled=false
+	_G.blinkEnabled=false
 	_G.airJumpEnabled=false
 	_G.aimbotEnabled=false
 	_G.targetLockEnabled=false
