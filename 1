@@ -157,25 +157,31 @@ local function ct(p,pos)
 	t.BackgroundTransparency=0.04
 	t.BorderSizePixel=0
 	t.Parent=p
+
 	Instance.new("UICorner",t).CornerRadius=UDim.new(1,0)
+
 	local ts=Instance.new("UIStroke")
 	ts.Color=Color3.fromRGB(160,160,160)
 	ts.Transparency=1
 	ts.Thickness=1.5
 	ts.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 	ts.Parent=t
+
 	local k=Instance.new("Frame")
 	k.Size=UDim2.new(0,18,0,18)
 	k.Position=UDim2.new(0,2,0.5,-9)
 	k.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 	k.BorderSizePixel=0
 	k.Parent=t
+
 	Instance.new("UICorner",k).CornerRadius=UDim.new(1,0)
+
 	local c=Instance.new("TextButton")
 	c.Size=UDim2.new(1,0,1,0)
 	c.BackgroundTransparency=1
 	c.Text=""
 	c.Parent=t
+
 	return t,k,ts,c
 end
 
@@ -186,13 +192,45 @@ local function ass(s,h)
 	ss.Thickness=1.5
 	ss.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 	ss.Parent=s
+
 	local hs=Instance.new("UIStroke")
 	hs.Color=Color3.fromRGB(160,160,160)
 	hs.Transparency=1
 	hs.Thickness=1.5
 	hs.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 	hs.Parent=h
+
 	return ss,hs
+end
+
+-- IMPORTANT:
+-- hover объявлен ДО createKeybindRow.
+-- Раньше он был ниже, из-за чего createKeybindRow
+-- обращался к глобальному hover вместо локального.
+local function hover(b,s)
+	if not b or not s then
+		return
+	end
+
+	b.MouseEnter:Connect(function()
+		TS:Create(
+			s,
+			TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+			{
+				Transparency=0.4
+			}
+		):Play()
+	end)
+
+	b.MouseLeave:Connect(function()
+		TS:Create(
+			s,
+			TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+			{
+				Transparency=1
+			}
+		):Play()
+	end)
 end
 
 local contentViewport=Instance.new("ScrollingFrame")
@@ -596,23 +634,52 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 	mst.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 	mst.Parent=minus
 
-	local row={name=name,label=label,plus=plus,minus=minus,bind=bind,stroke=st,plusStroke=pst,minusStroke=mst,toggle=toggleFunc}
+	local row={
+		name=name,
+		label=label,
+		plus=plus,
+		minus=minus,
+		bind=bind,
+		stroke=st,
+		plusStroke=pst,
+		minusStroke=mst,
+		toggle=toggleFunc
+	}
+
 	bindRows[name]=row
 
 	local function setBindVisual(bound,animate)
-		local color=bound and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-		local info=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+		local color=bound
+			and Color3.new(1,1,1)
+			or Color3.new(0.6,0.6,0.6)
+
+		local info=TweenInfo.new(
+			0.2,
+			Enum.EasingStyle.Quad,
+			Enum.EasingDirection.Out
+		)
+
 		if animate then
-			TS:Create(label,info,{TextColor3=color}):Play()
+			TS:Create(
+				label,
+				info,
+				{
+					TextColor3=color
+				}
+			):Play()
 		else
 			label.TextColor3=color
 		end
+
+		-- + и - всегда имеют тот же серый цвет,
+		-- что и None, независимо от наличия бинда.
 		plus.TextColor3=Color3.new(0.6,0.6,0.6)
 		minus.TextColor3=Color3.new(0.6,0.6,0.6)
 	end
 
 	row.setBindVisual=setBindVisual
 
+	-- Исправленный hover для всех трех кнопок бинда.
 	hover(bind,st)
 	hover(plus,pst)
 	hover(minus,mst)
@@ -625,11 +692,18 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 
 	plus.MouseButton1Click:Connect(listen)
 	bind.MouseButton1Click:Connect(listen)
+
 	minus.MouseButton1Click:Connect(function()
 		binds[name]=nil
-		if bindListening==name then bindListening=nil end
+
+		if bindListening==name then
+			bindListening=nil
+		end
+
 		bind.Text="None"
 		bind.TextColor3=Color3.new(0.6,0.6,0.6)
+
+		-- Плавно возвращаем название к цвету None.
 		setBindVisual(false,true)
 	end)
 end
@@ -875,6 +949,7 @@ miscL.Font=Enum.Font.GothamBold
 miscL.TextWrapped=true
 miscL.Parent=catBar
 
+-- Разделитель между misc и bind
 local bindSep=Instance.new("Frame")
 bindSep.Size=UDim2.new(0,48,0,1)
 bindSep.Position=UDim2.new(0.5,-24,0,110)
@@ -926,7 +1001,9 @@ local scrollTarget=0
 local scrollCurrent=0
 
 local function activeContent()
-	return _G.currentCategory=="movement" and mc or (_G.currentCategory=="misc" and miscC or bindC)
+	return _G.currentCategory=="movement"
+		and mc
+		or (_G.currentCategory=="misc" and miscC or bindC)
 end
 
 local function contentBottom(content)
@@ -935,6 +1012,7 @@ local function contentBottom(content)
 	for _,obj in ipairs(content:GetChildren()) do
 		if obj:IsA("GuiObject") and obj.Visible then
 			local y=obj.Position.Y.Offset+obj.AbsoluteSize.Y
+
 			if y>bottom then
 				bottom=y
 			end
@@ -997,6 +1075,7 @@ local function updateScrollBar()
 	scrollThumb.Visible=true
 
 	local trackH=scrollTrack.AbsoluteSize.Y
+
 	local thumbH=math.clamp(
 		trackH*(viewportH/math.max(bottom,viewportH)),
 		36,
@@ -1142,13 +1221,33 @@ task.defer(function()
 end)
 
 local function setToggle(t,k,on,anim)
-	local pos=on and UDim2.new(1,-20,0.5,-9) or UDim2.new(0,2,0.5,-9)
-	local tc=on and Color3.new(0.5,0.5,0.5) or Color3.new(0.15,0.15,0.15)
-	local kc=on and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
+	local pos=on
+		and UDim2.new(1,-20,0.5,-9)
+		or UDim2.new(0,2,0.5,-9)
+
+	local tc=on
+		and Color3.new(0.5,0.5,0.5)
+		or Color3.new(0.15,0.15,0.15)
+
+	local kc=on
+		and Color3.new(1,1,1)
+		or Color3.new(0.6,0.6,0.6)
+
 	if anim then
-		local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-		TS:Create(k,inf,{Position=pos,BackgroundColor3=kc}):Play()
-		TS:Create(t,inf,{BackgroundColor3=tc}):Play()
+		local inf=TweenInfo.new(
+			0.3,
+			Enum.EasingStyle.Quad,
+			Enum.EasingDirection.Out
+		)
+
+		TS:Create(k,inf,{
+			Position=pos,
+			BackgroundColor3=kc
+		}):Play()
+
+		TS:Create(t,inf,{
+			BackgroundColor3=tc
+		}):Play()
 	else
 		k.Position=pos
 		k.BackgroundColor3=kc
@@ -1156,61 +1255,46 @@ local function setToggle(t,k,on,anim)
 	end
 end
 
-local function hover(b,s)
-	b.MouseEnter:Connect(function()
-		TS:Create(s,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Transparency=0.4}):Play()
-	end)
-	b.MouseLeave:Connect(function()
-		TS:Create(s,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Transparency=1}):Play()
-	end)
-end
-
-hover(hideBtn,hideSt)
-
-hover(closeBtn,closeSt)
-hover(spTr,spSt)
-hover(spS,spSS)
-hover(spH,spHS)
-hover(jTr,jSt)
-hover(jS,jSS)
-hover(jH,jHS)
-hover(fTr,fSt)
-hover(fS,fSS)
-hover(fH,fHS)
-hover(nTr,nSt)
-hover(stTr,stSt)
-hover(stS,stSS)
-hover(stH,stHS)
-hover(awTr,awSt)
-hover(cTr,cSt)
-hover(ajTr,ajSt)
-hover(aimTr,aimSt)
-hover(tlTr,tlSt)
-hover(wcTr,wcSt)
-hover(spS,spSS)
-hover(spH,spHS)
-hover(jS,jSS)
-hover(jH,jHS)
-hover(fS,fSS)
-hover(fH,fHS)
-hover(stS,stSS)
-hover(stH,stHS)
-hover(smS,smSS)
-hover(smH,smHS)
-hover(rS,rSS)
-hover(rH,rHS)
-hover(targB,targSt)
-hover(sortB,sortSt)
-hover(modeB,modeSt)
 local function setColors(en,label,slider,fill,handle)
-	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	local sc=en and Color3.new(0.5,0.5,0.5) or Color3.new(0.3,0.3,0.3)
-	local fc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-	TS:Create(label,inf,{TextColor3=tc}):Play()
-	if slider then TS:Create(slider,inf,{BackgroundColor3=sc}):Play() end
-	if fill then TS:Create(fill,inf,{BackgroundColor3=fc}):Play() end
-	if handle then TS:Create(handle,inf,{BackgroundColor3=fc}):Play() end
+	local tc=en
+		and Color3.new(1,1,1)
+		or Color3.new(0.6,0.6,0.6)
+
+	local sc=en
+		and Color3.new(0.5,0.5,0.5)
+		or Color3.new(0.3,0.3,0.3)
+
+	local fc=en
+		and Color3.new(1,1,1)
+		or Color3.new(0.6,0.6,0.6)
+
+	local inf=TweenInfo.new(
+		0.3,
+		Enum.EasingStyle.Quad,
+		Enum.EasingDirection.Out
+	)
+
+	TS:Create(label,inf,{
+		TextColor3=tc
+	}):Play()
+
+	if slider then
+		TS:Create(slider,inf,{
+			BackgroundColor3=sc
+		}):Play()
+	end
+
+	if fill then
+		TS:Create(fill,inf,{
+			BackgroundColor3=fc
+		}):Play()
+	end
+
+	if handle then
+		TS:Create(handle,inf,{
+			BackgroundColor3=fc
+		}):Play()
+	end
 end
 
 local function setAimColors(en)
@@ -1222,72 +1306,136 @@ local function setAimColors(en)
 	setColors(en,modeT,nil,nil,nil)
 	setColors(en,tlT,nil,nil,nil)
 	setColors(en,wcT,nil,nil,nil)
-	targB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	sortB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	modeB.TextColor3=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-	targB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
-	sortB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
-	modeB.BackgroundColor3=en and Color3.new(0.25,0.25,0.25) or Color3.new(0.15,0.15,0.15)
+
+	targB.TextColor3=en
+		and Color3.new(1,1,1)
+		or Color3.new(0.6,0.6,0.6)
+
+	sortB.TextColor3=en
+		and Color3.new(1,1,1)
+		or Color3.new(0.6,0.6,0.6)
+
+	modeB.TextColor3=en
+		and Color3.new(1,1,1)
+		or Color3.new(0.6,0.6,0.6)
+
+	targB.BackgroundColor3=en
+		and Color3.new(0.25,0.25,0.25)
+		or Color3.new(0.15,0.15,0.15)
+
+	sortB.BackgroundColor3=en
+		and Color3.new(0.25,0.25,0.25)
+		or Color3.new(0.15,0.15,0.15)
+
+	modeB.BackgroundColor3=en
+		and Color3.new(0.25,0.25,0.25)
+		or Color3.new(0.15,0.15,0.15)
 end
 
 local function updateNoclip()
 	local en=_G.flightEnabled and _G.noclipEnabled
+
 	setColors(en,nT,nil,nil,nil)
 	setToggle(nTr,nK,en,true)
 end
 
 local function applySpeed()
-	if _G.speedEnabled and humanoid then humanoid.WalkSpeed=_G.currentSpeed
-	elseif humanoid then humanoid.WalkSpeed=16 end
+	if _G.speedEnabled and humanoid then
+		humanoid.WalkSpeed=_G.currentSpeed
+	elseif humanoid then
+		humanoid.WalkSpeed=16
+	end
 end
 
 local function applyJump()
-	if humanoid then humanoid.JumpPower=_G.currentJumpStrength end
+	if humanoid then
+		humanoid.JumpPower=_G.currentJumpStrength
+	end
 end
 
 local function setNoclip(s)
-	if not character then return end
+	if not character then
+		return
+	end
+
 	for _,p in pairs(character:GetDescendants()) do
-		if p:IsA("BasePart") then p.CanCollide=not s end
+		if p:IsA("BasePart") then
+			p.CanCollide=not s
+		end
 	end
 end
 
 local function stopFlight()
 	_G.flying=false
-	if _G.bodyVelocity then _G.bodyVelocity:Destroy() _G.bodyVelocity=nil end
-	if _G.bodyGyro then _G.bodyGyro:Destroy() _G.bodyGyro=nil end
-	if humanoid then humanoid.PlatformStand=false end
-	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
+
+	if _G.bodyVelocity then
+		_G.bodyVelocity:Destroy()
+		_G.bodyVelocity=nil
+	end
+
+	if _G.bodyGyro then
+		_G.bodyGyro:Destroy()
+		_G.bodyGyro=nil
+	end
+
+	if humanoid then
+		humanoid.PlatformStand=false
+	end
+
+	if _G.noclipConnection then
+		_G.noclipConnection:Disconnect()
+		_G.noclipConnection=nil
+	end
+
 	setNoclip(false)
 	updateNoclip()
 end
 
 local function startFlight()
-	if _G.flying or not root then return end
+	if _G.flying or not root then
+		return
+	end
+
 	_G.flying=true
+
 	_G.bodyVelocity=Instance.new("BodyVelocity")
 	_G.bodyVelocity.MaxForce=Vector3.new(math.huge,math.huge,math.huge)
 	_G.bodyVelocity.Velocity=Vector3.zero
 	_G.bodyVelocity.Parent=root
+
 	_G.bodyGyro=Instance.new("BodyGyro")
 	_G.bodyGyro.MaxTorque=Vector3.new(math.huge,math.huge,math.huge)
 	_G.bodyGyro.P=10000
 	_G.bodyGyro.Parent=root
+
 	humanoid.PlatformStand=true
+
 	if _G.noclipEnabled then
 		setNoclip(true)
-		_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+
+		_G.noclipConnection=RS.Stepped:Connect(function()
+			setNoclip(true)
+		end)
 	end
+
 	updateNoclip()
 end
 
 local function applyFlight()
-	if _G.flightEnabled then startFlight() else stopFlight() end
+	if _G.flightEnabled then
+		startFlight()
+	else
+		stopFlight()
+	end
 end
 
 local function startAirwalk()
-	if _G.airwalkPlatform then return end
+	if _G.airwalkPlatform then
+		return
+	end
+
 	_G.airwalkY=root.Position.Y-3
+
 	_G.airwalkPlatform=Instance.new("Part")
 	_G.airwalkPlatform.Size=Vector3.new(6,1,6)
 	_G.airwalkPlatform.Transparency=1
@@ -1297,37 +1445,58 @@ local function startAirwalk()
 end
 
 local function stopAirwalk()
-	if _G.airwalkPlatform then _G.airwalkPlatform:Destroy() _G.airwalkPlatform=nil end
+	if _G.airwalkPlatform then
+		_G.airwalkPlatform:Destroy()
+		_G.airwalkPlatform=nil
+	end
 end
 
 local function updateSpeed(v)
-	_G.currentSpeed=_G.minSpeed+(_G.maxSpeed-_G.minSpeed)*v
+	_G.currentSpeed=
+		_G.minSpeed+
+		(_G.maxSpeed-_G.minSpeed)*v
+
 	spVT.Text="Value: "..math.floor(_G.currentSpeed+0.5)
 	applySpeed()
 end
 
 local function updateJump(v)
-	_G.currentJumpStrength=_G.minJump+(_G.maxJump-_G.minJump)*v
+	_G.currentJumpStrength=
+		_G.minJump+
+		(_G.maxJump-_G.minJump)*v
+
 	jST.Text="Strength: "..math.floor(_G.currentJumpStrength+0.5)
 end
 
 local function updateFlight(v)
-	_G.currentFlight=_G.minFlight+(_G.maxFlight-_G.minFlight)*v
+	_G.currentFlight=
+		_G.minFlight+
+		(_G.maxFlight-_G.minFlight)*v
+
 	fST.Text="Speed: "..math.floor(_G.currentFlight+0.5)
 end
 
 local function updateStrafe(v)
-	_G.currentStrafe=_G.minStrafe+(_G.maxStrafe-_G.minStrafe)*v
+	_G.currentStrafe=
+		_G.minStrafe+
+		(_G.maxStrafe-_G.minStrafe)*v
+
 	stVT.Text="Value: "..math.floor(_G.currentStrafe+0.5)
 end
 
 local function updateSmooth(v)
-	_G.currentSmoothness=_G.minSmooth+(_G.maxSmooth-_G.minSmooth)*v
+	_G.currentSmoothness=
+		_G.minSmooth+
+		(_G.maxSmooth-_G.minSmooth)*v
+
 	smT.Text="Speed: "..string.format("%.2f",_G.currentSmoothness)
 end
 
 local function updateRange(v)
-	_G.currentRange=_G.minRange+(_G.maxRange-_G.minRange)*v
+	_G.currentRange=
+		_G.minRange+
+		(_G.maxRange-_G.minRange)*v
+
 	rT.Text="Range: "..math.floor(_G.currentRange+0.5)
 end
 
@@ -1337,40 +1506,94 @@ local function updateSlider(f,h,v)
 end
 
 local function valueToAlpha(value,minValue,maxValue)
-	if maxValue==minValue then return 0 end
-	return math.clamp((value-minValue)/(maxValue-minValue),0,1)
+	if maxValue==minValue then
+		return 0
+	end
+
+	return math.clamp(
+		(value-minValue)/(maxValue-minValue),
+		0,
+		1
+	)
 end
 
 local function initializeDefaultValues()
-	updateSpeed(valueToAlpha(_G.currentSpeed,_G.minSpeed,_G.maxSpeed))
-	updateJump(valueToAlpha(_G.currentJumpStrength,_G.minJump,_G.maxJump))
-	updateFlight(valueToAlpha(_G.currentFlight,_G.minFlight,_G.maxFlight))
-	updateStrafe(valueToAlpha(_G.currentStrafe,_G.minStrafe,_G.maxStrafe))
-	updateSmooth(valueToAlpha(_G.currentSmoothness,_G.minSmooth,_G.maxSmooth))
-	updateRange(valueToAlpha(_G.currentRange,_G.minRange,_G.maxRange))
+	updateSpeed(
+		valueToAlpha(
+			_G.currentSpeed,
+			_G.minSpeed,
+			_G.maxSpeed
+		)
+	)
+
+	updateJump(
+		valueToAlpha(
+			_G.currentJumpStrength,
+			_G.minJump,
+			_G.maxJump
+		)
+	)
+
+	updateFlight(
+		valueToAlpha(
+			_G.currentFlight,
+			_G.minFlight,
+			_G.maxFlight
+		)
+	)
+
+	updateStrafe(
+		valueToAlpha(
+			_G.currentStrafe,
+			_G.minStrafe,
+			_G.maxStrafe
+		)
+	)
+
+	updateSmooth(
+		valueToAlpha(
+			_G.currentSmoothness,
+			_G.minSmooth,
+			_G.maxSmooth
+		)
+	)
+
+	updateRange(
+		valueToAlpha(
+			_G.currentRange,
+			_G.minRange,
+			_G.maxRange
+		)
+	)
 end
 
 local function toggleSpeed()
 	_G.speedEnabled=not _G.speedEnabled
+
 	setToggle(spTr,spK,_G.speedEnabled,true)
 	setColors(_G.speedEnabled,spT,nil,nil,nil)
 	setColors(_G.speedEnabled,spVT,spS,spF,spH)
+
 	applySpeed()
 end
 
 local function toggleJump()
 	_G.jumpEnabled=not _G.jumpEnabled
+
 	setToggle(jTr,jK,_G.jumpEnabled,true)
 	setColors(_G.jumpEnabled,jT,nil,nil,nil)
 	setColors(_G.jumpEnabled,jST,jS,jF,jH)
+
 	applyJump()
 end
 
 local function toggleFlight()
 	_G.flightEnabled=not _G.flightEnabled
+
 	setToggle(fTr,fK,_G.flightEnabled,true)
 	setColors(_G.flightEnabled,fT,nil,nil,nil)
 	setColors(_G.flightEnabled,fST,fS,fF,fH)
+
 	applyFlight()
 end
 
@@ -1379,14 +1602,19 @@ local function toggleNoclip()
 
 	if _G.noclipEnabled and _G.flightEnabled and _G.flying then
 		setNoclip(true)
+
 		if not _G.noclipConnection then
-			_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+			_G.noclipConnection=RS.Stepped:Connect(function()
+				setNoclip(true)
+			end)
 		end
+
 	elseif not _G.noclipEnabled then
 		if _G.noclipConnection then
 			_G.noclipConnection:Disconnect()
 			_G.noclipConnection=nil
 		end
+
 		setNoclip(false)
 	end
 
@@ -1395,6 +1623,7 @@ end
 
 local function toggleStrafe()
 	_G.strafeEnabled=not _G.strafeEnabled
+
 	setToggle(stTr,stK,_G.strafeEnabled,true)
 	setColors(_G.strafeEnabled,stT,nil,nil,nil)
 	setColors(_G.strafeEnabled,stVT,stS,stF,stH)
@@ -1402,42 +1631,70 @@ end
 
 local function toggleAirwalk()
 	_G.airwalkEnabled=not _G.airwalkEnabled
+
 	setToggle(awTr,awK,_G.airwalkEnabled,true)
 	setColors(_G.airwalkEnabled,awT,nil,nil,nil)
-	if _G.airwalkEnabled then startAirwalk() else stopAirwalk() end
+
+	if _G.airwalkEnabled then
+		startAirwalk()
+	else
+		stopAirwalk()
+	end
 end
 
 local function toggleClickTp()
 	_G.clickTpEnabled=not _G.clickTpEnabled
+
 	setToggle(cTr,cK,_G.clickTpEnabled,true)
 	setColors(_G.clickTpEnabled,cT,nil,nil,nil)
-	if _G.clickTpEnabled then mouse.Icon="rbxassetid://6065121748" else mouse.Icon="" end
+
+	if _G.clickTpEnabled then
+		mouse.Icon="rbxassetid://6065121748"
+	else
+		mouse.Icon=""
+	end
 end
 
 local function toggleAirJump()
 	_G.airJumpEnabled=not _G.airJumpEnabled
+
 	setToggle(ajTr,ajK,_G.airJumpEnabled,true)
 	setColors(_G.airJumpEnabled,ajT,nil,nil,nil)
 end
 
 local function toggleAimbot()
 	_G.aimbotEnabled=not _G.aimbotEnabled
+
 	setToggle(aimTr,aimK,_G.aimbotEnabled,true)
 	setAimColors(_G.aimbotEnabled)
-	if not _G.aimbotEnabled then _G.lockedTarget=nil end
+
+	if not _G.aimbotEnabled then
+		_G.lockedTarget=nil
+	end
 end
 
 local function toggleTargetLock()
 	_G.targetLockEnabled=not _G.targetLockEnabled
+
 	setToggle(tlTr,tlK,_G.targetLockEnabled,true)
-	if _G.aimbotEnabled then setColors(_G.targetLockEnabled,tlT,nil,nil,nil) end
-	if not _G.targetLockEnabled then _G.lockedTarget=nil end
+
+	if _G.aimbotEnabled then
+		setColors(_G.targetLockEnabled,tlT,nil,nil,nil)
+	end
+
+	if not _G.targetLockEnabled then
+		_G.lockedTarget=nil
+	end
 end
 
 local function toggleWallsCheck()
 	_G.wallsCheckEnabled=not _G.wallsCheckEnabled
+
 	setToggle(wcTr,wcK,_G.wallsCheckEnabled,true)
-	if _G.aimbotEnabled then setColors(_G.wallsCheckEnabled,wcT,nil,nil,nil) end
+
+	if _G.aimbotEnabled then
+		setColors(_G.wallsCheckEnabled,wcT,nil,nil,nil)
+	end
 end
 
 local function cycleTarget()
@@ -1493,18 +1750,31 @@ for _,row in pairs(bindRows) do
 end
 
 UIS.InputBegan:Connect(function(i,p)
-	if p then return end
+	if p then
+		return
+	end
+
 	if bindListening then
-		if i.UserInputType==Enum.UserInputType.Keyboard and i.KeyCode~=Enum.KeyCode.Unknown then
+		if i.UserInputType==Enum.UserInputType.Keyboard
+			and i.KeyCode~=Enum.KeyCode.Unknown then
+
 			local name=bindListening
+
 			binds[name]=i.KeyCode
 			bindListening=nil
+
 			local row=bindRows[name]
+
 			if row then
 				row.bind.Text=i.KeyCode.Name
+
+				-- Сам key становится белым.
 				row.bind.TextColor3=Color3.new(1,1,1)
+
+				-- Название Speed/Jump/etc. плавно становится белым за 0.2 сек.
 				row.setBindVisual(true,true)
 			end
+
 			return
 		end
 	end
@@ -1513,7 +1783,10 @@ UIS.InputBegan:Connect(function(i,p)
 		for name,key in pairs(binds) do
 			if key==i.KeyCode then
 				local row=bindRows[name]
-				if row then row.toggle() end
+
+				if row then
+					row.toggle()
+				end
 			end
 		end
 	end
@@ -1530,66 +1803,101 @@ ajCl.MouseButton1Click:Connect(toggleAirJump)
 aimCl.MouseButton1Click:Connect(toggleAimbot)
 tlCl.MouseButton1Click:Connect(toggleTargetLock)
 wcCl.MouseButton1Click:Connect(toggleWallsCheck)
+
 targB.MouseButton1Click:Connect(cycleTarget)
 sortB.MouseButton1Click:Connect(cycleSort)
 modeB.MouseButton1Click:Connect(cycleMode)
 
 mouse.Button1Down:Connect(function()
 	if _G.clickTpEnabled and root and mouse.Hit then
-		root.CFrame=CFrame.new(mouse.Hit.Position+Vector3.new(0,3,0))
+		root.CFrame=CFrame.new(
+			mouse.Hit.Position+Vector3.new(0,3,0)
+		)
 	end
 end)
 
 UIS.InputBegan:Connect(function(i,p)
-	if p then return end
-	if i.KeyCode==Enum.KeyCode.Space and humanoid and not _G.lastSpace then
+	if p then
+		return
+	end
+
+	if i.KeyCode==Enum.KeyCode.Space
+		and humanoid
+		and not _G.lastSpace then
+
 		_G.lastSpace=true
+
 		if _G.jumpEnabled then
-			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			humanoid:ChangeState(
+				Enum.HumanoidStateType.Jumping
+			)
+
 			if root then
 				local v=root.AssemblyLinearVelocity
-				root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y+_G.currentJumpStrength,v.Z)
+
+				root.AssemblyLinearVelocity=Vector3.new(
+					v.X,
+					v.Y+_G.currentJumpStrength,
+					v.Z
+				)
 			end
+
 		elseif _G.airJumpEnabled then
-			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			humanoid:ChangeState(
+				Enum.HumanoidStateType.Jumping
+			)
 		end
 	end
 end)
 
 UIS.InputEnded:Connect(function(i)
-	if i.KeyCode==Enum.KeyCode.Space then _G.lastSpace=false end
+	if i.KeyCode==Enum.KeyCode.Space then
+		_G.lastSpace=false
+	end
 end)
 
 local function switchCat(c)
-	if _G.currentCategory==c then return end
+	if _G.currentCategory==c then
+		return
+	end
 
 	_G.currentCategory=c
+
 	scrollTarget=0
 	scrollCurrent=0
 	contentViewport.CanvasPosition=Vector2.new(0,0)
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
 
-	local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+	local inf=TweenInfo.new(
+		0.3,
+		Enum.EasingStyle.Quad,
+		Enum.EasingDirection.Out
+	)
 
 	if c=="movement" then
 		TS:Create(movL,inf,{TextTransparency=0}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(bindL,inf,{TextTransparency=0.4}):Play()
+
 		miscC.Visible=false
 		mc.Visible=true
 		bindC.Visible=false
+
 	elseif c=="misc" then
 		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0}):Play()
 		TS:Create(bindL,inf,{TextTransparency=0.4}):Play()
+
 		mc.Visible=false
 		miscC.Visible=true
 		bindC.Visible=false
+
 	else
 		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(bindL,inf,{TextTransparency=0}):Play()
+
 		mc.Visible=false
 		miscC.Visible=false
 		bindC.Visible=true
@@ -1601,13 +1909,26 @@ local function switchCat(c)
 	end)
 end
 
-movL.MouseButton1Click:Connect(function() switchCat("movement") end)
-miscL.MouseButton1Click:Connect(function() switchCat("misc") end)
-bindL.MouseButton1Click:Connect(function() switchCat("bind") end)
+movL.MouseButton1Click:Connect(function()
+	switchCat("movement")
+end)
+
+miscL.MouseButton1Click:Connect(function()
+	switchCat("misc")
+end)
+
+bindL.MouseButton1Click:Connect(function()
+	switchCat("bind")
+end)
 
 mf.InputBegan:Connect(function(i)
-	if _G.isSliding then return end
-	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+	if _G.isSliding then
+		return
+	end
+
+	if i.UserInputType==Enum.UserInputType.MouseButton1
+		or i.UserInputType==Enum.UserInputType.Touch then
+
 		_G.isDragging=true
 		_G.dragStart=i.Position
 		_G.startPos=mf.Position
@@ -1616,14 +1937,28 @@ mf.InputBegan:Connect(function(i)
 end)
 
 UIS.InputChanged:Connect(function(i)
-	if _G.isDragging and not _G.isSliding and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+	if _G.isDragging
+		and not _G.isSliding
+		and (
+			i.UserInputType==Enum.UserInputType.MouseMovement
+			or i.UserInputType==Enum.UserInputType.Touch
+		) then
+
 		local d=i.Position-_G.dragStart
-		_G.targetPos=UDim2.new(_G.startPos.X.Scale,_G.startPos.X.Offset+d.X,_G.startPos.Y.Scale,_G.startPos.Y.Offset+d.Y)
+
+		_G.targetPos=UDim2.new(
+			_G.startPos.X.Scale,
+			_G.startPos.X.Offset+d.X,
+			_G.startPos.Y.Scale,
+			_G.startPos.Y.Offset+d.Y
+		)
 	end
 end)
 
 UIS.InputEnded:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+	if i.UserInputType==Enum.UserInputType.MouseButton1
+		or i.UserInputType==Enum.UserInputType.Touch then
+
 		_G.isDragging=false
 		_G.isSliding=false
 	end
@@ -1632,10 +1967,17 @@ end)
 RS.RenderStepped:Connect(function()
 	if _G.targetPos then
 		local c=mf.Position
+
 		local dx=_G.targetPos.X.Offset-c.X.Offset
 		local dy=_G.targetPos.Y.Offset-c.Y.Offset
+
 		if math.abs(dx)>0.5 or math.abs(dy)>0.5 then
-			mf.Position=UDim2.new(c.X.Scale,c.X.Offset+dx*0.18,c.Y.Scale,c.Y.Offset+dy*0.18)
+			mf.Position=UDim2.new(
+				c.X.Scale,
+				c.X.Offset+dx*0.18,
+				c.Y.Scale,
+				c.Y.Offset+dy*0.18
+			)
 		end
 	end
 end)
@@ -1644,21 +1986,30 @@ local function setVisible(s)
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
 	bindC.Visible=s and _G.currentCategory=="bind"
+
 	catBar.Visible=s
+
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
 	contentViewport.ScrollingEnabled=false
 end
 
 local function startFps()
-	if _G.fpsConnection then return end
+	if _G.fpsConnection then
+		return
+	end
+
 	local f=0
 	local l=tick()
+
 	_G.fpsConnection=RS.RenderStepped:Connect(function()
 		f=f+1
+
 		local n=tick()
+
 		if n-l>=0.016 then
 			fpsLabel.Text="fps "..math.floor(f/(n-l))
+
 			f=0
 			l=n
 		end
@@ -1666,7 +2017,9 @@ local function startFps()
 end
 
 local function setMinimized(s)
-	if _G.isAnimating then return end
+	if _G.isAnimating then
+		return
+	end
 
 	_G.isAnimating=true
 	_G.isHidden=s
@@ -1681,8 +2034,14 @@ local function setMinimized(s)
 
 	local tw=TS:Create(
 		mf,
-		TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
-		{Size=ts}
+		TweenInfo.new(
+			0.35,
+			Enum.EasingStyle.Quad,
+			Enum.EasingDirection.Out
+		),
+		{
+			Size=ts
+		}
 	)
 
 	if s then
@@ -1691,14 +2050,26 @@ local function setMinimized(s)
 
 		TS:Create(
 			fpsLabel,
-			TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
-			{TextTransparency=0}
+			TweenInfo.new(
+				0.35,
+				Enum.EasingStyle.Quad,
+				Enum.EasingDirection.Out
+			),
+			{
+				TextTransparency=0
+			}
 		):Play()
 	else
 		TS:Create(
 			fpsLabel,
-			TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
-			{TextTransparency=1}
+			TweenInfo.new(
+				0.35,
+				Enum.EasingStyle.Quad,
+				Enum.EasingDirection.Out
+			),
+			{
+				TextTransparency=1
+			}
 		):Play()
 	end
 
@@ -1714,79 +2085,189 @@ local function setMinimized(s)
 		end
 
 		_G.isAnimating=false
-
 	end)
 end
 
-hideBtn.MouseButton1Click:Connect(function() setMinimized(not _G.isHidden) end)
+hideBtn.MouseButton1Click:Connect(function()
+	setMinimized(not _G.isHidden)
+end)
 
 closeBtn.MouseButton1Click:Connect(function()
 	stopFlight()
 	stopAirwalk()
-	if _G.fpsConnection then _G.fpsConnection:Disconnect() end
+
+	if _G.fpsConnection then
+		_G.fpsConnection:Disconnect()
+	end
+
 	mouse.Icon=""
 	sg:Destroy()
 end)
 
+-- Hover для остальных элементов
+hover(hideBtn,hideSt)
+hover(closeBtn,closeSt)
+
+hover(spTr,spSt)
+hover(spS,spSS)
+hover(spH,spHS)
+
+hover(jTr,jSt)
+hover(jS,jSS)
+hover(jH,jHS)
+
+hover(fTr,fSt)
+hover(fS,fSS)
+hover(fH,fHS)
+
+hover(nTr,nSt)
+
+hover(stTr,stSt)
+hover(stS,stSS)
+hover(stH,stHS)
+
+hover(awTr,awSt)
+hover(cTr,cSt)
+hover(ajTr,ajSt)
+
+hover(aimTr,aimSt)
+hover(tlTr,tlSt)
+hover(wcTr,wcSt)
+
+hover(smS,smSS)
+hover(smH,smHS)
+
+hover(rS,rSS)
+hover(rH,rHS)
+
+hover(targB,targSt)
+hover(sortB,sortSt)
+hover(modeB,modeSt)
+
 local function updateSpeedFromInput(i)
 	local s=spS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-spS.AbsolutePosition.X,0,s)/s
+
+	if s<=0 then
+		return
+	end
+
+	local v=math.clamp(
+		i.Position.X-spS.AbsolutePosition.X,
+		0,
+		s
+	)/s
+
 	updateSlider(spF,spH,v)
 	updateSpeed(v)
 end
 
 local function updateJumpFromInput(i)
 	local s=jS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-jS.AbsolutePosition.X,0,s)/s
+
+	if s<=0 then
+		return
+	end
+
+	local v=math.clamp(
+		i.Position.X-jS.AbsolutePosition.X,
+		0,
+		s
+	)/s
+
 	updateSlider(jF,jH,v)
 	updateJump(v)
 end
 
 local function updateFlightFromInput(i)
 	local s=fS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-fS.AbsolutePosition.X,0,s)/s
+
+	if s<=0 then
+		return
+	end
+
+	local v=math.clamp(
+		i.Position.X-fS.AbsolutePosition.X,
+		0,
+		s
+	)/s
+
 	updateSlider(fF,fH,v)
 	updateFlight(v)
 end
 
 local function updateStrafeFromInput(i)
 	local s=stS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-stS.AbsolutePosition.X,0,s)/s
+
+	if s<=0 then
+		return
+	end
+
+	local v=math.clamp(
+		i.Position.X-stS.AbsolutePosition.X,
+		0,
+		s
+	)/s
+
 	updateSlider(stF,stH,v)
 	updateStrafe(v)
 end
 
 local function updateSmoothFromInput(i)
 	local s=smS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-smS.AbsolutePosition.X,0,s)/s
+
+	if s<=0 then
+		return
+	end
+
+	local v=math.clamp(
+		i.Position.X-smS.AbsolutePosition.X,
+		0,
+		s
+	)/s
+
 	updateSlider(smF,smH,v)
 	updateSmooth(v)
 end
 
 local function updateRangeFromInput(i)
 	local s=rS.AbsoluteSize.X
-	if s<=0 then return end
-	local v=math.clamp(i.Position.X-rS.AbsolutePosition.X,0,s)/s
+
+	if s<=0 then
+		return
+	end
+
+	local v=math.clamp(
+		i.Position.X-rS.AbsolutePosition.X,
+		0,
+		s
+	)/s
+
 	updateSlider(rF,rH,v)
 	updateRange(v)
 end
 
 local function startDrag(f,u)
 	return function(i)
-		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+		if i.UserInputType==Enum.UserInputType.MouseButton1
+			or i.UserInputType==Enum.UserInputType.Touch then
+
 			_G.isSliding=true
 			_G.isDragging=false
-			if f=="sp" then _G.draggingSpeed=true
-			elseif f=="j" then _G.draggingJump=true
-			elseif f=="f" then _G.draggingFlight=true
-			elseif f=="st" then _G.draggingStrafe=true
-			elseif f=="sm" then _G.draggingSmooth=true
-			elseif f=="r" then _G.draggingRange=true end
+
+			if f=="sp" then
+				_G.draggingSpeed=true
+			elseif f=="j" then
+				_G.draggingJump=true
+			elseif f=="f" then
+				_G.draggingFlight=true
+			elseif f=="st" then
+				_G.draggingStrafe=true
+			elseif f=="sm" then
+				_G.draggingSmooth=true
+			elseif f=="r" then
+				_G.draggingRange=true
+			end
+
 			u(i)
 		end
 	end
@@ -1794,40 +2275,82 @@ end
 
 spS.InputBegan:Connect(startDrag("sp",updateSpeedFromInput))
 spH.InputBegan:Connect(startDrag("sp",updateSpeedFromInput))
+
 jS.InputBegan:Connect(startDrag("j",updateJumpFromInput))
 jH.InputBegan:Connect(startDrag("j",updateJumpFromInput))
+
 fS.InputBegan:Connect(startDrag("f",updateFlightFromInput))
 fH.InputBegan:Connect(startDrag("f",updateFlightFromInput))
+
 stS.InputBegan:Connect(startDrag("st",updateStrafeFromInput))
 stH.InputBegan:Connect(startDrag("st",updateStrafeFromInput))
+
 smS.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
 smH.InputBegan:Connect(startDrag("sm",updateSmoothFromInput))
+
 rS.InputBegan:Connect(startDrag("r",updateRangeFromInput))
 rH.InputBegan:Connect(startDrag("r",updateRangeFromInput))
 
 UIS.InputChanged:Connect(function(i)
-	if _G.draggingSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+	if _G.draggingSpeed
+		and (
+			i.UserInputType==Enum.UserInputType.MouseMovement
+			or i.UserInputType==Enum.UserInputType.Touch
+		) then
+
 		updateSpeedFromInput(i)
 	end
-	if _G.draggingJump and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+
+	if _G.draggingJump
+		and (
+			i.UserInputType==Enum.UserInputType.MouseMovement
+			or i.UserInputType==Enum.UserInputType.Touch
+		) then
+
 		updateJumpFromInput(i)
 	end
-	if _G.draggingFlight and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+
+	if _G.draggingFlight
+		and (
+			i.UserInputType==Enum.UserInputType.MouseMovement
+			or i.UserInputType==Enum.UserInputType.Touch
+		) then
+
 		updateFlightFromInput(i)
 	end
-	if _G.draggingStrafe and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+
+	if _G.draggingStrafe
+		and (
+			i.UserInputType==Enum.UserInputType.MouseMovement
+			or i.UserInputType==Enum.UserInputType.Touch
+		) then
+
 		updateStrafeFromInput(i)
 	end
-	if _G.draggingSmooth and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+
+	if _G.draggingSmooth
+		and (
+			i.UserInputType==Enum.UserInputType.MouseMovement
+			or i.UserInputType==Enum.UserInputType.Touch
+		) then
+
 		updateSmoothFromInput(i)
 	end
-	if _G.draggingRange and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+
+	if _G.draggingRange
+		and (
+			i.UserInputType==Enum.UserInputType.MouseMovement
+			or i.UserInputType==Enum.UserInputType.Touch
+		) then
+
 		updateRangeFromInput(i)
 	end
 end)
 
 UIS.InputEnded:Connect(function(i)
-	if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+	if i.UserInputType==Enum.UserInputType.MouseButton1
+		or i.UserInputType==Enum.UserInputType.Touch then
+
 		_G.draggingSpeed=false
 		_G.draggingJump=false
 		_G.draggingFlight=false
@@ -1841,13 +2364,17 @@ end)
 player.CharacterAdded:Connect(function(c)
 	scrollTarget=0
 	scrollCurrent=0
+
 	_G.scrollOffset=0
 	_G.scrollTarget=0
+
 	character=c
 	humanoid=character:WaitForChild("Humanoid")
 	root=character:WaitForChild("HumanoidRootPart")
+
 	stopFlight()
 	stopAirwalk()
+
 	_G.speedEnabled=false
 	_G.jumpEnabled=false
 	_G.flightEnabled=false
@@ -1860,7 +2387,9 @@ player.CharacterAdded:Connect(function(c)
 	_G.targetLockEnabled=false
 	_G.wallsCheckEnabled=false
 	_G.lockedTarget=nil
+
 	mouse.Icon=""
+
 	_G.currentSpeed=16
 	_G.currentJumpStrength=50
 	_G.currentFlight=50
@@ -1870,6 +2399,7 @@ player.CharacterAdded:Connect(function(c)
 	_G.aimMode="Center"
 	_G.sortMode="Distance"
 	_G.aimTarget="Head"
+
 	setToggle(spTr,spK,false,false)
 	setToggle(jTr,jK,false,false)
 	setToggle(fTr,fK,false,false)
@@ -1881,30 +2411,59 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(aimTr,aimK,false,false)
 	setToggle(tlTr,tlK,false,false)
 	setToggle(wcTr,wcK,false,false)
+
 	initializeDefaultValues()
+
 	spT.Text="Speed"
 	jT.Text="Jump"
 	fT.Text="Flight"
 	stT.Text="Strafe"
+
 	setColors(false,spT,nil,nil,nil)
 	setColors(false,spVT,spS,spF,spH)
+
 	setColors(false,jT,nil,nil,nil)
 	setColors(false,jST,jS,jF,jH)
+
 	setColors(false,fT,nil,nil,nil)
 	setColors(false,fST,fS,fF,fH)
+
 	updateNoclip()
+
 	setColors(false,stT,nil,nil,nil)
 	setColors(false,stVT,stS,stF,stH)
+
 	setColors(false,awT,nil,nil,nil)
 	setColors(false,cT,nil,nil,nil)
 	setColors(false,ajT,nil,nil,nil)
+
 	targB.Text="Head"
 	targT.Text="Target:"
+
 	sortB.Text="Distance"
 	sortT.Text="Sort:"
+
 	modeB.Text="Center"
 	modeT.Text="Mode:"
+
 	setAimColors(false)
+
 	applySpeed()
 	applyJump()
+
+	-- Обновляем визуал биндов после респавна,
+	-- сами binds при этом сохраняются.
+	for name,row in pairs(bindRows) do
+		local key=binds[name]
+
+		if key then
+			row.bind.Text=key.Name
+			row.bind.TextColor3=Color3.new(1,1,1)
+			row.setBindVisual(true,false)
+		else
+			row.bind.Text="None"
+			row.bind.TextColor3=Color3.new(0.6,0.6,0.6)
+			row.setBindVisual(false,false)
+		end
+	end
 end)
