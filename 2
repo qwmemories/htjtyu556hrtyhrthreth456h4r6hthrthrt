@@ -601,21 +601,15 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 
 	local function setBindVisual(bound,animate)
 		local color=bound and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
-		local info=TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 		if animate then
-			TS:Create(label,info,{TextColor3=color}):Play()
+			TS:Create(label,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=color}):Play()
 		else
 			label.TextColor3=color
 		end
 		plus.TextColor3=Color3.new(0.6,0.6,0.6)
 		minus.TextColor3=Color3.new(0.6,0.6,0.6)
 	end
-
 	row.setBindVisual=setBindVisual
-
-	hover(bind,st)
-	hover(plus,pst)
-	hover(minus,mst)
 
 	local function listen()
 		bindListening=name
@@ -1202,6 +1196,7 @@ hover(rH,rHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
+
 local function setColors(en,label,slider,fill,handle)
 	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
 	local sc=en and Color3.new(0.5,0.5,0.5) or Color3.new(0.3,0.3,0.3)
@@ -1332,6 +1327,7 @@ local function updateRange(v)
 end
 
 local function updateSlider(f,h,v)
+	v=math.clamp(v,0,1)
 	f.Size=UDim2.new(v,0,1,0)
 	h.Position=UDim2.new(v,-8,0.5,-8)
 end
@@ -1376,21 +1372,18 @@ end
 
 local function toggleNoclip()
 	_G.noclipEnabled=not _G.noclipEnabled
-
-	if _G.noclipEnabled and _G.flightEnabled and _G.flying then
-		setNoclip(true)
-		if not _G.noclipConnection then
-			_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+	updateNoclip()
+	if _G.noclipEnabled then
+		if _G.flying then
+			setNoclip(true)
+			if not _G.noclipConnection then
+				_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+			end
 		end
-	elseif not _G.noclipEnabled then
-		if _G.noclipConnection then
-			_G.noclipConnection:Disconnect()
-			_G.noclipConnection=nil
-		end
+	else
+		if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
 		setNoclip(false)
 	end
-
-	updateNoclip()
 end
 
 local function toggleStrafe()
@@ -1488,8 +1481,12 @@ createKeybindRow(bindC,"Aimbot",290,toggleAimbot)
 createKeybindRow(bindC,"TargetLock",326,toggleTargetLock)
 createKeybindRow(bindC,"WallsCheck",362,toggleWallsCheck)
 
+-- Bind-row hover handlers must be attached after all rows exist.
 for _,row in pairs(bindRows) do
-	row.setBindVisual(false,false)
+	hover(row.bind,row.stroke)
+	hover(row.plus,row.plusStroke)
+	hover(row.minus,row.minusStroke)
+	row.setBindVisual(binds[row.name]~=nil,false)
 end
 
 UIS.InputBegan:Connect(function(i,p)
