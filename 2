@@ -10,6 +10,105 @@ local PL=game:GetService("Players")
 repeat wait(0.1) until _G.speedEnabled~=nil
 wait(0.2)
 
+-- Timer module
+_G.timerEnabled = _G.timerEnabled == true
+_G.timerSpeed = math.clamp(tonumber(_G.timerSpeed) or 1.0, 0.1, 25.0)
+_G.timerCurrentTime = tonumber(_G.timerCurrentTime) or 0
+
+local timerPlayer = player
+local timerCharacter = character
+
+local function applyTimerSpeed()
+	local speedToApply = _G.timerEnabled and _G.timerSpeed or 1.0
+
+	local function applyToCharacter(char)
+		if not char then return end
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
+
+		local animator = hum:FindFirstChildOfClass("Animator")
+		if not animator then return end
+
+		for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+			track:AdjustSpeed(speedToApply)
+		end
+	end
+
+	applyToCharacter(timerCharacter)
+
+	for _, plr in ipairs(PL:GetPlayers()) do
+		if plr ~= timerPlayer then
+			applyToCharacter(plr.Character)
+		end
+	end
+end
+
+function _G.setTimerSpeedFunc(newSpeed)
+	_G.timerSpeed = math.clamp(tonumber(newSpeed) or 1.0, 0.1, 25.0)
+	if _G.timerEnabled then
+		applyTimerSpeed()
+	end
+end
+
+function _G.toggleTimerFunc()
+	_G.timerEnabled = not _G.timerEnabled
+	applyTimerSpeed()
+end
+
+function _G.getTimerTimeFunc()
+	return _G.timerCurrentTime
+end
+
+function _G.waitTimerFunc(seconds)
+	seconds = tonumber(seconds) or 0
+	if seconds <= 0 then return end
+
+	if not _G.timerEnabled then
+		task.wait(seconds)
+		return
+	end
+
+	local startTime = _G.timerCurrentTime
+	local targetTime = startTime + (seconds / _G.timerSpeed)
+
+	repeat
+		task.wait()
+	until _G.timerCurrentTime >= targetTime or not _G.timerEnabled
+end
+
+RS.RenderStepped:Connect(function()
+	if _G.timerEnabled then
+		applyTimerSpeed()
+	end
+end)
+
+RS.Heartbeat:Connect(function(deltaTime)
+	if _G.timerEnabled then
+		_G.timerCurrentTime = _G.timerCurrentTime + (deltaTime * _G.timerSpeed)
+	else
+		_G.timerCurrentTime = _G.timerCurrentTime + deltaTime
+	end
+end)
+
+timerPlayer.CharacterAdded:Connect(function(newCharacter)
+	timerCharacter = newCharacter
+	task.wait(0.5)
+
+	if _G.timerEnabled then
+		applyTimerSpeed()
+	end
+end)
+
+PL.PlayerAdded:Connect(function(plr)
+	plr.CharacterAdded:Connect(function()
+		task.wait(0.5)
+
+		if _G.timerEnabled then
+			applyTimerSpeed()
+		end
+	end)
+end)
+
 local function setNoclip(s)
 	if not character then return end
 	for _,p in pairs(character:GetDescendants()) do
