@@ -10,11 +10,52 @@ local PL=game:GetService("Players")
 repeat wait(0.1) until _G.speedEnabled~=nil
 wait(0.2)
 
+local timerCurrentTime=0
+local timerConnection=nil
+
 local function setNoclip(s)
 	if not character then return end
 	for _,p in pairs(character:GetDescendants()) do
 		if p:IsA("BasePart") then p.CanCollide=not s end
 	end
+end
+
+local function applyTimerToAnimations(speed)
+	for _, player in pairs(PL:GetPlayers()) do
+		local char = player.Character
+		if char then
+			local hum = char:FindFirstChild("Humanoid")
+			if hum then
+				local animator = hum:FindFirstChild("Animator")
+				if animator then
+					for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+						track:AdjustSpeed(speed)
+					end
+				end
+			end
+		end
+	end
+end
+
+local function startTimer()
+	if timerConnection then return end
+	timerConnection=RS.Heartbeat:Connect(function(deltaTime)
+		if _G.timerEnabled then
+			timerCurrentTime=timerCurrentTime+(deltaTime*_G.currentTimerSpeed)
+			applyTimerToAnimations(_G.currentTimerSpeed)
+		else
+			timerCurrentTime=timerCurrentTime+deltaTime
+			applyTimerToAnimations(1.0)
+		end
+	end)
+end
+
+local function stopTimer()
+	if timerConnection then
+		timerConnection:Disconnect()
+		timerConnection=nil
+	end
+	applyTimerToAnimations(1.0)
 end
 
 function _G.startFlightFunc()
@@ -223,3 +264,5 @@ player.CharacterAdded:Connect(function(c)
 	_G.stopFlightFunc()
 	_G.stopAirwalkFunc()
 end)
+
+startTimer()
