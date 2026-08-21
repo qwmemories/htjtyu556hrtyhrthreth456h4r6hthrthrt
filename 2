@@ -45,15 +45,22 @@ function _G.stopFlightFunc()
 end
 
 function _G.enableNoclipFunc()
+	_G.noclipEnabled=true
+	-- Noclip is only applied while Flight is active.
 	if _G.flying then
 		setNoclip(true)
 		if not _G.noclipConnection then
-			_G.noclipConnection=RS.Stepped:Connect(function() setNoclip(true) end)
+			_G.noclipConnection=RS.Stepped:Connect(function()
+				if _G.flying and _G.noclipEnabled then
+					setNoclip(true)
+				end
+			end)
 		end
 	end
 end
 
 function _G.disableNoclipFunc()
+	_G.noclipEnabled=false
 	if _G.noclipConnection then _G.noclipConnection:Disconnect() _G.noclipConnection=nil end
 	setNoclip(false)
 end
