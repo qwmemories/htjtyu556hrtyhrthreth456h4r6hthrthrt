@@ -20,7 +20,6 @@ _G.aimbotEnabled=false
 _G.targetLockEnabled=false
 _G.wallsCheckEnabled=false
 _G.aimTarget="Head"
-_G.timerEnabled=false
 
 _G.currentSpeed=16
 _G.currentJumpStrength=50
@@ -28,7 +27,6 @@ _G.currentFlight=50
 _G.currentStrafe=0
 _G.currentSmoothness=0.15
 _G.currentRange=500
-_G.currentTimer=0
 _G.aimMode="Center"
 _G.sortMode="Distance"
 
@@ -514,21 +512,6 @@ miscC.Position=UDim2.new(0,0,0,0)
 miscC.BackgroundTransparency=1
 miscC.Visible=false
 miscC.Parent=contentViewport
-
--- ===== TIMER UI =====
-local timerT=Instance.new("TextLabel")
-timerT.Size=UDim2.new(0.5,0,0,25)
-timerT.Position=UDim2.new(0,10,0,2)
-timerT.BackgroundTransparency=1
-timerT.Text="Timer"
-timerT.TextColor3=Color3.new(0.6,0.6,0.6)
-timerT.TextSize=20
-timerT.Font=Enum.Font.Gotham
-timerT.TextXAlignment=Enum.TextXAlignment.Left
-timerT.Parent=miscC
-
-local timerTr,timerK,timerSt,timerCl=ct(miscC,UDim2.new(0.75,0,0,4))
--- ===== END TIMER UI =====
 
 local bindC=Instance.new("Frame")
 bindC.Size=UDim2.new(0,258,0,500)
@@ -1205,7 +1188,6 @@ hover(rH,rHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
-hover(timerTr,timerSt)
 for _,row in pairs(bindRows) do
 	hover(row.bind,row.stroke)
 	hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke"))
@@ -1436,12 +1418,6 @@ local function toggleWallsCheck()
 	if _G.aimbotEnabled then setColors(_G.wallsCheckEnabled,wcT,nil,nil,nil) end
 end
 
-local function toggleTimer()
-	_G.timerEnabled=not _G.timerEnabled
-	setToggle(timerTr,timerK,_G.timerEnabled,true)
-	setColors(_G.timerEnabled,timerT,nil,nil,nil)
-end
-
 local function cycleTarget()
 	if _G.aimTarget=="Head" then
 		_G.aimTarget="Body"
@@ -1486,7 +1462,6 @@ createKeybindRow(bindC,"Airwalk",146,toggleAirwalk)
 createKeybindRow(bindC,"ClickTP",182,toggleClickTp)
 createKeybindRow(bindC,"AirJump",218,toggleAirJump)
 createKeybindRow(bindC,"Aimbot",254,toggleAimbot)
-createKeybindRow(bindC,"Timer",290,toggleTimer)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
@@ -1525,7 +1500,6 @@ ajCl.MouseButton1Click:Connect(toggleAirJump)
 aimCl.MouseButton1Click:Connect(toggleAimbot)
 tlCl.MouseButton1Click:Connect(toggleTargetLock)
 wcCl.MouseButton1Click:Connect(toggleWallsCheck)
-timerCl.MouseButton1Click:Connect(toggleTimer)
 targB.MouseButton1Click:Connect(cycleTarget)
 sortB.MouseButton1Click:Connect(cycleSort)
 modeB.MouseButton1Click:Connect(cycleMode)
@@ -1855,7 +1829,6 @@ player.CharacterAdded:Connect(function(c)
 	_G.aimbotEnabled=false
 	_G.targetLockEnabled=false
 	_G.wallsCheckEnabled=false
-	_G.timerEnabled=false
 	_G.lockedTarget=nil
 	mouse.Icon=""
 	_G.currentSpeed=16
@@ -1878,7 +1851,6 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(aimTr,aimK,false,false)
 	setToggle(tlTr,tlK,false,false)
 	setToggle(wcTr,wcK,false,false)
-	setToggle(timerTr,timerK,false,false)
 	updateSlider(spF,spH,0.032)
 	spT.Text="Speed"
 	spVT.Text="Value: 16"
@@ -1907,7 +1879,6 @@ player.CharacterAdded:Connect(function(c)
 	smT.Text="Speed: 0.15"
 	updateSlider(rF,rH,0.5)
 	rT.Text="Range: 500"
-	setColors(false,timerT,nil,nil,nil)
 	targB.Text="Head"
 	targT.Text="Target:"
 	sortB.Text="Distance"
