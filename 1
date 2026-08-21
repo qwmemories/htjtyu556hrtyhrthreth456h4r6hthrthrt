@@ -513,16 +513,16 @@ miscC.BackgroundTransparency=1
 miscC.Visible=false
 miscC.Parent=contentViewport
 
-local keybindC=Instance.new("Frame")
-keybindC.Size=UDim2.new(0,258,0,500)
-keybindC.Position=UDim2.new(0,0,0,0)
-keybindC.BackgroundTransparency=1
-keybindC.Visible=false
-keybindC.Parent=contentViewport
+local bindC=Instance.new("Frame")
+bindC.Size=UDim2.new(0,258,0,500)
+bindC.Position=UDim2.new(0,0,0,0)
+bindC.BackgroundTransparency=1
+bindC.Visible=false
+bindC.Parent=contentViewport
 
-local keybindRows={}
-local keybinds={}
-local keybindListening=nil
+local bindRows={}
+local binds={}
+local bindListening=nil
 
 local function createKeybindRow(parent,name,y,toggleFunc)
 	local label=Instance.new("TextLabel")
@@ -542,7 +542,7 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 	plus.BackgroundColor3=Color3.new(0.15,0.15,0.15)
 	plus.BackgroundTransparency=0.04
 	plus.Text="+"
-	plus.TextColor3=Color3.new(1,1,1)
+	plus.TextColor3=Color3.new(0.6,0.6,0.6)
 	plus.TextSize=16
 	plus.Font=Enum.Font.GothamBold
 	plus.AutoButtonColor=false
@@ -555,7 +555,7 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 	minus.BackgroundColor3=Color3.new(0.15,0.15,0.15)
 	minus.BackgroundTransparency=0.04
 	minus.Text="-"
-	minus.TextColor3=Color3.new(1,1,1)
+	minus.TextColor3=Color3.new(0.6,0.6,0.6)
 	minus.TextSize=16
 	minus.Font=Enum.Font.GothamBold
 	minus.AutoButtonColor=false
@@ -597,10 +597,14 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 	mst.Parent=minus
 
 	local row={name=name,label=label,plus=plus,minus=minus,bind=bind,stroke=st,toggle=toggleFunc}
-	keybindRows[name]=row
+	bindRows[name]=row
+
+	hover(bind,st)
+	hover(plus,pst)
+	hover(minus,mst)
 
 	local function listen()
-		keybindListening=name
+		bindListening=name
 		bind.Text="..."
 		bind.TextColor3=Color3.new(1,1,1)
 	end
@@ -608,10 +612,11 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 	plus.MouseButton1Click:Connect(listen)
 	bind.MouseButton1Click:Connect(listen)
 	minus.MouseButton1Click:Connect(function()
-		keybinds[name]=nil
-		if keybindListening==name then keybindListening=nil end
+		binds[name]=nil
+		if bindListening==name then bindListening=nil end
 		bind.Text="None"
 		bind.TextColor3=Color3.new(0.6,0.6,0.6)
+		TS:Create(label,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=Color3.new(0.6,0.6,0.6)}):Play()
 	end)
 end
 
@@ -856,17 +861,24 @@ miscL.Font=Enum.Font.GothamBold
 miscL.TextWrapped=true
 miscL.Parent=catBar
 
-local keybindL=Instance.new("TextButton")
-keybindL.Size=UDim2.new(1,0,0,40)
-keybindL.Position=UDim2.new(0,0,0,120)
-keybindL.BackgroundTransparency=1
-keybindL.Text="keybind"
-keybindL.TextColor3=Color3.new(1,1,1)
-keybindL.TextTransparency=0.4
-keybindL.TextSize=14
-keybindL.Font=Enum.Font.GothamBold
-keybindL.TextWrapped=true
-keybindL.Parent=catBar
+local bindSep=Instance.new("Frame")
+bindSep.Size=UDim2.new(0,48,0,1)
+bindSep.Position=UDim2.new(0.5,-24,0,110)
+bindSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
+bindSep.BorderSizePixel=0
+bindSep.Parent=catBar
+
+local bindL=Instance.new("TextButton")
+bindL.Size=UDim2.new(1,0,0,40)
+bindL.Position=UDim2.new(0,0,0,120)
+bindL.BackgroundTransparency=1
+bindL.Text="bind"
+bindL.TextColor3=Color3.new(1,1,1)
+bindL.TextTransparency=0.4
+bindL.TextSize=14
+bindL.Font=Enum.Font.GothamBold
+bindL.TextWrapped=true
+bindL.Parent=catBar
 
 local scrollTrack=Instance.new("Frame")
 scrollTrack.Size=UDim2.new(0,6,0,460)
@@ -900,7 +912,7 @@ local scrollTarget=0
 local scrollCurrent=0
 
 local function activeContent()
-	return _G.currentCategory=="movement" and mc or (_G.currentCategory=="misc" and miscC or keybindC)
+	return _G.currentCategory=="movement" and mc or (_G.currentCategory=="misc" and miscC or bindC)
 end
 
 local function contentBottom(content)
@@ -1175,11 +1187,6 @@ hover(rH,rHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
-for _,row in pairs(keybindRows) do
-	hover(row.bind,row.stroke)
-	hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke"))
-	hover(row.minus,row.minus:FindFirstChildOfClass("UIStroke"))
-end
 
 local function setColors(en,label,slider,fill,handle)
 	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
@@ -1221,7 +1228,7 @@ local function applySpeed()
 end
 
 local function applyJump()
-	if humanoid then humanoid.JumpPower=50 end
+	if humanoid then humanoid.JumpPower=_G.currentJumpStrength end
 end
 
 local function setNoclip(s)
@@ -1340,7 +1347,6 @@ local function toggleFlight()
 end
 
 local function toggleNoclip()
-	if not _G.flightEnabled then return end
 	_G.noclipEnabled=not _G.noclipEnabled
 	updateNoclip()
 	if _G.noclipEnabled then
@@ -1439,38 +1445,39 @@ local function cycleMode()
 	end
 end
 
-createKeybindRow(keybindC,"Speed",2,toggleSpeed)
-createKeybindRow(keybindC,"Jump",38,toggleJump)
-createKeybindRow(keybindC,"Flight",74,toggleFlight)
-createKeybindRow(keybindC,"Noclip",110,toggleNoclip)
-createKeybindRow(keybindC,"Strafe",146,toggleStrafe)
-createKeybindRow(keybindC,"Airwalk",182,toggleAirwalk)
-createKeybindRow(keybindC,"ClickTP",218,toggleClickTp)
-createKeybindRow(keybindC,"AirJump",254,toggleAirJump)
-createKeybindRow(keybindC,"Aimbot",290,toggleAimbot)
-createKeybindRow(keybindC,"TargetLock",326,toggleTargetLock)
-createKeybindRow(keybindC,"WallsCheck",362,toggleWallsCheck)
+createKeybindRow(bindC,"Speed",2,toggleSpeed)
+createKeybindRow(bindC,"Jump",38,toggleJump)
+createKeybindRow(bindC,"Flight",74,toggleFlight)
+createKeybindRow(bindC,"Noclip",110,toggleNoclip)
+createKeybindRow(bindC,"Strafe",146,toggleStrafe)
+createKeybindRow(bindC,"Airwalk",182,toggleAirwalk)
+createKeybindRow(bindC,"ClickTP",218,toggleClickTp)
+createKeybindRow(bindC,"AirJump",254,toggleAirJump)
+createKeybindRow(bindC,"Aimbot",290,toggleAimbot)
+createKeybindRow(bindC,"TargetLock",326,toggleTargetLock)
+createKeybindRow(bindC,"WallsCheck",362,toggleWallsCheck)
 
 UIS.InputBegan:Connect(function(i,p)
 	if p then return end
-	if keybindListening then
+	if bindListening then
 		if i.UserInputType==Enum.UserInputType.Keyboard and i.KeyCode~=Enum.KeyCode.Unknown then
-			local name=keybindListening
-			keybinds[name]=i.KeyCode
-			keybindListening=nil
-			local row=keybindRows[name]
+			local name=bindListening
+			binds[name]=i.KeyCode
+			bindListening=nil
+			local row=bindRows[name]
 			if row then
 				row.bind.Text=i.KeyCode.Name
 				row.bind.TextColor3=Color3.new(1,1,1)
+				TS:Create(row.label,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=Color3.new(1,1,1)}):Play()
 			end
 			return
 		end
 	end
 
 	if i.UserInputType==Enum.UserInputType.Keyboard then
-		for name,key in pairs(keybinds) do
+		for name,key in pairs(binds) do
 			if key==i.KeyCode then
-				local row=keybindRows[name]
+				local row=bindRows[name]
 				if row then row.toggle() end
 			end
 		end
@@ -1533,24 +1540,24 @@ local function switchCat(c)
 	if c=="movement" then
 		TS:Create(movL,inf,{TextTransparency=0}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
-		TS:Create(keybindL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(bindL,inf,{TextTransparency=0.4}):Play()
 		miscC.Visible=false
 		mc.Visible=true
-		keybindC.Visible=false
+		bindC.Visible=false
 	elseif c=="misc" then
 		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0}):Play()
-		TS:Create(keybindL,inf,{TextTransparency=0.4}):Play()
+		TS:Create(bindL,inf,{TextTransparency=0.4}):Play()
 		mc.Visible=false
 		miscC.Visible=true
-		keybindC.Visible=false
+		bindC.Visible=false
 	else
 		TS:Create(movL,inf,{TextTransparency=0.4}):Play()
 		TS:Create(miscL,inf,{TextTransparency=0.4}):Play()
-		TS:Create(keybindL,inf,{TextTransparency=0}):Play()
+		TS:Create(bindL,inf,{TextTransparency=0}):Play()
 		mc.Visible=false
 		miscC.Visible=false
-		keybindC.Visible=true
+		bindC.Visible=true
 	end
 
 	task.defer(function()
@@ -1561,7 +1568,7 @@ end
 
 movL.MouseButton1Click:Connect(function() switchCat("movement") end)
 miscL.MouseButton1Click:Connect(function() switchCat("misc") end)
-keybindL.MouseButton1Click:Connect(function() switchCat("keybind") end)
+bindL.MouseButton1Click:Connect(function() switchCat("bind") end)
 
 mf.InputBegan:Connect(function(i)
 	if _G.isSliding then return end
@@ -1601,7 +1608,7 @@ end)
 local function setVisible(s)
 	mc.Visible=s and _G.currentCategory=="movement"
 	miscC.Visible=s and _G.currentCategory=="misc"
-	keybindC.Visible=s and _G.currentCategory=="keybind"
+	bindC.Visible=s and _G.currentCategory=="bind"
 	catBar.Visible=s
 	scrollTrack.Visible=false
 	scrollThumb.Visible=false
@@ -1839,34 +1846,24 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(aimTr,aimK,false,false)
 	setToggle(tlTr,tlK,false,false)
 	setToggle(wcTr,wcK,false,false)
-	updateSlider(spF,spH,0.08)
-	spT.Text="Speed"
-	spVT.Text="Value: 16"
+	updateSpeed(16/500)
 	setColors(false,spT,nil,nil,nil)
 	setColors(false,spVT,spS,spF,spH)
-	updateSlider(jF,jH,0.25)
-	jT.Text="Jump"
-	jST.Text="Strength: 50"
+	updateJump(50/500)
 	setColors(false,jT,nil,nil,nil)
 	setColors(false,jST,jS,jF,jH)
-	updateSlider(fF,fH,0.25)
-	fT.Text="Flight"
-	fST.Text="Speed: 50"
+	updateFlight(50/500)
 	setColors(false,fT,nil,nil,nil)
 	setColors(false,fST,fS,fF,fH)
 	updateNoclip()
-	updateSlider(stF,stH,0)
-	stT.Text="Strafe"
-	stVT.Text="Value: 0"
+	updateStrafe(0)
 	setColors(false,stT,nil,nil,nil)
 	setColors(false,stVT,stS,stF,stH)
 	setColors(false,awT,nil,nil,nil)
 	setColors(false,cT,nil,nil,nil)
 	setColors(false,ajT,nil,nil,nil)
-	updateSlider(smF,smH,0.3)
-	smT.Text="Speed: 0.15"
-	updateSlider(rF,rH,0.5)
-	rT.Text="Range: 500"
+	updateSmooth((0.15-0.01)/(1-0.01))
+	updateRange((500-10)/(1000-10))
 	targB.Text="Head"
 	targT.Text="Target:"
 	sortB.Text="Distance"
