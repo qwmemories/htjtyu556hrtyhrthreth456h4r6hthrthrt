@@ -66,6 +66,7 @@ _G.airwalkPlatform=nil
 _G.airwalkY=0
 _G.fpsConnection=nil
 _G.lastSpace=false
+_G.timerConnection=nil
 
 task.spawn(function()
 	pcall(function()
@@ -1501,13 +1502,11 @@ local function toggleTimer()
 	setTimerColors(_G.timerEnabled)
 	if _G.timerEnabled then
 		_G.timerValue=_G.currentTimerValue
-		task.spawn(function()
-			if _G.timerConnection then _G.timerConnection:Disconnect() end
-			_G.timerConnection=RS.Heartbeat:Connect(function(delta)
-				if _G.timerEnabled and _G.timerValue~=1 then
-					RS.Heartbeat:Wait(_G.timerValue)
-				end
-			end)
+		if _G.timerConnection then _G.timerConnection:Disconnect() end
+		_G.timerConnection=RS.Heartbeat:Connect(function(delta)
+			if _G.timerEnabled and _G.timerValue~=1 then
+				wait(_G.timerValue)
+			end
 		end)
 	else
 		_G.timerValue=1.0
@@ -1933,6 +1932,7 @@ player.CharacterAdded:Connect(function(c)
 	root=character:WaitForChild("HumanoidRootPart")
 	stopFlight()
 	stopAirwalk()
+	if _G.timerConnection then _G.timerConnection:Disconnect() _G.timerConnection=nil end
 	_G.speedEnabled=false
 	_G.jumpEnabled=false
 	_G.flightEnabled=false
@@ -1957,7 +1957,6 @@ player.CharacterAdded:Connect(function(c)
 	_G.aimMode="Center"
 	_G.sortMode="Distance"
 	_G.aimTarget="Head"
-	if _G.timerConnection then _G.timerConnection:Disconnect() _G.timerConnection=nil end
 	setToggle(spTr,spK,false,false)
 	setToggle(jTr,jK,false,false)
 	setToggle(fTr,fK,false,false)
