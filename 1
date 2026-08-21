@@ -599,7 +599,6 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 	local row={name=name,label=label,plus=plus,minus=minus,bind=bind,stroke=st,toggle=toggleFunc}
 	bindRows[name]=row
 
-
 	local function listen()
 		bindListening=name
 		bind.Text="..."
@@ -613,7 +612,6 @@ local function createKeybindRow(parent,name,y,toggleFunc)
 		if bindListening==name then bindListening=nil end
 		bind.Text="None"
 		bind.TextColor3=Color3.new(0.6,0.6,0.6)
-		TS:Create(label,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=Color3.new(0.6,0.6,0.6)}):Play()
 	end)
 end
 
@@ -1148,13 +1146,13 @@ local function hover(b,s)
 	end)
 end
 
-for _,row in pairs(bindRows) do
-	hover(row.bind,row.stroke)
-	hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke"))
-	hover(row.minus,row.minus:FindFirstChildOfClass("UIStroke"))
-end
-
 hover(hideBtn,hideSt)
+
+for _,row in pairs(bindRows) do
+    if row.bind and row.stroke then hover(row.bind,row.stroke) end
+    if row.plus and row.plus:FindFirstChildOfClass("UIStroke") then hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke")) end
+    if row.minus and row.minus:FindFirstChildOfClass("UIStroke") then hover(row.minus,row.minus:FindFirstChildOfClass("UIStroke")) end
+end
 hover(closeBtn,closeSt)
 hover(spTr,spSt)
 hover(spS,spSS)
@@ -1190,6 +1188,11 @@ hover(rH,rHS)
 hover(targB,targSt)
 hover(sortB,sortSt)
 hover(modeB,modeSt)
+for _,row in pairs(bindRows) do
+	hover(row.bind,row.stroke)
+	hover(row.plus,row.plus:FindFirstChildOfClass("UIStroke"))
+	hover(row.minus,row.minus:FindFirstChildOfClass("UIStroke"))
+end
 
 local function setColors(en,label,slider,fill,handle)
 	local tc=en and Color3.new(1,1,1) or Color3.new(0.6,0.6,0.6)
@@ -1471,7 +1474,6 @@ UIS.InputBegan:Connect(function(i,p)
 			if row then
 				row.bind.Text=i.KeyCode.Name
 				row.bind.TextColor3=Color3.new(1,1,1)
-				TS:Create(row.label,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=Color3.new(1,1,1)}):Play()
 			end
 			return
 		end
@@ -1849,24 +1851,34 @@ player.CharacterAdded:Connect(function(c)
 	setToggle(aimTr,aimK,false,false)
 	setToggle(tlTr,tlK,false,false)
 	setToggle(wcTr,wcK,false,false)
-	updateSpeed(16/500)
+	updateSlider(spF,spH,0.08)
+	spT.Text="Speed"
+	spVT.Text="Value: 16"
 	setColors(false,spT,nil,nil,nil)
 	setColors(false,spVT,spS,spF,spH)
-	updateJump(50/500)
+	updateSlider(jF,jH,0.25)
+	jT.Text="Jump"
+	jST.Text="Strength: 50"
 	setColors(false,jT,nil,nil,nil)
 	setColors(false,jST,jS,jF,jH)
-	updateFlight(50/500)
+	updateSlider(fF,fH,0.25)
+	fT.Text="Flight"
+	fST.Text="Speed: 50"
 	setColors(false,fT,nil,nil,nil)
 	setColors(false,fST,fS,fF,fH)
 	updateNoclip()
-	updateStrafe(0)
+	updateSlider(stF,stH,0)
+	stT.Text="Strafe"
+	stVT.Text="Value: 0"
 	setColors(false,stT,nil,nil,nil)
 	setColors(false,stVT,stS,stF,stH)
 	setColors(false,awT,nil,nil,nil)
 	setColors(false,cT,nil,nil,nil)
 	setColors(false,ajT,nil,nil,nil)
-	updateSmooth((0.15-0.01)/(1-0.01))
-	updateRange((500-10)/(1000-10))
+	updateSlider(smF,smH,0.3)
+	smT.Text="Speed: 0.15"
+	updateSlider(rF,rH,0.5)
+	rT.Text="Range: 500"
 	targB.Text="Head"
 	targT.Text="Target:"
 	sortB.Text="Distance"
