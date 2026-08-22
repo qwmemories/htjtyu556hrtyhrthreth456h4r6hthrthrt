@@ -137,35 +137,26 @@ local function getAimPart(target)
 end
 
 local function captureColorUnderPlus()
-    if not _G.colorTapPlus or not _G.colorTapPlus.Visible then return nil end
     local plus = _G.colorTapPlus
+    if not plus or not plus.Visible then return nil end
     local centerX = plus.AbsolutePosition.X + plus.AbsoluteSize.X / 2
     local centerY = plus.AbsolutePosition.Y + plus.AbsoluteSize.Y / 2
     if centerX <= 0 or centerY <= 0 then return nil end
-    local color = game:GetService("Workspace").CurrentCamera:ViewportPointToRay(centerX, centerY, 0)
-    local ray = workspace:Raycast(workspace.CurrentCamera.CFrame.Position, (color.Origin - workspace.CurrentCamera.CFrame.Position).Unit * 1000)
-    if ray and ray.Instance then
-        local surface = ray.Instance
-        if surface:IsA("BasePart") and surface.Material ~= Enum.Material.SmoothPlastic and surface.Material ~= Enum.Material.Neon then
-            return nil
-        end
-        local textureId = surface:GetAttribute("TextureId")
-        if textureId then
-            return nil
-        end
-        if surface:IsA("BasePart") and surface.BrickColor then
-            local color = surface.BrickColor.Color
-            if color.r > 0 or color.g > 0 or color.b > 0 then
-                return color
+    local cam = workspace.CurrentCamera
+    local ray = cam:ScreenPointToRay(centerX, centerY)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+    params.FilterDescendantsInstances = {player.Character}
+    local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
+    if result and result.Instance then
+        local instance = result.Instance
+        if instance:IsA("BasePart") then
+            if instance.BrickColor then
+                return instance.BrickColor.Color
+            elseif instance.Color then
+                return instance.Color
             end
         end
-        if surface:IsA("BasePart") and surface.Color then
-            local color = surface.Color
-            if color.r > 0 or color.g > 0 or color.b > 0 then
-                return color
-            end
-        end
-        return nil
     end
     return nil
 end
@@ -232,7 +223,7 @@ RS.RenderStepped:Connect(function()
         end
     end
 
-    if _G.colorTapEnabled and _G.colorTapPlus and _G.colorTapPlus.Visible then
+    if _G.colorTapEnabled then
         local capturedColor = captureColorUnderPlus()
         if capturedColor and _G.colorTapColor then
             if colorsMatch(capturedColor, _G.colorTapColor, 0.3) then
