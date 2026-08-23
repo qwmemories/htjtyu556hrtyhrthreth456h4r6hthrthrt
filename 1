@@ -118,6 +118,7 @@ G.autoshootCooldownEnd=0
 G.autoSaveReady=false
 G.autoSaveDelayTimer=0
 G.scriptTerminated=false
+G.saveCooldownUntil=0
 
 G.hudColor=Color3.fromHSV(0.5,0,1)
 G.hueValue=0.5
@@ -3974,7 +3975,7 @@ U.InputBegan:Connect(function(i,p2)
                 end
                 syncKeybindVisualState()
                 task.defer(function()
-                    if G.autoSaveReady and not autoConfigLoading then saveAutoConfig() end
+                    if G.autoSaveReady and not autoConfigLoading and tick()>G.saveCooldownUntil then saveAutoConfig() end
                 end)
             end
             return
@@ -4318,6 +4319,7 @@ end
 
 function saveAutoConfig()
     if not G.autoSaveReady or G.scriptTerminated then return false end
+    if tick()<G.saveCooldownUntil then return false end
     if type(writefile)~="function" then return false end
 
     local lines={
@@ -4611,6 +4613,7 @@ function loadAutoConfig()
 end
 
 function startAutoConfig()
+    G.saveCooldownUntil=tick()+3
     loadAutoConfig()
 
     G.autoSaveReady=true
@@ -4622,7 +4625,7 @@ function startAutoConfig()
     task.spawn(function()
         while not G.scriptTerminated do
             task.wait(1)
-            if G.autoSaveReady and not autoConfigLoading then
+            if G.autoSaveReady and not autoConfigLoading and tick()>G.saveCooldownUntil then
                 saveAutoConfig()
             end
         end
@@ -5029,6 +5032,7 @@ U.InputEnded:Connect(function(i)
 end)
 
 p.CharacterAdded:Connect(function(c2)
+    G.saveCooldownUntil=tick()+3
     scrollTarget=0
     scrollCurrent=0
     c=c2
@@ -5071,160 +5075,15 @@ p.CharacterAdded:Connect(function(c2)
     clearESP()
     clearNametags()
     clearCrosshairArrows()
-    G.espEnabled=false
-    G.nametagEnabled=false
-    G.crosshairArrowsEnabled=false
-    setToggle(espUI.toggle.tr,espUI.toggle.k,false,false)
-    setESPColors(false)
-    setToggle(nametagUI.toggle.tr,nametagUI.toggle.k,false,false)
-    setNametagColors(false)
-    G.jumpEnabled=false
-    G.flightEnabled=false
-    G.noclipEnabled=false
-    G.strafeEnabled=false
-    G.airwalkEnabled=false
-    G.clickTpEnabled=false
-    G.airJumpEnabled=false
-    G.aimbotEnabled=false
-    G.targetLockEnabled=false
-    G.wallsCheckEnabled=false
-    G.visualTimerEnabled=false
-    G.autoclickerEnabled=false
-    G.autowalkEnabled=false
-    G.autojumpEnabled=false
-    G.phaseEnabled=false
-    G.autoshootEnabled=false
+    
+    m.Icon=""
     G.timerIsEnabled=false
     G.timerCurrentTime=0
     G.lockedTarget=nil
     G.autoshootLastColor=nil
     G.autoshootCooldown=false
     G.autoshootCooldownEnd=0
-    m.Icon=""
-    G.currentSpeed=16
-    G.currentJumpStrength=50
-    G.currentFlight=50
-    G.currentStrafe=0
-    G.currentSmoothness=0.15
-    G.currentRange=500
-    G.visualTimerValue=1
-    G.timerSpeed=1.0
-    G.autoclickerCPS=10
-    G.nametagSize=16
-    G.nametagHeight=3
-    G.nametagAlpha=1
-    G.aimMode="Center"
-    G.sortMode="Distance"
-    G.aimTarget="Head"
-    setToggle(Tt.speed.tr,Tt.speed.k,false,false)
-    setToggle(Tt.jump.tr,Tt.jump.k,false,false)
-    setToggle(Tt.flight.tr,Tt.flight.k,false,false)
-    setToggle(Tt.noclip.tr,Tt.noclip.k,false,false)
-    setToggle(Tt.strafe.tr,Tt.strafe.k,false,false)
-    setToggle(Tt.airwalk.tr,Tt.airwalk.k,false,false)
-    setToggle(Tt.clicktp.tr,Tt.clicktp.k,false,false)
-    setToggle(Tt.airjump.tr,Tt.airjump.k,false,false)
-    setToggle(Tt.phase.tr,Tt.phase.k,false,false)
-    setColorsNoSlider(false,Tt.airwalk.l)
-    setColorsNoSlider(false,Tt.clicktp.l)
-    setColorsNoSlider(false,Tt.airjump.l)
-    setToggle(vtMiscTr,vtMiscK,false,false)
-    setToggle(aimTr,aimK,false,false)
-    setToggle(tlTr,tlK,false,false)
-    setToggle(wcTr,wcK,false,false)
-    setToggle(acTr,acK,false,false)
-    setToggle(awTr,awK,false,false)
-    setToggle(ajTr,ajK,false,false)
-    setToggle(asTr,asK,false,false)
-    updateSlider(espFillF,espFillH,G.espFillTransparency)
-    updateSlider(espOutlineF,espOutlineH,G.espOutlineTransparency)
-    setToggle(espUI.toggle.tr,espUI.toggle.k,false,false)
-    setESPColors(false)
-    updateSlider(nametagSizeF,nametagSizeH,(G.nametagSize-10)/(28-10))
-    nametagUI.sizeLabel.Text="Size: "..G.nametagSize
-    updateSlider(nametagHeightF,nametagHeightH,(G.nametagHeight+2)/10)
-    nametagUI.heightLabel.Text="Height: "..string.format("%.1f",G.nametagHeight)
-    updateSlider(nametagAlphaF,nametagAlphaH,G.nametagAlpha)
-    nametagUI.alphaLabel.Text="Alpha: "..string.format("%.2f",G.nametagAlpha)
-    setToggle(nametagUI.toggle.tr,nametagUI.toggle.k,false,false)
-    setNametagColors(false)
-    G.crosshairArrowsRadius=100
-    G.crosshairArrowsSize=25
-    G.crosshairArrowsAlpha=1
-    G.crosshairArrowsAnimatedRadius=100
-    G.crosshairArrowMotion={}
-    updateSlider(crosshairRadiusF,crosshairRadiusH,(G.crosshairArrowsRadius-20)/(300-20))
-    crosshairUI.radiusLabel.Text="Radius: 100"
-    updateSlider(crosshairSizeF,crosshairSizeH,(G.crosshairArrowsSize-25)/(100-25))
-    crosshairUI.sizeLabel.Text="Size: 25"
-    updateSlider(crosshairAlphaF,crosshairAlphaH,G.crosshairArrowsAlpha)
-    crosshairUI.alphaLabel.Text="Alpha: 1.00"
-    setToggle(crosshairUI.toggle.tr,crosshairUI.toggle.k,false,false)
-    setCrosshairArrowsColors(false)
-    updateSlider(Tt.speed.f,Tt.speed.h,0.032)
-    Tt.speed.l.Text="Speed"
-    Tt.speed.vl.Text="Value: 16"
-    setColors(false,Tt.speed.l,nil,nil,nil)
-    setColors(false,Tt.speed.vl,Tt.speed.s,Tt.speed.f,Tt.speed.h)
-    updateSlider(Tt.jump.f,Tt.jump.h,0.1)
-    Tt.jump.l.Text="Jump"
-    Tt.jump.vl.Text="Strength: 50"
-    setColors(false,Tt.jump.l,nil,nil,nil)
-    setColors(false,Tt.jump.vl,Tt.jump.s,Tt.jump.f,Tt.jump.h)
-    updateSlider(Tt.flight.f,Tt.flight.h,0.1)
-    Tt.flight.l.Text="Flight"
-    Tt.flight.vl.Text="Speed: 50"
-    setColors(false,Tt.flight.l,nil,nil,nil)
-    setColors(false,Tt.flight.vl,Tt.flight.s,Tt.flight.f,Tt.flight.h)
-    setToggle(Tt.noclip.tr,Tt.noclip.k,false,false)
-    updateSlider(Tt.strafe.f,Tt.strafe.h,0)
-    Tt.strafe.l.Text="Strafe"
-    Tt.strafe.vl.Text="Value: 0"
-    setColors(false,Tt.strafe.l,nil,nil,nil)
-    setColors(false,Tt.strafe.vl,Tt.strafe.s,Tt.strafe.f,Tt.strafe.h)
-    setToggle(Tt.phase.tr,Tt.phase.k,false,false)
-    setPhaseColors(false)
-    vtMiscF.Size=UDim2.new(0.04,0,1,0)
-    vtMiscH.Position=UDim2.new(0.04,-7,0.5,-7)
-    vtMiscT.Text="VisualTimer"
-    vtMiscVT.Text="Value: 1.0"
-    setVisualTimerMiscColors(false)
-    setAimbotColors(false)
-    setColorsNoSlider(false,tlT)
-    setColorsNoSlider(false,wcT)
-    setAutoclickerColors(false)
-    setAutoWalkColors(false)
-    setAutoJumpColors(false)
-    setAutoShootColors(false)
-    updateSlider(acF,acH,0.045)
-    acValLabel.Text="CPS: 10"
-    updateSlider(smF,smH,0.3)
-    smT.Text="Speed: 0.15"
-    updateSlider(rF,rH,0.5)
-    rT.Text="Range: 500"
-    targB.Text="Head"
-    targT.Text="Target:"
-    T:Create(targB,TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=hudGray06()}):Play()
-    sortB.Text="Distance"
-    sortT.Text="Sort:"
-    T:Create(sortB,TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=hudGray06()}):Play()
-    modeB.Text="Center"
-    modeT.Text="Mode:"
-    T:Create(modeB,TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=hudGray06()}):Play()
-    G.hueValue=0.5
-    G.saturationValue=0
-    G.brightnessValue=1
-    G.hudColor=Color3.fromHSV(0.5,0,1)
-    colorBox.BackgroundColor3=G.hudColor
-    updateSlider(hueF,hueH,0.5)
-    hueLabel.Text="Hue: 0.50"
-    updateSlider(satF,satH,0)
-    satLabel.Text="Saturation: 0.00"
-    updateSlider(brightF,brightH,1)
-    brightLabel.Text="Brightness: 1.00"
-    G.hudAlpha=0.95
-    G.hudBackgroundBrightness=0.5
-    updateHudBackground()
+    
     applySpeed()
     applyJump()
     applyTimerSpeedToAll()
