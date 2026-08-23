@@ -8,6 +8,7 @@ local R=game:GetService("RunService")
 local T=game:GetService("TweenService")
 local P=game:GetService("Players")
 local G=_G
+local WS=game:GetService("Workspace")
 
 G.speedEnabled=false
 G.jumpEnabled=false
@@ -131,9 +132,11 @@ G.draggingHudBackgroundBrightness=false
 
 local sg=Instance.new("ScreenGui")
 sg.ResetOnSpawn=false
-sg.DisplayOrder=999
+sg.DisplayOrder=9999
 sg.IgnoreGuiInset=true
-sg.Parent=p.PlayerGui
+
+local playerGui = p:WaitForChild("PlayerGui")
+sg.Parent = playerGui
 
 G.hudThemeEnabled=true
 G.hudThemeUpdating=false
@@ -2303,8 +2306,7 @@ end
 hueS.InputBegan:Connect(function(i)
     if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
         G.isSliding=true
-        G.draggingHue=true
-        updateHueFromInput(i)
+        G.draggingHue=true        updateHueFromInput(i)
     end
 end)
 hueH.InputBegan:Connect(function(i)
@@ -3357,6 +3359,14 @@ function clearESP()
             end
         end
     end
+    for _,model in ipairs(WS:GetChildren()) do
+        if model:IsA("Model") and model~=c and model:FindFirstChildOfClass("Humanoid") then
+            local esp=model:FindFirstChild("Totally NOT Esp")
+            if esp and esp:IsA("Highlight") then
+                esp:Destroy()
+            end
+        end
+    end
 end
 
 function applyESPToPlayer(plr)
@@ -3382,6 +3392,30 @@ function applyESPToPlayer(plr)
     esp.OutlineTransparency=1-math.clamp(G.espOutlineTransparency,0,1)
 end
 
+function applyESPToModel(model)
+    if not G.espEnabled or model==c then return end
+    if not model:IsA("Model") then return end
+    local hum=model:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health<=0 then return end
+    
+    local esp=model:FindFirstChild("Totally NOT Esp")
+    if not esp or not esp:IsA("Highlight") then
+        esp=Instance.new("Highlight")
+        esp.Name="Totally NOT Esp"
+        esp.Adornee=model
+        esp.Archivable=true
+        esp.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
+        esp.FillColor=hudWhite()
+        esp.OutlineColor=hudWhite()
+        esp.Parent=model
+        registerHudThemeObject(esp)
+    end
+
+    esp.Enabled=true
+    esp.FillTransparency=1-math.clamp(G.espFillTransparency,0,1)
+    esp.OutlineTransparency=1-math.clamp(G.espOutlineTransparency,0,1)
+end
+
 function refreshESP()
     if not G.espEnabled then
         clearESP()
@@ -3390,6 +3424,11 @@ function refreshESP()
     for _,plr in ipairs(P:GetPlayers()) do
         if plr~=p then
             applyESPToPlayer(plr)
+        end
+    end
+    for _,model in ipairs(WS:GetChildren()) do
+        if model:IsA("Model") and model~=c then
+            applyESPToModel(model)
         end
     end
 end
@@ -3422,6 +3461,15 @@ P.PlayerRemoving:Connect(function(plr)
     if G.espConnections[plr] then
         pcall(function() G.espConnections[plr]:Disconnect() end)
         G.espConnections[plr]=nil
+    end
+end)
+
+WS.ChildAdded:Connect(function(model)
+    if model:IsA("Model") and model~=c and model:FindFirstChildOfClass("Humanoid") then
+        task.wait(0.5)
+        if G.espEnabled then
+            applyESPToModel(model)
+        end
     end
 end)
 
@@ -4234,44 +4282,79 @@ R.RenderStepped:Connect(function()
 
     if G.aimbotEnabled then
         local targets={}
+        
         for _,plr in ipairs(P:GetPlayers()) do
-            if plr~=p and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Head") then
+            if plr~=p and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
                 local ph=plr.Character:FindFirstChildOfClass("Humanoid")
-                if ph and ph.Health>0 then table.insert(targets,plr) end
+                if ph and ph.Health>0 then 
+                    table.insert(targets,{type="player",plr=plr,char=plr.Character})
+                end
+            end
+        end
+        
+        for _,model in ipairs(WS:GetChildren()) do
+            if model:IsA("Model") and model~=c and model:FindFirstChildOfClass("Humanoid") then
+                local hum=model:FindFirstChildOfClass("Humanoid")
+                local root=model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
+                if hum and hum.Health>0 and root then
+                    local isPlayer=false
+                    for _,plr in ipairs(P:GetPlayers()) do
+                        if plr.Character==model then isPlayer=true break end
+                    end
+                    if not isPlayer then
+                        table.insert(targets,{type="npc",model=model,hum=hum,root=root})
+                    end
+                end
             end
         end
 
         local target=nil
-        if G.targetLockEnabled and G.lockedTarget and G.lockedTarget.Character and G.lockedTarget.Character:FindFirstChild("Head") then
-            local d=(G.lockedTarget.Character.Head.Position-r.Position).Magnitude
-            if d<=G.currentRange then target=G.lockedTarget else G.lockedTarget=nil end
-        end
-
-        if not target then
-            if #targets>0 then
-                if G.sortMode=="Distance" then
-                    table.sort(targets,function(a,b)
-                        local da=(a.Character.HumanoidRootPart.Position-r.Position).Magnitude
-                        local db=(b.Character.HumanoidRootPart.Position-r.Position).Magnitude
-                        return da<db
-                    end)
-                else
-                    local mp=U:GetMouseLocation()
-                    table.sort(targets,function(a,b)
-                        local pa,oa=workspace.CurrentCamera:WorldToViewportPoint(a.Character.Head.Position)
-                        local pb,ob=workspace.CurrentCamera:WorldToViewportPoint(b.Character.Head.Position)
-                        if not oa then return false end
-                        if not ob then return true end
-                        return (Vector2.new(pa.X,pa.Y)-mp).Magnitude < (Vector2.new(pb.X,pb.Y)-mp).Magnitude
-                    end)
-                end
-                target=targets[1]
-                if G.targetLockEnabled then G.lockedTarget=target end
+        if G.targetLockEnabled and G.lockedTarget then
+            if G.lockedTarget.type=="player" and G.lockedTarget.plr.Character and G.lockedTarget.plr.Character:FindFirstChild("Head") then
+                local d=(G.lockedTarget.plr.Character.Head.Position-r.Position).Magnitude
+                if d<=G.currentRange then target=G.lockedTarget else G.lockedTarget=nil end
+            elseif G.lockedTarget.type=="npc" and G.lockedTarget.model and G.lockedTarget.root then
+                local d=(G.lockedTarget.root.Position-r.Position).Magnitude
+                if d<=G.currentRange then target=G.lockedTarget else G.lockedTarget=nil end
+            else
+                G.lockedTarget=nil
             end
         end
 
-        if target and target.Character then
-            local aimPart=(G.aimTarget=="Head" and target.Character:FindFirstChild("Head")) or target.Character:FindFirstChild("HumanoidRootPart")
+        if not target and #targets>0 then
+            if G.sortMode=="Distance" then
+                table.sort(targets,function(a,b)
+                    local posA = a.type=="player" and a.char.HumanoidRootPart.Position or a.root.Position
+                    local posB = b.type=="player" and b.char.HumanoidRootPart.Position or b.root.Position
+                    local da=(posA-r.Position).Magnitude
+                    local db=(posB-r.Position).Magnitude
+                    return da<db
+                end)
+            else
+                local mp=U:GetMouseLocation()
+                table.sort(targets,function(a,b)
+                    local headA = a.type=="player" and a.char:FindFirstChild("Head") or a.root
+                    local headB = b.type=="player" and b.char:FindFirstChild("Head") or b.root
+                    if not headA or not headB then return false end
+                    local pa,oa=workspace.CurrentCamera:WorldToViewportPoint(headA.Position)
+                    local pb,ob=workspace.CurrentCamera:WorldToViewportPoint(headB.Position)
+                    if not oa then return false end
+                    if not ob then return true end
+                    return (Vector2.new(pa.X,pa.Y)-mp).Magnitude < (Vector2.new(pb.X,pb.Y)-mp).Magnitude
+                end)
+            end
+            target=targets[1]
+            if G.targetLockEnabled then G.lockedTarget=target end
+        end
+
+        if target then
+            local aimPart = nil
+            if target.type=="player" then
+                aimPart = (G.aimTarget=="Head" and target.char:FindFirstChild("Head")) or target.char:FindFirstChild("HumanoidRootPart")
+            else
+                aimPart = (G.aimTarget=="Head" and target.model:FindFirstChild("Head")) or target.root
+            end
+            
             if aimPart then
                 local d=(aimPart.Position-r.Position).Magnitude
                 if d<=G.currentRange then
