@@ -854,8 +854,6 @@ G.makeVisualAlphaSlider=function(parent,y,label,initial,callback)
     ui.h.Active=true
     ui.h.Parent=ui.s
     Instance.new("UICorner",ui.h).CornerRadius=UDim.new(0,7)
-    ui.drag=false
-
     local function setValue(v, fire)
         v=math.clamp(tonumber(v) or 0,0,1)
         ui.value=v
@@ -865,20 +863,11 @@ G.makeVisualAlphaSlider=function(parent,y,label,initial,callback)
         if fire and callback then callback(v) end
     end
 
-    ui.s.InputBegan:Connect(function(i)
-        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-            ui.drag=true
-            setValue((i.Position.X-ui.s.AbsolutePosition.X)/math.max(ui.s.AbsoluteSize.X,1),true)
-            G.isSliding=true
-        end
-    end)
-    ui.h.InputBegan:Connect(function(i)
-        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-            ui.drag=true
-            G.isSliding=true
-        end
-    end)
     ui.set=function(v) setValue(v,false) end
+    ui.setFromInput=function(i)
+        local size=math.max(ui.s.AbsoluteSize.X,1)
+        setValue((i.Position.X-ui.s.AbsolutePosition.X)/size,true)
+    end
     ui.setActive=function(active,anim)
         local inf=TweenInfo.new(anim and 0.3 or 0,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
         themeTween(ui.label,"TextColor3",active and hudWhite() or hudGray06(),inf)
@@ -4432,7 +4421,8 @@ G.updateVisualEsp=function()
         return
     end
 
-    local center=cam.ViewportSize/2
+    local vp=cam.ViewportSize
+    local center=vp/2
     local col=hudWhite()
     local seen={}
 
@@ -4442,47 +4432,33 @@ G.updateVisualEsp=function()
             local bx=G.boxEspDrawings[plr]
             local tr=G.tracerDrawings[plr]
 
-            if not boxOn and bx then pcall(function() bx.Visible=false end) end
-            if not tracerOn and tr then pcall(function() tr.Visible=false end) end
-
             local char=plr.Character
             local hum=char and char:FindFirstChildOfClass("Humanoid")
             local root=char and char:FindFirstChild("HumanoidRootPart")
             local head=char and char:FindFirstChild("Head")
-
             local valid=hum and hum.Health>0 and root and head and char.Parent
+
             if valid then
-                -- A little padding keeps the whole avatar inside the rectangle.
-                local topWorld=head.Position+Vector3.new(0,0.65,0)
-                local bottomWorld=root.Position-Vector3.new(0,hum.HipHeight+2.35,0)
-                local hp,onHead=cam:WorldToViewportPoint(topWorld)
-                local fp,onFeet=cam:WorldToViewportPoint(bottomWorld)
+                local hp,onHead=cam:WorldToViewportPoint(head.Position+Vector3.new(0,0.65,0))
+                local fp,onFeet=cam:WorldToViewportPoint(root.Position-Vector3.new(0,hum.HipHeight+2.35,0))
                 local onScreen=hp.Z>0 and fp.Z>0 and (onHead or onFeet)
 
-                local topY=math.min(hp.Y,fp.Y)
-                local bottomY=math.max(hp.Y,fp.Y)
-                local bh=math.max(12,(bottomY-topY)*1.08)
-                local bw=math.max(8,bh*0.52)
-                local cx=(hp.X+fp.X)/2
-                local left=cx-bw/2
-                topY=topY-bh*0.04
-
-                -- BoxESP is only useful while the player is actually visible on-screen.
-                if onScreen then
-                    if boxOn then
-                        bx=bx or G.getVisualEspDrawing(plr,"box")
-                        if bx then
-                            pcall(function()
-                                bx.Position=Vector2.new(left,topY)
-                                bx.Size=Vector2.new(bw,bh)
-                                bx.Color=col
-                                bx.Transparency=G.boxEspAlpha
-                                bx.Visible=true
-                                bx.ZIndex=5
-                            end)
-                        end
-                    elseif bx then
-                        pcall(function() bx.Visible=false end)
+                if boxOn and onScreen then
+                    local topY=math.min(hp.Y,fp.Y)
+                    local bottomY=math.max(hp.Y,fp.Y)
+                    local bh=math.max(12,(bottomY-topY)*1.12)
+                    local bw=math.max(10,bh*0.56)
+                    local cx=(hp.X+fp.X)/2
+                    bx=bx or G.getVisualEspDrawing(plr,"box")
+                    if bx then
+                        pcall(function()
+                            bx.Position=Vector2.new(cx-bw/2,topY-bh*0.06)
+                            bx.Size=Vector2.new(bw,bh*1.12)
+                            bx.Color=col
+                            bx.Transparency=G.boxEspAlpha
+                            bx.Visible=true
+                            bx.ZIndex=5
+                        end)
                     end
                 elseif bx then
                     pcall(function() bx.Visible=false end)
@@ -4494,39 +4470,21 @@ G.updateVisualEsp=function()
                         local tracerTo=nil
 
                         if onScreen then
-                            -- On-screen: terminate at the player.
-                            tracerTo=Vector2.new(cx,topY+bh/2)
+                            local cx=(hp.X+fp.X)/2
+                            local cy=(hp.Y+fp.Y)/2
+                            tracerTo=Vector2.new(cx,cy)
                         else
-                            -- Off-screen / behind camera: project the target direction
-                            -- to the nearest edge of the viewport, like Crosshair Arrows.
+                            -- Same bearing calculation used by CrosshairArrows.
                             local rel=cam.CFrame:PointToObjectSpace(head.Position)
-                            local dx=rel.X
-                            local dy=-rel.Y
-
-                            -- If the target is behind the camera, flip the 2D direction
-                            -- so the tracer still points toward the correct screen edge.
-                            if rel.Z>0 then
-                                dx=-dx
-                                dy=-dy
-                            end
-
-                            local mag=math.sqrt(dx*dx+dy*dy)
-                            if mag>0.0001 then
-                                dx=dx/mag
-                                dy=dy/mag
-
-                                local margin=8
-                                local halfW=math.max(1,vp.X*0.5-margin)
-                                local halfH=math.max(1,vp.Y*0.5-margin)
-
-                                local tx=math.huge
-                                local ty=math.huge
-                                if math.abs(dx)>0.0001 then tx=halfW/math.abs(dx) end
-                                if math.abs(dy)>0.0001 then ty=halfH/math.abs(dy) end
-
-                                local t=math.min(tx,ty)
-                                tracerTo=Vector2.new(center.X+dx*t,center.Y+dy*t)
-                            end
+                            local bearing=math.atan2(rel.X,-rel.Z)
+                            local dirX=math.sin(bearing)
+                            local dirY=-math.cos(bearing)
+                            local halfW=math.max(1,vp.X*0.5-8)
+                            local halfH=math.max(1,vp.Y*0.5-8)
+                            local tx=halfW/math.max(math.abs(dirX),0.0001)
+                            local ty=halfH/math.max(math.abs(dirY),0.0001)
+                            local radius=math.min(tx,ty)
+                            tracerTo=Vector2.new(center.X+dirX*radius,center.Y+dirY*radius)
                         end
 
                         if tracerTo then
@@ -4552,16 +4510,11 @@ G.updateVisualEsp=function()
         end
     end
 
-    -- Hide anything belonging to a player that is no longer in Players.
     for plr,obj in pairs(G.boxEspDrawings) do
-        if not seen[plr] then
-            pcall(function() obj.Visible=false end)
-        end
+        if not seen[plr] then pcall(function() obj.Visible=false end) end
     end
     for plr,obj in pairs(G.tracerDrawings) do
-        if not seen[plr] then
-            pcall(function() obj.Visible=false end)
-        end
+        if not seen[plr] then pcall(function() obj.Visible=false end) end
     end
 end
 
@@ -5342,21 +5295,21 @@ mf.InputBegan:Connect(function(i)
     end
 
     -- Slider input must never fall through to the window drag handler.
-    local sliders={
-        espFillS,espFillH,espOutlineS,espOutlineH,
-        nametagSizeS,nametagSizeH,nametagHeightS,nametagHeightH,
-        nametagAlphaS,nametagAlphaH,crosshairRadiusS,crosshairRadiusH,
-        crosshairSizeS,crosshairSizeH,crosshairAlphaS,crosshairAlphaH,
-        fullbrightBrightnessS,fullbrightBrightnessH,
-        vtMiscS,vtMiscH,acS,acH
-    }
-    if G.boxUI and G.boxUI.alpha then table.insert(sliders,G.boxUI.alpha.s); table.insert(sliders,G.boxUI.alpha.h) end
-    if G.tracerUI and G.tracerUI.alpha then table.insert(sliders,G.tracerUI.alpha.s); table.insert(sliders,G.tracerUI.alpha.h) end
-    for _,slider in ipairs(sliders) do
-        if inside(slider) then
-            G.isSliding=true
-            return
-        end
+    if inside(espFillS) or inside(espFillH) or
+       inside(espOutlineS) or inside(espOutlineH) or
+       inside(nametagSizeS) or inside(nametagSizeH) or
+       inside(nametagHeightS) or inside(nametagHeightH) or
+       inside(nametagAlphaS) or inside(nametagAlphaH) or
+       inside(crosshairRadiusS) or inside(crosshairRadiusH) or
+       inside(crosshairSizeS) or inside(crosshairSizeH) or
+       inside(crosshairAlphaS) or inside(crosshairAlphaH) or
+       inside(fullbrightBrightnessS) or inside(fullbrightBrightnessH) or
+       inside(vtMiscS) or inside(vtMiscH) or
+       inside(acS) or inside(acH) or
+       (G.boxUI and G.boxUI.alpha and (inside(G.boxUI.alpha.s) or inside(G.boxUI.alpha.h))) or
+       (G.tracerUI and G.tracerUI.alpha and (inside(G.tracerUI.alpha.s) or inside(G.tracerUI.alpha.h))) then
+        G.isSliding=true
+        return
     end
 
     G.isDragging=true
@@ -5557,21 +5510,24 @@ R.RenderStepped:Connect(function(dt)
 end)
 
 -- Category navigation
-local categoryButtons={
-    {button=movL, category="movement"},
-    {button=visualsL, category="visuals"},
-    {button=miscL, category="misc"},
-    {button=bindL, category="bind"},
-    {button=hudL, category="hud"},
-    {button=G.clientL, category="client"},
-}
-for _,item in ipairs(categoryButtons) do
-    item.button.AutoButtonColor=false
-    item.button.Active=true
-    item.button.MouseButton1Click:Connect(function()
-        switchCat(item.category)
-    end)
-end
+movL.AutoButtonColor=false
+movL.Active=true
+movL.MouseButton1Click:Connect(function() switchCat("movement") end)
+visualsL.AutoButtonColor=false
+visualsL.Active=true
+visualsL.MouseButton1Click:Connect(function() switchCat("visuals") end)
+miscL.AutoButtonColor=false
+miscL.Active=true
+miscL.MouseButton1Click:Connect(function() switchCat("misc") end)
+bindL.AutoButtonColor=false
+bindL.Active=true
+bindL.MouseButton1Click:Connect(function() switchCat("bind") end)
+hudL.AutoButtonColor=false
+hudL.Active=true
+hudL.MouseButton1Click:Connect(function() switchCat("hud") end)
+G.clientL.AutoButtonColor=false
+G.clientL.Active=true
+G.clientL.MouseButton1Click:Connect(function() switchCat("client") end)
 
 function switchCat(cat)
     if G.currentCategory==cat then return end
@@ -5713,7 +5669,7 @@ function autoConfigRead(path)
     return nil
 end
 
-local function getKeybindEnabled(name)
+function getKeybindEnabled(name)
     local map={
         Speed="speedEnabled", Jump="jumpEnabled", Flight="flightEnabled",
         Strafe="strafeEnabled", Airwalk="airwalkEnabled", ClickTP="clickTpEnabled",
@@ -5725,7 +5681,7 @@ local function getKeybindEnabled(name)
     return key and G[key] or false
 end
 
-local function syncKeybindVisualState()
+function syncKeybindVisualState()
     for name,row in pairs(bindRows) do
         local enabled=getKeybindEnabled(name)
         local bound=binds[name]~=nil
@@ -5984,6 +5940,11 @@ function getQueueOnTeleport()
     if type(queue_on_teleport)=="function" then return queue_on_teleport end
     if type(syn)=="table" and type(syn.queue_on_teleport)=="function" then return syn.queue_on_teleport end
     if type(fluxus)=="table" and type(fluxus.queue_on_teleport)=="function" then return fluxus.queue_on_teleport end
+    local x=rawget(_G,"Xeno")
+    if type(x)=="table" and type(x.queue_on_teleport)=="function" then return x.queue_on_teleport end
+    if type(shared)=="table" and type(shared.Xeno)=="table" and type(shared.Xeno.queue_on_teleport)=="function" then
+        return shared.Xeno.queue_on_teleport
+    end
     return nil
 end
 
@@ -5999,9 +5960,7 @@ function queueAutoLoad()
     -- fetch the current GitHub Raw script and execute it. The freshly
     -- executed copy installs the queue again, so the chain survives
     -- subsequent PlaceId changes as long as the executor remains attached.
-    local queued='task.spawn(function() if not game:IsLoaded() then game.Loaded:Wait() end; task.wait(0.35); local ok,src=pcall(function() return game:HttpGet('
-        ..string.format('%q',url)
-        ..') end); if ok and type(src)=="string" and #src>0 then local fn=loadstring(src); if type(fn)=="function" then pcall(fn) end end end)'
+    local queued="loadstring(game:HttpGet("..string.format("%q",url).."))()"
 
     local ok=false
     local ok2,res=pcall(q,"s",queued)
@@ -6385,6 +6344,8 @@ function startDrag(f,u)
             elseif f=="cr" then G.draggingCrosshairRadius=true
             elseif f=="cs" then G.draggingCrosshairSize=true
             elseif f=="ca" then G.draggingCrosshairAlpha=true
+            elseif f=="ba" then G.draggingBoxEspAlpha=true
+            elseif f=="ta" then G.draggingTracersAlpha=true
             elseif f=="fb" then G.draggingFullbright=true end
             u(i)
         end
@@ -6399,7 +6360,13 @@ G.draggingNametagAlpha=false
 G.draggingCrosshairRadius=false
 G.draggingCrosshairSize=false
 G.draggingCrosshairAlpha=false
+G.draggingBoxEspAlpha=false
+G.draggingTracersAlpha=false
 G.draggingFullbright=false
+G.boxUI.alpha.s.InputBegan:Connect(startDrag("ba",G.boxUI.alpha.setFromInput))
+G.boxUI.alpha.h.InputBegan:Connect(startDrag("ba",G.boxUI.alpha.setFromInput))
+G.tracerUI.alpha.s.InputBegan:Connect(startDrag("ta",G.tracerUI.alpha.setFromInput))
+G.tracerUI.alpha.h.InputBegan:Connect(startDrag("ta",G.tracerUI.alpha.setFromInput))
 espFillS.InputBegan:Connect(startDrag("ef",updateESPFillFromInput))
 espFillH.InputBegan:Connect(startDrag("ef",updateESPFillFromInput))
 espOutlineS.InputBegan:Connect(startDrag("eo",updateESPOutlineFromInput))
@@ -6462,6 +6429,12 @@ U.InputChanged:Connect(function(i)
     if G.draggingCrosshairAlpha and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
         updateCrosshairAlphaFromInput(i)
     end
+    if G.draggingBoxEspAlpha and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+        G.boxUI.alpha.setFromInput(i)
+    end
+    if G.draggingTracersAlpha and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+        G.tracerUI.alpha.setFromInput(i)
+    end
     if G.draggingFullbright and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
         updateFullbrightBrightnessFromInput(i)
     end
@@ -6501,6 +6474,8 @@ U.InputEnded:Connect(function(i)
         G.draggingCrosshairRadius=false
         G.draggingCrosshairSize=false
         G.draggingCrosshairAlpha=false
+        G.draggingBoxEspAlpha=false
+        G.draggingTracersAlpha=false
         G.draggingFullbright=false
         G.draggingSpeed=false
         G.draggingJump=false
@@ -6580,9 +6555,9 @@ keepHudPickerBright()
 setToggle(G.rgbUI.toggle.tr,G.rgbUI.toggle.k,G.rgbEnabled,false)
 setRGBColors(G.rgbEnabled)
 
-local hasSavedAutoConfig=autoConfigRead(AUTO_CONFIG_FILE)~=nil
+G.hasSavedAutoConfig=autoConfigRead(AUTO_CONFIG_FILE)~=nil
 
-if not hasSavedAutoConfig then
+if not G.hasSavedAutoConfig then
     updateSlider(espFillF,espFillH,G.espFillTransparency)
     updateSlider(espOutlineF,espOutlineH,G.espOutlineTransparency)
     updateSlider(nametagSizeF,nametagSizeH,(G.nametagSize-10)/(28-10))
