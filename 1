@@ -4221,9 +4221,8 @@ local function trackForeignHighlight(obj)
     if G.espSuppressedHighlights[obj]==nil then
         G.espSuppressedHighlights[obj]=obj.Enabled
     end
-    
     pcall(function() 
-        obj.Enabled=false
+        obj.Enabled=false 
         obj.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
     end)
 
@@ -4232,17 +4231,6 @@ local function trackForeignHighlight(obj)
             pcall(function() 
                 obj.Enabled=false
                 obj.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-            end)
-            task.defer(function()
-                if G.espEnabled and obj.Parent then
-                    local own2=model:FindFirstChild("Totally NOT Esp")
-                    if own2 and own2:IsA("Highlight") then
-                        own2.Enabled=false
-                        task.wait()
-                        own2.Enabled=true
-                        own2.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-                    end
-                end
             end)
         end
     end)
@@ -4286,10 +4274,6 @@ function clearESP()
             if esp and esp:IsA("Highlight") then esp:Destroy() end
         end
     end
-    if G.espMonitorConnection then
-        pcall(function() G.espMonitorConnection:Disconnect() end)
-        G.espMonitorConnection=nil
-    end
 end
 
 function shouldESPApply(model)
@@ -4328,15 +4312,12 @@ function applyESPToModel(model)
     G.suppressForeignHighlights(model,esp)
     
     local col=hudWhite()
-    esp.Enabled=false
-    task.wait()
     esp.Enabled=true
     esp.FillColor=col
     esp.OutlineColor=col
     esp.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
     esp.FillTransparency=1-math.clamp(G.espFillTransparency,0,1)
     esp.OutlineTransparency=1-math.clamp(G.espOutlineTransparency,0,1)
-    esp.ZIndex=100
     
     if esp.Parent and esp.Parent~=model then
         esp.Parent=model
@@ -4354,15 +4335,11 @@ function refreshESP()
         if plr~=p and plr.Character then
             local esp=plr.Character:FindFirstChild("Totally NOT Esp")
             if esp and esp:IsA("Highlight") then
-                esp.Enabled=false
-                task.wait()
-                esp.Enabled=true
                 esp.FillColor=col
                 esp.OutlineColor=col
                 esp.FillTransparency=fillTrans
                 esp.OutlineTransparency=outlineTrans
-                esp.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-                esp.ZIndex=100
+                esp.Enabled=true
             else
                 applyESPToModel(plr.Character)
             end
@@ -4374,15 +4351,11 @@ function refreshESP()
             if model:IsA("Model") and model~=c and P:GetPlayerFromCharacter(model)==nil then
                 local esp=model:FindFirstChild("Totally NOT Esp")
                 if esp and esp:IsA("Highlight") then
-                    esp.Enabled=false
-                    task.wait()
-                    esp.Enabled=true
                     esp.FillColor=col
                     esp.OutlineColor=col
                     esp.FillTransparency=fillTrans
                     esp.OutlineTransparency=outlineTrans
-                    esp.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-                    esp.ZIndex=100
+                    esp.Enabled=true
                 else
                     applyESPToModel(model)
                 end
@@ -4712,71 +4685,6 @@ function updateESPOutline(v)
         refreshESP()
     end
 end
-
-G.espMonitorConnection=nil
-
-function startEspMonitor()
-    if G.espMonitorConnection then
-        pcall(function() G.espMonitorConnection:Disconnect() end)
-        G.espMonitorConnection=nil
-    end
-    
-    G.espMonitorConnection=R.RenderStepped:Connect(function()
-        if not G.espEnabled then return end
-        
-        for _,plr in ipairs(P:GetPlayers()) do
-            if plr~=p and plr.Character then
-                local own=plr.Character:FindFirstChild("Totally NOT Esp")
-                if own and own:IsA("Highlight") then
-                    for _,obj in ipairs(plr.Character:GetDescendants()) do
-                        if obj:IsA("Highlight") and obj~=own and obj.Enabled then
-                            pcall(function()
-                                obj.Enabled=false
-                                obj.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-                            end)
-                            task.defer(function()
-                                if own and own.Parent then
-                                    own.Enabled=false
-                                    task.wait()
-                                    own.Enabled=true
-                                    own.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-                                    own.ZIndex=100
-                                end
-                            end)
-                        end
-                    end
-                end
-            end
-        end
-        
-        for _,model in ipairs(WS:GetChildren()) do
-            if model:IsA("Model") and model~=c and P:GetPlayerFromCharacter(model)==nil then
-                local own=model:FindFirstChild("Totally NOT Esp")
-                if own and own:IsA("Highlight") then
-                    for _,obj in ipairs(model:GetDescendants()) do
-                        if obj:IsA("Highlight") and obj~=own and obj.Enabled then
-                            pcall(function()
-                                obj.Enabled=false
-                                obj.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-                            end)
-                            task.defer(function()
-                                if own and own.Parent then
-                                    own.Enabled=false
-                                    task.wait()
-                                    own.Enabled=true
-                                    own.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-                                    own.ZIndex=100
-                                end
-                            end)
-                        end
-                    end
-                end
-            end
-        end
-    end)
-end
-
-startEspMonitor()
 
 function clearNametagForPlayer(plr)
     local char=plr.Character
