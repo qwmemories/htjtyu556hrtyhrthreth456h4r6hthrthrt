@@ -4281,9 +4281,13 @@ function applyESPToModel(model)
     end
 
     G.suppressForeignHighlights(model,esp)
+    
+    local fillColor=hudWhite()
+    local outlineColor=hudWhite()
+    
     esp.Enabled=true
-    esp.FillColor=hudWhite()
-    esp.OutlineColor=hudWhite()
+    esp.FillColor=fillColor
+    esp.OutlineColor=outlineColor
     esp.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
     esp.FillTransparency=1-math.clamp(G.espFillTransparency,0,1)
     esp.OutlineTransparency=1-math.clamp(G.espOutlineTransparency,0,1)
@@ -4296,19 +4300,38 @@ end
 function refreshESP()
     if not G.espEnabled then clearESP(); return end
 
-    -- Player characters are the common ESP target. Handle them directly so
-    -- refreshes do not have to walk unrelated Workspace objects.
+    local col=hudWhite()
+    local fillTrans=1-math.clamp(G.espFillTransparency,0,1)
+    local outlineTrans=1-math.clamp(G.espOutlineTransparency,0,1)
+
     for _,plr in ipairs(P:GetPlayers()) do
         if plr~=p and plr.Character then
-            applyESPToModel(plr.Character)
+            local esp=plr.Character:FindFirstChild("Totally NOT Esp")
+            if esp and esp:IsA("Highlight") then
+                esp.FillColor=col
+                esp.OutlineColor=col
+                esp.FillTransparency=fillTrans
+                esp.OutlineTransparency=outlineTrans
+                esp.Enabled=true
+            else
+                applyESPToModel(plr.Character)
+            end
         end
     end
 
-    -- Keep NPC support, but only inspect top-level models (the old behavior).
     if G.espNPCMode~="Players" then
         for _,model in ipairs(WS:GetChildren()) do
             if model:IsA("Model") and model~=c and P:GetPlayerFromCharacter(model)==nil then
-                applyESPToModel(model)
+                local esp=model:FindFirstChild("Totally NOT Esp")
+                if esp and esp:IsA("Highlight") then
+                    esp.FillColor=col
+                    esp.OutlineColor=col
+                    esp.FillTransparency=fillTrans
+                    esp.OutlineTransparency=outlineTrans
+                    esp.Enabled=true
+                else
+                    applyESPToModel(model)
+                end
             end
         end
     end
@@ -4453,45 +4476,22 @@ G.updateVisualEsp=function()
                 local fp,onFeet=cam:WorldToViewportPoint(root.Position-Vector3.new(0,hum.HipHeight+2.35,0))
                 local onScreen=hp.Z>0 and fp.Z>0 and (onHead or onFeet)
 
-                if boxOn then
+                if boxOn and onScreen then
                     bx=bx or G.getVisualEspDrawing(plr,"box")
                     if bx then
-                        if onScreen then
-                            local topY=math.min(hp.Y,fp.Y)
-                            local bottomY=math.max(hp.Y,fp.Y)
-                            local bh=math.max(12,(bottomY-topY)*1.12)
-                            local bw=math.max(10,bh*0.56)
-                            local cx=(hp.X+fp.X)/2
-                            pcall(function()
-                                bx.Position=Vector2.new(cx-bw/2,topY-bh*0.06)
-                                bx.Size=Vector2.new(bw,bh*1.12)
-                                bx.Color=col
-                                bx.Transparency=G.boxEspAlpha
-                                bx.Visible=true
-                                bx.ZIndex=5
-                            end)
-                        else
-                            local rel=cam.CFrame:PointToObjectSpace(head.Position)
-                            local yaw=math.atan2(rel.X,-rel.Z)
-                            local pitch=math.atan2(rel.Y,Vector2.new(rel.X,rel.Z).Magnitude)
-                            local dir=Vector2.new(math.sin(yaw),-math.sin(pitch))
-                            if dir.Magnitude>0 then
-                                dir=dir.Unit
-                                local rx=(vp.X*0.5-10)/math.max(math.abs(dir.X),0.001)
-                                local ry=(vp.Y*0.5-10)/math.max(math.abs(dir.Y),0.001)
-                                local edgePos=center+dir*math.min(rx,ry)
-                                local dist=(root.Position-cam.CFrame.Position).Magnitude
-                                local size=math.clamp(1500/dist,20,80)
-                                pcall(function()
-                                    bx.Position=Vector2.new(edgePos.X-size/2,edgePos.Y-size/2)
-                                    bx.Size=Vector2.new(size,size)
-                                    bx.Color=col
-                                    bx.Transparency=G.boxEspAlpha
-                                    bx.Visible=true
-                                    bx.ZIndex=5
-                                end)
-                            end
-                        end
+                        local topY=math.min(hp.Y,fp.Y)
+                        local bottomY=math.max(hp.Y,fp.Y)
+                        local bh=math.max(12,(bottomY-topY)*1.12)
+                        local bw=math.max(10,bh*0.56)
+                        local cx=(hp.X+fp.X)/2
+                        pcall(function()
+                            bx.Position=Vector2.new(cx-bw/2,topY-bh*0.06)
+                            bx.Size=Vector2.new(bw,bh*1.12)
+                            bx.Color=col
+                            bx.Transparency=G.boxEspAlpha
+                            bx.Visible=true
+                            bx.ZIndex=5
+                        end)
                     end
                 elseif bx then
                     pcall(function() bx.Visible=false end)
@@ -4599,7 +4599,54 @@ function updateESPFill(v)
     espUI.fillLabel.Text="Fill: "..string.format("%.2f",G.espFillTransparency)
     updateSlider(espFillF,espFillH,G.espFillTransparency)
     if G.espEnabled then
-        refreshESP()
+        local col=hudWhite()
+        local fillTrans=1-G.espFillTransparency
+        for _,plr in ipairs(P:GetPlayers()) do
+            if plr~=p and plr.Character then
+                local esp=plr.Character:FindFirstChild("Totally NOT Esp")
+                if esp and esp:IsA("Highlight") then
+                    esp.FillColor=col
+                    esp.FillTransparency=fillTrans
+                end
+            end
+        end
+        for _,model in ipairs(WS:GetChildren()) do
+            if model:IsA("Model") and model~=c then
+                local esp=model:FindFirstChild("Totally NOT Esp")
+                if esp and esp:IsA("Highlight") then
+                    esp.FillColor=col
+                    esp.FillTransparency=fillTrans
+                end
+            end
+        end
+    end
+end
+
+function updateESPOutline(v)
+    G.espOutlineTransparency=math.clamp(v,0,1)
+    espUI.outlineLabel.Text="Outline: "..string.format("%.2f",G.espOutlineTransparency)
+    updateSlider(espOutlineF,espOutlineH,G.espOutlineTransparency)
+    if G.espEnabled then
+        local col=hudWhite()
+        local outlineTrans=1-G.espOutlineTransparency
+        for _,plr in ipairs(P:GetPlayers()) do
+            if plr~=p and plr.Character then
+                local esp=plr.Character:FindFirstChild("Totally NOT Esp")
+                if esp and esp:IsA("Highlight") then
+                    esp.OutlineColor=col
+                    esp.OutlineTransparency=outlineTrans
+                end
+            end
+        end
+        for _,model in ipairs(WS:GetChildren()) do
+            if model:IsA("Model") and model~=c then
+                local esp=model:FindFirstChild("Totally NOT Esp")
+                if esp and esp:IsA("Highlight") then
+                    esp.OutlineColor=col
+                    esp.OutlineTransparency=outlineTrans
+                end
+            end
+        end
     end
 end
 
