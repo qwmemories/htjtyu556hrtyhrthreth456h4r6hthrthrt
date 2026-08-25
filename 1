@@ -4459,15 +4459,16 @@ G.updateVisualEsp=function()
                 local fp,onFeet=cam:WorldToViewportPoint(bottomWorld)
                 local onScreen=hp.Z>0 and fp.Z>0 and (onHead or onFeet)
 
-                if onScreen then
-                    local topY=math.min(hp.Y,fp.Y)
-                    local bottomY=math.max(hp.Y,fp.Y)
-                    local bh=math.max(12,(bottomY-topY)*1.08)
-                    local bw=math.max(8,bh*0.52)
-                    local cx=(hp.X+fp.X)/2
-                    local left=cx-bw/2
-                    topY=topY-bh*0.04
+                local topY=math.min(hp.Y,fp.Y)
+                local bottomY=math.max(hp.Y,fp.Y)
+                local bh=math.max(12,(bottomY-topY)*1.08)
+                local bw=math.max(8,bh*0.52)
+                local cx=(hp.X+fp.X)/2
+                local left=cx-bw/2
+                topY=topY-bh*0.04
 
+                -- BoxESP is only useful while the player is actually visible on-screen.
+                if onScreen then
                     if boxOn then
                         bx=bx or G.getVisualEspDrawing(plr,"box")
                         if bx then
@@ -4480,24 +4481,69 @@ G.updateVisualEsp=function()
                                 bx.ZIndex=5
                             end)
                         end
+                    elseif bx then
+                        pcall(function() bx.Visible=false end)
                     end
+                elseif bx then
+                    pcall(function() bx.Visible=false end)
+                end
 
-                    if tracerOn then
-                        tr=tr or G.getVisualEspDrawing(plr,"tracer")
-                        if tr then
+                if tracerOn then
+                    tr=tr or G.getVisualEspDrawing(plr,"tracer")
+                    if tr then
+                        local tracerTo=nil
+
+                        if onScreen then
+                            -- On-screen: terminate at the player.
+                            tracerTo=Vector2.new(cx,topY+bh/2)
+                        else
+                            -- Off-screen / behind camera: project the target direction
+                            -- to the nearest edge of the viewport, like Crosshair Arrows.
+                            local rel=cam.CFrame:PointToObjectSpace(head.Position)
+                            local dx=rel.X
+                            local dy=-rel.Y
+
+                            -- If the target is behind the camera, flip the 2D direction
+                            -- so the tracer still points toward the correct screen edge.
+                            if rel.Z>0 then
+                                dx=-dx
+                                dy=-dy
+                            end
+
+                            local mag=math.sqrt(dx*dx+dy*dy)
+                            if mag>0.0001 then
+                                dx=dx/mag
+                                dy=dy/mag
+
+                                local margin=8
+                                local halfW=math.max(1,vp.X*0.5-margin)
+                                local halfH=math.max(1,vp.Y*0.5-margin)
+
+                                local tx=math.huge
+                                local ty=math.huge
+                                if math.abs(dx)>0.0001 then tx=halfW/math.abs(dx) end
+                                if math.abs(dy)>0.0001 then ty=halfH/math.abs(dy) end
+
+                                local t=math.min(tx,ty)
+                                tracerTo=Vector2.new(center.X+dx*t,center.Y+dy*t)
+                            end
+                        end
+
+                        if tracerTo then
                             pcall(function()
                                 tr.From=center
-                                tr.To=Vector2.new(cx,topY+bh/2)
+                                tr.To=tracerTo
                                 tr.Color=col
                                 tr.Transparency=G.tracersAlpha
                                 tr.Visible=true
                                 tr.ZIndex=5
                             end)
+                        else
+                            pcall(function() tr.Visible=false end)
                         end
                     end
-                else
-                    if bx then pcall(function() bx.Visible=false end) end
-                    if tr then pcall(function() tr.Visible=false end) end
+                elseif tr then
+                    pcall(function() tr.Visible=false end)
                 end
             else
                 if bx then pcall(function() bx.Visible=false end) end
@@ -5317,7 +5363,7 @@ mf.InputBegan:Connect(function(i)
     G.dragStart=i.Position
     G.startPos=mf.Position
     G.targetPos=mf.Position
-end
+end)
 
 U.InputChanged:Connect(function(i)
     if G.isDragging and not G.isSliding
