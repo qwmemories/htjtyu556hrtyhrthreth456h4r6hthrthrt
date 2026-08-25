@@ -4192,11 +4192,17 @@ local function trackForeignHighlight(obj)
     if G.espSuppressedHighlights[obj]==nil then
         G.espSuppressedHighlights[obj]=obj.Enabled
     end
-    pcall(function() obj.Enabled=false end)
+    pcall(function() 
+        obj.Enabled=false 
+        obj.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
+    end)
 
     G.espForeignConnections[obj]=obj:GetPropertyChangedSignal("Enabled"):Connect(function()
         if G.espEnabled and obj.Parent then
-            pcall(function() obj.Enabled=false end)
+            pcall(function() 
+                obj.Enabled=false
+                obj.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
+            end)
         end
     end)
 
@@ -4281,6 +4287,10 @@ function applyESPToModel(model)
     esp.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
     esp.FillTransparency=1-math.clamp(G.espFillTransparency,0,1)
     esp.OutlineTransparency=1-math.clamp(G.espOutlineTransparency,0,1)
+    
+    if esp.Parent and esp.Parent~=model then
+        esp.Parent=model
+    end
 end
 
 function refreshESP()
@@ -4443,22 +4453,45 @@ G.updateVisualEsp=function()
                 local fp,onFeet=cam:WorldToViewportPoint(root.Position-Vector3.new(0,hum.HipHeight+2.35,0))
                 local onScreen=hp.Z>0 and fp.Z>0 and (onHead or onFeet)
 
-                if boxOn and onScreen then
-                    local topY=math.min(hp.Y,fp.Y)
-                    local bottomY=math.max(hp.Y,fp.Y)
-                    local bh=math.max(12,(bottomY-topY)*1.12)
-                    local bw=math.max(10,bh*0.56)
-                    local cx=(hp.X+fp.X)/2
+                if boxOn then
                     bx=bx or G.getVisualEspDrawing(plr,"box")
                     if bx then
-                        pcall(function()
-                            bx.Position=Vector2.new(cx-bw/2,topY-bh*0.06)
-                            bx.Size=Vector2.new(bw,bh*1.12)
-                            bx.Color=col
-                            bx.Transparency=G.boxEspAlpha
-                            bx.Visible=true
-                            bx.ZIndex=5
-                        end)
+                        if onScreen then
+                            local topY=math.min(hp.Y,fp.Y)
+                            local bottomY=math.max(hp.Y,fp.Y)
+                            local bh=math.max(12,(bottomY-topY)*1.12)
+                            local bw=math.max(10,bh*0.56)
+                            local cx=(hp.X+fp.X)/2
+                            pcall(function()
+                                bx.Position=Vector2.new(cx-bw/2,topY-bh*0.06)
+                                bx.Size=Vector2.new(bw,bh*1.12)
+                                bx.Color=col
+                                bx.Transparency=G.boxEspAlpha
+                                bx.Visible=true
+                                bx.ZIndex=5
+                            end)
+                        else
+                            local rel=cam.CFrame:PointToObjectSpace(head.Position)
+                            local yaw=math.atan2(rel.X,-rel.Z)
+                            local pitch=math.atan2(rel.Y,Vector2.new(rel.X,rel.Z).Magnitude)
+                            local dir=Vector2.new(math.sin(yaw),-math.sin(pitch))
+                            if dir.Magnitude>0 then
+                                dir=dir.Unit
+                                local rx=(vp.X*0.5-10)/math.max(math.abs(dir.X),0.001)
+                                local ry=(vp.Y*0.5-10)/math.max(math.abs(dir.Y),0.001)
+                                local edgePos=center+dir*math.min(rx,ry)
+                                local dist=(root.Position-cam.CFrame.Position).Magnitude
+                                local size=math.clamp(1500/dist,20,80)
+                                pcall(function()
+                                    bx.Position=Vector2.new(edgePos.X-size/2,edgePos.Y-size/2)
+                                    bx.Size=Vector2.new(size,size)
+                                    bx.Color=col
+                                    bx.Transparency=G.boxEspAlpha
+                                    bx.Visible=true
+                                    bx.ZIndex=5
+                                end)
+                            end
+                        end
                     end
                 elseif bx then
                     pcall(function() bx.Visible=false end)
@@ -4468,7 +4501,6 @@ G.updateVisualEsp=function()
                     tr=tr or G.getVisualEspDrawing(plr,"tracer")
                     if tr then
                         local tracerTo=nil
-
                         if onScreen then
                             local cx=(hp.X+fp.X)/2
                             local cy=(hp.Y+fp.Y)/2
@@ -4477,7 +4509,6 @@ G.updateVisualEsp=function()
                             local rel=cam.CFrame:PointToObjectSpace(head.Position)
                             local yaw=math.atan2(rel.X,-rel.Z)
                             local pitch=math.atan2(rel.Y,Vector2.new(rel.X,rel.Z).Magnitude)
-
                             local dir=Vector2.new(math.sin(yaw),-math.sin(pitch))
                             if dir.Magnitude>0 then
                                 dir=dir.Unit
@@ -4486,7 +4517,6 @@ G.updateVisualEsp=function()
                                 tracerTo=center+dir*math.min(rx,ry)
                             end
                         end
-
                         if tracerTo then
                             pcall(function()
                                 tr.From=center
