@@ -4474,21 +4474,30 @@ G.updateVisualEsp=function()
                             local cy=(hp.Y+fp.Y)/2
                             tracerTo=Vector2.new(cx,cy)
                         else
-                            local pos=cam:WorldToViewportPoint(head.Position)
+                            local camCF=cam.CFrame
+                            local relative=camCF:PointToObjectSpace(head.Position)
+                            local x=relative.X
+                            local y=relative.Y
+                            local z=-relative.Z
 
-                            local dir=Vector2.new(
-                                pos.X-center.X,
-                                pos.Y-center.Y
-                            )
+                            if z < 0 then
+                                x=-x
+                                y=-y
+                            end
+
+                            local dir=Vector2.new(x,y)
 
                             if dir.Magnitude>0 then
                                 dir=dir.Unit
 
-                                local edgeX=(vp.X*0.5-10)/math.max(math.abs(dir.X),0.001)
-                                local edgeY=(vp.Y*0.5-10)/math.max(math.abs(dir.Y),0.001)
-                                local dist=math.min(edgeX,edgeY)
+                                local maxX=(vp.X*0.5)-10
+                                local maxY=(vp.Y*0.5)-10
 
-                                tracerTo=center+(dir*dist)
+                                local scaleX=maxX/math.max(math.abs(dir.X),0.001)
+                                local scaleY=maxY/math.max(math.abs(dir.Y),0.001)
+                                local scale=math.min(scaleX,scaleY)
+
+                                tracerTo=center+(dir*scale)
                             end
                         end
 
@@ -5966,12 +5975,12 @@ function queueAutoLoad()
 
     local ok=false
 
-    local a=pcall(q,"s",queued)
-    if a then
+    local success=pcall(function()
+        q(queued)
+    end)
+
+    if success then
         ok=true
-    else
-        local b=pcall(q,queued)
-        ok=b
     end
 
     G.autoLoadQueued=ok
