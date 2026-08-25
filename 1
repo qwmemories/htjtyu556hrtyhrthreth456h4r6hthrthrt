@@ -4474,17 +4474,22 @@ G.updateVisualEsp=function()
                             local cy=(hp.Y+fp.Y)/2
                             tracerTo=Vector2.new(cx,cy)
                         else
-                            -- Same bearing calculation used by CrosshairArrows.
-                            local rel=cam.CFrame:PointToObjectSpace(head.Position)
-                            local bearing=math.atan2(rel.X,-rel.Z)
-                            local dirX=math.sin(bearing)
-                            local dirY=-math.cos(bearing)
-                            local halfW=math.max(1,vp.X*0.5-8)
-                            local halfH=math.max(1,vp.Y*0.5-8)
-                            local tx=halfW/math.max(math.abs(dirX),0.0001)
-                            local ty=halfH/math.max(math.abs(dirY),0.0001)
-                            local radius=math.min(tx,ty)
-                            tracerTo=Vector2.new(center.X+dirX*radius,center.Y+dirY*radius)
+                            local pos=cam:WorldToViewportPoint(head.Position)
+
+                            local dir=Vector2.new(
+                                pos.X-center.X,
+                                pos.Y-center.Y
+                            )
+
+                            if dir.Magnitude>0 then
+                                dir=dir.Unit
+
+                                local edgeX=(vp.X*0.5-10)/math.max(math.abs(dir.X),0.001)
+                                local edgeY=(vp.Y*0.5-10)/math.max(math.abs(dir.Y),0.001)
+                                local dist=math.min(edgeX,edgeY)
+
+                                tracerTo=center+(dir*dist)
+                            end
                         end
 
                         if tracerTo then
@@ -5950,26 +5955,25 @@ end
 
 function queueAutoLoad()
     if not G.autoLoadEnabled or G.scriptTerminated then return false end
+
     local q=getQueueOnTeleport()
     if not q then return false end
 
     local url=tostring(G.autoLoadURL or "")
     if url=="" then return false end
 
-    -- The queued source is deliberately small: after the new Place loads,
-    -- fetch the current GitHub Raw script and execute it. The freshly
-    -- executed copy installs the queue again, so the chain survives
-    -- subsequent PlaceId changes as long as the executor remains attached.
-    local queued="loadstring(game:HttpGet("..string.format("%q",url).."))()"
+    local queued="repeat task.wait() until game:IsLoaded(); loadstring(game:HttpGet("..string.format("%q",url).."))()"
 
     local ok=false
-    local ok2,res=pcall(q,"s",queued)
-    if ok2 and res~=false then
+
+    local a=pcall(q,"s",queued)
+    if a then
         ok=true
     else
-        local ok3,res3=pcall(q,queued)
-        ok=ok3 and res3~=false
+        local b=pcall(q,queued)
+        ok=b
     end
+
     G.autoLoadQueued=ok
     return ok
 end
