@@ -34,6 +34,14 @@ G.espEnabled=false
 G.espFillTransparency=0.5
 G.espOutlineTransparency=0
 G.espConnections={}
+G.espNPCMode="All"
+G.boxEspEnabled=false
+G.boxEspAlpha=1
+G.tracersEnabled=false
+G.tracersAlpha=1
+G.boxEspDrawings={}
+G.tracerDrawings={}
+G.visualEspConnection=nil
 
 G.fullbrightEnabled=false
 G.fullbrightBrightness=1
@@ -44,6 +52,7 @@ G.nametagEnabled=false
 G.nametagSize=16
 G.nametagHeight=3
 G.nametagAlpha=1
+-- УДАЛЕНО G.nametagHealthEnabled
 G.nametagConnections={}
 G.nametagHumanoids={}
 
@@ -80,7 +89,7 @@ G.minSpeed,G.maxSpeed=0,500
 G.minJump,G.maxJump=0,500
 G.minFlight,G.maxFlight=0,500
 G.minStrafe,G.maxStrafe=0,100
-G.minSmooth,G.maxSmooth=0.01,1
+G.minSmooth,G.maxSmooth=0.01,2.5
 G.minRange,G.maxRange=10,1000
 G.minVisualTimer,G.maxVisualTimer=0.1,25
 G.minCPS,G.maxCPS=1,200
@@ -109,34 +118,71 @@ G.timerIsEnabled=false
 G.autoclickerConnection=nil
 G.autowalkConnection=nil
 G.autojumpConnection=nil
+G.autojumpLastJump=0
+G.autojumpWasAirborne=false
 G.phaseConnection=nil
 G.clickTpCircle=nil
 G.autoshootConnection=nil
 G.autoshootLastColor=nil
 G.autoshootCooldown=false
 G.autoshootCooldownEnd=0
+G.triggerbotEnabled=false
+G.triggerbotTarget="All"
+G.triggerbotMode="Tap"
+G.triggerbotConnection=nil
+G.triggerbotAccumulator=0
+G.triggerbotHolding=false
 
 G.autoSaveReady=false
 G.autoSaveDelayTimer=0
 G.scriptTerminated=false
 G.saveCooldownUntil=0
 
+-- Re-execute after TeleportService moves to another PlaceId in the same experience.
+G.autoLoadEnabled=true
+G.autoLoadURL="https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/1"
+G.autoLoadQueued=false
+
 G.hudColor=Color3.fromHSV(0.5,0,1)
 G.hueValue=0.5
 G.saturationValue=0
 G.brightnessValue=1
+G.rgbEnabled=false
+G.rgbSpeed=1
+G.rgbBrightness=1
+G.rgbPhase=0
+G.draggingRgbSpeed=false
+G.draggingRgbBrightness=false
 G.hudAlpha=0.95
 G.hudBackgroundBrightness=0.5
 G.draggingHudAlpha=false
 G.draggingHudBackgroundBrightness=false
 
-local sg=Instance.new("ScreenGui")
-sg.ResetOnSpawn=false
-sg.DisplayOrder=9999
-sg.IgnoreGuiInset=true
+local sg
 
-local playerGui = p:WaitForChild("PlayerGui")
-sg.Parent = playerGui
+-- Put the HUD into the executor's hidden UI container when available.
+-- This lets it remain above Roblox's normal PlayerGui/CoreGui layers in
+-- executors that expose gethui(). Fall back to PlayerGui for normal Roblox.
+local hudParent=nil
+local okHui, hui=pcall(function()
+    if typeof(gethui)=="function" then
+        return gethui()
+    end
+    return nil
+end)
+if okHui and hui then
+    hudParent=hui
+else
+    hudParent=p:WaitForChild("PlayerGui", 10)
+end
+
+sg=Instance.new("ScreenGui")
+sg.Name="CustomHUD_Overlay"
+sg.ResetOnSpawn=false
+sg.DisplayOrder=2147483647
+sg.IgnoreGuiInset=true
+sg.ZIndexBehavior=Enum.ZIndexBehavior.Global
+sg.Parent=hudParent
 
 G.hudThemeEnabled=true
 G.hudThemeUpdating=false
@@ -294,10 +340,19 @@ function applyHudTheme(force)
         else
             local obj=entry.object
             local value=themeScaled(newColor,entry.scale)
+            entry.currentScale=entry.scale
+            entry.animFromScale=nil
+            entry.animToScale=nil
+            entry.animStart=nil
+            entry.animDuration=nil
             pcall(function()
-                T:Create(obj,TweenInfo.new(0),{
-                    [entry.property]=value
-                }):Play()
+                if G.rgbEnabled then
+                    obj[entry.property]=value
+                else
+                    T:Create(obj,TweenInfo.new(0),{
+                        [entry.property]=value
+                    }):Play()
+                end
             end)
         end
     end
@@ -333,23 +388,48 @@ local function themeTween(obj,property,value,inf)
     if not scale then
         untrackThemeProperty(obj,property)
     end
+    local entry=nil
     if scale then
         local props=G.hudThemeRegistered[obj]
         if not props then props={}; G.hudThemeRegistered[obj]=props end
         props[property]=true
-        local found=false
-        for _,entry in ipairs(G.hudThemeRegistry) do
-            if entry.object==obj and entry.property==property then
-                entry.scale=scale
-                found=true
+        for _,e in ipairs(G.hudThemeRegistry) do
+            if e.object==obj and e.property==property then
+                entry=e
                 break
             end
         end
-        if not found then
-            table.insert(G.hudThemeRegistry,{object=obj,property=property,scale=scale})
+        if not entry then
+            entry={object=obj,property=property,scale=scale,currentScale=scale}
+            table.insert(G.hudThemeRegistry,entry)
+        else
+            entry.scale=scale
+            entry.currentScale=entry.currentScale or scale
         end
     end
-    pcall(function() T:Create(obj,inf,{[property]=value}):Play() end)
+
+    local duration=(inf and inf.Time) or 0
+    if G.rgbEnabled and entry and duration>0 then
+        local current=entry.currentScale or entry.scale or scale
+        entry.animFromScale=current
+        entry.animToScale=scale
+        entry.animStart=os.clock()
+        entry.animDuration=duration
+        entry.currentScale=current
+        return
+    end
+
+    if entry then
+        entry.currentScale=scale
+        entry.animFromScale=nil
+        entry.animToScale=nil
+        entry.animStart=nil
+        entry.animDuration=nil
+    end
+
+    pcall(function()
+        T:Create(obj,inf,{[property]=value}):Play()
+    end)
 end
 
 local mf=Instance.new("Frame")
@@ -466,8 +546,11 @@ closeSt.Thickness=1.5
 closeSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 closeSt.Parent=closeBtn
 
+G.hoveredStrokes=G.hoveredStrokes or {}
+
 function hover(b,s)
     b.MouseEnter:Connect(function()
+        G.hoveredStrokes[s]=true
         s.Color=hudWhite()
         T:Create(s,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{
             Transparency=0.5,
@@ -475,11 +558,35 @@ function hover(b,s)
         }):Play()
     end)
     b.MouseLeave:Connect(function()
+        G.hoveredStrokes[s]=nil
         T:Create(s,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Transparency=1}):Play()
     end)
 end
 hover(hideBtn,hideSt)
 hover(closeBtn,closeSt)
+
+-- Keep the button interaction disabled during the hide/show transition, but
+-- do NOT freeze the visual hover outline. MouseEnter/Leave no longer fire while
+-- Active=false, so track the pointer visually and tween only when the state changes.
+G.headerHoverState=G.headerHoverState or {}
+local function updateHeaderButtonHover(button,stroke,key)
+    if not button.Parent or not stroke.Parent then return end
+    local mp=U:GetMouseLocation()
+    local ap=button.AbsolutePosition
+    local sz=button.AbsoluteSize
+    local inside=mp.X>=ap.X and mp.X<=ap.X+sz.X and mp.Y>=ap.Y and mp.Y<=ap.Y+sz.Y
+    if G.headerHoverState[key] == inside then return end
+    G.headerHoverState[key]=inside
+    local target=inside and 0.5 or 1
+    T:Create(stroke,TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{
+        Transparency=target,Color=hudWhite()
+    }):Play()
+end
+R.RenderStepped:Connect(function()
+    if G.scriptTerminated then return end
+    updateHeaderButtonHover(hideBtn,hideSt,"hide")
+    updateHeaderButtonHover(closeBtn,closeSt,"close")
+end)
 
 local cv=Instance.new("ScrollingFrame")
 cv.Size=UDim2.new(0,343,0,430)
@@ -630,6 +737,54 @@ function makeToggleNoSlider(parent,y,txt)
     return {l=l,tr=tr,k=k,st=ts,cl=cl}
 end
 
+function makeCycleButton(parent,y,txt,options,updateFunc)
+    local l=Instance.new("TextLabel")
+    l.Size=UDim2.new(0.5,0,0,22)
+    l.Position=UDim2.new(0,5,0,y)
+    l.BackgroundTransparency=1
+    l.Text=txt..":"
+    l.TextColor3=hudGray06()
+    l.TextSize=16
+    l.Font=Enum.Font.Gotham
+    l.TextXAlignment=Enum.TextXAlignment.Left
+    l.Parent=parent
+
+    local b=Instance.new("TextButton")
+    b.Size=UDim2.new(0.22,0,0,20)
+    b.Position=UDim2.new(0.68,0,0,y+1)
+    b.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+    b.BackgroundTransparency=0.04
+    b.Text=options[1]
+    b.TextColor3=hudGray06()
+    b.TextSize=13
+    b.Font=Enum.Font.Gotham
+    b.AutoButtonColor=false
+    b.Parent=parent
+    Instance.new("UICorner",b).CornerRadius=UDim.new(0,5)
+    local st=Instance.new("UIStroke")
+    st.Color=Color3.fromRGB(160,160,160)
+    st.Transparency=1
+    st.Thickness=1.5
+    st.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+    st.Parent=b
+    hover(b,st)
+
+    local currentIndex=1
+    b.MouseButton1Click:Connect(function()
+        currentIndex=currentIndex%#options+1
+        b.Text=options[currentIndex]
+        if updateFunc then updateFunc(options[currentIndex]) end
+        if b then
+            T:Create(b,TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=hudWhite()}):Play()
+        end
+    end)
+
+    return {label=l,button=b,stroke=st,setIndex=function(idx)
+        currentIndex=idx
+        b.Text=options[idx]
+    end}
+end
+
 function addSep(parent,y)
     local s=Instance.new("Frame")
     s.Size=UDim2.new(0.905,0,0,1)
@@ -657,11 +812,82 @@ addSep(mc,512)
 Tt.phase=makeToggleNoSlider(mc,522,"Phase")
 
 local visualsC=Instance.new("Frame")
-visualsC.Size=UDim2.new(0,343,0,780)
+visualsC.Size=UDim2.new(0,343,0,1040)
 visualsC.Position=UDim2.new(0,0,0,0)
 visualsC.BackgroundTransparency=1
 visualsC.Visible=false
 visualsC.Parent=cv
+
+G.makeVisualAlphaSlider=function(parent,y,label,initial,callback)
+    local ui={}
+    ui.value=math.clamp(tonumber(initial) or 0,0,1)
+    ui.label=Instance.new("TextLabel")
+    ui.label.Size=UDim2.new(0.5,0,0,22)
+    ui.label.Position=UDim2.new(0,5,0,y)
+    ui.label.BackgroundTransparency=1
+    ui.label.Text=label..": "..string.format("%.2f",ui.value)
+    ui.label.TextColor3=hudGray06()
+    ui.label.TextSize=16
+    ui.label.Font=Enum.Font.Gotham
+    ui.label.TextXAlignment=Enum.TextXAlignment.Left
+    ui.label.Parent=parent
+
+    ui.s=Instance.new("Frame")
+    ui.s.Size=UDim2.new(0.885,0,0,6)
+    ui.s.Position=UDim2.new(0.02,0,0,y+26)
+    ui.s.BackgroundColor3=hudGray03()
+    ui.s.BorderSizePixel=0
+    ui.s.Active=true
+    ui.s.Parent=parent
+    Instance.new("UICorner",ui.s).CornerRadius=UDim.new(0,3)
+    ui.f=Instance.new("Frame")
+    ui.f.Size=UDim2.new(ui.value,0,1,0)
+    ui.f.BackgroundColor3=hudGray06()
+    ui.f.BorderSizePixel=0
+    ui.f.Parent=ui.s
+    Instance.new("UICorner",ui.f).CornerRadius=UDim.new(0,3)
+    ui.h=Instance.new("Frame")
+    ui.h.Size=UDim2.new(0,14,0,14)
+    ui.h.Position=UDim2.new(ui.value,-7,0.5,-7)
+    ui.h.BackgroundColor3=hudGray06()
+    ui.h.BorderSizePixel=0
+    ui.h.Active=true
+    ui.h.Parent=ui.s
+    Instance.new("UICorner",ui.h).CornerRadius=UDim.new(0,7)
+    ui.drag=false
+
+    local function setValue(v, fire)
+        v=math.clamp(tonumber(v) or 0,0,1)
+        ui.value=v
+        ui.f.Size=UDim2.new(v,0,1,0)
+        ui.h.Position=UDim2.new(v,-7,0.5,-7)
+        ui.label.Text=label..": "..string.format("%.2f",v)
+        if fire and callback then callback(v) end
+    end
+
+    ui.s.InputBegan:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+            ui.drag=true
+            setValue((i.Position.X-ui.s.AbsolutePosition.X)/math.max(ui.s.AbsoluteSize.X,1),true)
+            G.isSliding=true
+        end
+    end)
+    ui.h.InputBegan:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+            ui.drag=true
+            G.isSliding=true
+        end
+    end)
+    ui.set=function(v) setValue(v,false) end
+    ui.setActive=function(active,anim)
+        local inf=TweenInfo.new(anim and 0.3 or 0,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+        themeTween(ui.label,"TextColor3",active and hudWhite() or hudGray06(),inf)
+        themeTween(ui.s,"BackgroundColor3",active and hudGray05() or hudGray03(),inf)
+        themeTween(ui.f,"BackgroundColor3",active and hudWhite() or hudGray06(),inf)
+        themeTween(ui.h,"BackgroundColor3",active and hudWhite() or hudGray06(),inf)
+    end
+    return ui
+end
 
 local espUI={}
 espUI.toggle=makeToggleNoSlider(visualsC,2,"ESP")
@@ -765,14 +991,23 @@ do
     espOutlineS,espOutlineF,espOutlineH=s,f,h2
 end
 
-addSep(visualsC,140)
+espUI.npc=makeCycleButton(visualsC,142,"Render",{"All","Players","NPC"},function(val)
+    G.espNPCMode=val
+    clearESP()
+    if G.espEnabled then refreshESP() end
+    task.defer(function()
+        if G.autoSaveReady and not autoConfigLoading then saveAutoConfig() end
+    end)
+end)
+
+addSep(visualsC,172)
 
 local nametagUI={}
-nametagUI.toggle=makeToggleNoSlider(visualsC,152,"Nametags")
+nametagUI.toggle=makeToggleNoSlider(visualsC,184,"Nametags")
 
 nametagUI.sizeLabel=Instance.new("TextLabel")
 nametagUI.sizeLabel.Size=UDim2.new(0.5,0,0,22)
-nametagUI.sizeLabel.Position=UDim2.new(0,5,0,184)
+nametagUI.sizeLabel.Position=UDim2.new(0,5,0,216)
 nametagUI.sizeLabel.BackgroundTransparency=1
 nametagUI.sizeLabel.Text="Size: 16"
 nametagUI.sizeLabel.TextColor3=hudGray06()
@@ -785,7 +1020,7 @@ local nametagSizeS,nametagSizeF,nametagSizeH
 do
     local s=Instance.new("Frame")
     s.Size=UDim2.new(0.885,0,0,6)
-    s.Position=UDim2.new(0.02,0,0,210)
+    s.Position=UDim2.new(0.02,0,0,242)
     s.BackgroundColor3=hudGray03()
     s.BorderSizePixel=0
     s.Parent=visualsC
@@ -822,7 +1057,7 @@ end
 
 nametagUI.heightLabel=Instance.new("TextLabel")
 nametagUI.heightLabel.Size=UDim2.new(0.5,0,0,22)
-nametagUI.heightLabel.Position=UDim2.new(0,5,0,232)
+nametagUI.heightLabel.Position=UDim2.new(0,5,0,264)
 nametagUI.heightLabel.BackgroundTransparency=1
 nametagUI.heightLabel.Text="Height: 3.0"
 nametagUI.heightLabel.TextColor3=hudGray06()
@@ -835,7 +1070,7 @@ local nametagHeightS,nametagHeightF,nametagHeightH
 do
     local s=Instance.new("Frame")
     s.Size=UDim2.new(0.885,0,0,6)
-    s.Position=UDim2.new(0.02,0,0,258)
+    s.Position=UDim2.new(0.02,0,0,290)
     s.BackgroundColor3=hudGray03()
     s.BorderSizePixel=0
     s.Parent=visualsC
@@ -872,7 +1107,7 @@ end
 
 nametagUI.alphaLabel=Instance.new("TextLabel")
 nametagUI.alphaLabel.Size=UDim2.new(0.5,0,0,22)
-nametagUI.alphaLabel.Position=UDim2.new(0,5,0,280)
+nametagUI.alphaLabel.Position=UDim2.new(0,5,0,312)
 nametagUI.alphaLabel.BackgroundTransparency=1
 nametagUI.alphaLabel.Text="Alpha: 1.00"
 nametagUI.alphaLabel.TextColor3=hudGray06()
@@ -885,7 +1120,7 @@ local nametagAlphaS,nametagAlphaF,nametagAlphaH
 do
     local s=Instance.new("Frame")
     s.Size=UDim2.new(0.885,0,0,6)
-    s.Position=UDim2.new(0.02,0,0,306)
+    s.Position=UDim2.new(0.02,0,0,338)
     s.BackgroundColor3=hudGray03()
     s.BorderSizePixel=0
     s.Parent=visualsC
@@ -920,14 +1155,18 @@ do
     nametagAlphaS,nametagAlphaF,nametagAlphaH=s,f,h2
 end
 
-addSep(visualsC,334)
+-- УДАЛЕНО: nametagUI.healthToggle
 
+-- Добавляем разделитель после Alpha
+addSep(visualsC,370)
+
+-- CrosshairArrows - подняты выше после разделителя
 local crosshairUI={}
-crosshairUI.toggle=makeToggleNoSlider(visualsC,346,"CrosshairArrows")
+crosshairUI.toggle=makeToggleNoSlider(visualsC,382,"CrosshairArrows")
 
 crosshairUI.radiusLabel=Instance.new("TextLabel")
 crosshairUI.radiusLabel.Size=UDim2.new(0.5,0,0,22)
-crosshairUI.radiusLabel.Position=UDim2.new(0,5,0,378)
+crosshairUI.radiusLabel.Position=UDim2.new(0,5,0,414)
 crosshairUI.radiusLabel.BackgroundTransparency=1
 crosshairUI.radiusLabel.Text="Radius: 100"
 crosshairUI.radiusLabel.TextColor3=hudGray06()
@@ -940,9 +1179,10 @@ local crosshairRadiusS,crosshairRadiusF,crosshairRadiusH
 do
     local s=Instance.new("Frame")
     s.Size=UDim2.new(0.885,0,0,6)
-    s.Position=UDim2.new(0.02,0,0,404)
+    s.Position=UDim2.new(0.02,0,0,440)
     s.BackgroundColor3=hudGray03()
-    s.BorderSizePixel=0    s.Parent=visualsC
+    s.BorderSizePixel=0
+    s.Parent=visualsC
     Instance.new("UICorner",s).CornerRadius=UDim.new(0,3)
     local ss=Instance.new("UIStroke")
     ss.Color=Color3.fromRGB(160,160,160)
@@ -976,7 +1216,7 @@ end
 
 crosshairUI.sizeLabel=Instance.new("TextLabel")
 crosshairUI.sizeLabel.Size=UDim2.new(0.5,0,0,22)
-crosshairUI.sizeLabel.Position=UDim2.new(0,5,0,426)
+crosshairUI.sizeLabel.Position=UDim2.new(0,5,0,462)
 crosshairUI.sizeLabel.BackgroundTransparency=1
 crosshairUI.sizeLabel.Text="Size: 25"
 crosshairUI.sizeLabel.TextColor3=hudGray06()
@@ -989,7 +1229,7 @@ local crosshairSizeS,crosshairSizeF,crosshairSizeH
 do
     local s=Instance.new("Frame")
     s.Size=UDim2.new(0.885,0,0,6)
-    s.Position=UDim2.new(0.02,0,0,452)
+    s.Position=UDim2.new(0.02,0,0,488)
     s.BackgroundColor3=hudGray03()
     s.BorderSizePixel=0
     s.Parent=visualsC
@@ -1026,7 +1266,7 @@ end
 
 crosshairUI.alphaLabel=Instance.new("TextLabel")
 crosshairUI.alphaLabel.Size=UDim2.new(0.5,0,0,22)
-crosshairUI.alphaLabel.Position=UDim2.new(0,5,0,474)
+crosshairUI.alphaLabel.Position=UDim2.new(0,5,0,510)
 crosshairUI.alphaLabel.BackgroundTransparency=1
 crosshairUI.alphaLabel.Text="Alpha: 1.00"
 crosshairUI.alphaLabel.TextColor3=hudGray06()
@@ -1039,7 +1279,7 @@ local crosshairAlphaS,crosshairAlphaF,crosshairAlphaH
 do
     local s=Instance.new("Frame")
     s.Size=UDim2.new(0.885,0,0,6)
-    s.Position=UDim2.new(0.02,0,0,500)
+    s.Position=UDim2.new(0.02,0,0,536)
     s.BackgroundColor3=hudGray03()
     s.BorderSizePixel=0
     s.Parent=visualsC
@@ -1074,14 +1314,16 @@ do
     crosshairAlphaS,crosshairAlphaF,crosshairAlphaH=s,f,h2
 end
 
-addSep(visualsC,546)
+-- Добавляем разделитель после Alpha
+addSep(visualsC,568)
 
+-- Fullbright - поднят выше после разделителя
 local fullbrightUI={}
-fullbrightUI.toggle=makeToggleNoSlider(visualsC,558,"Fullbright")
+fullbrightUI.toggle=makeToggleNoSlider(visualsC,580,"Fullbright")
 
 fullbrightUI.brightnessLabel=Instance.new("TextLabel")
 fullbrightUI.brightnessLabel.Size=UDim2.new(0.5,0,0,22)
-fullbrightUI.brightnessLabel.Position=UDim2.new(0,5,0,590)
+fullbrightUI.brightnessLabel.Position=UDim2.new(0,5,0,612)
 fullbrightUI.brightnessLabel.BackgroundTransparency=1
 fullbrightUI.brightnessLabel.Text="Brightness: 1.00"
 fullbrightUI.brightnessLabel.TextColor3=hudGray06()
@@ -1094,7 +1336,7 @@ local fullbrightBrightnessS,fullbrightBrightnessF,fullbrightBrightnessH
 do
     local s=Instance.new("Frame")
     s.Size=UDim2.new(0.885,0,0,6)
-    s.Position=UDim2.new(0.02,0,0,616)
+    s.Position=UDim2.new(0.02,0,0,638)
     s.BackgroundColor3=hudGray03()
     s.BorderSizePixel=0
     s.Parent=visualsC
@@ -1128,6 +1370,16 @@ do
     hover(h2,hs)
     fullbrightBrightnessS,fullbrightBrightnessF,fullbrightBrightnessH=s,f,h2
 end
+
+addSep(visualsC,680)
+G.boxUI={}
+G.boxUI.toggle=makeToggleNoSlider(visualsC,692,"BoxEsp")
+G.boxUI.alpha=G.makeVisualAlphaSlider(visualsC,724,"Alpha",G.boxEspAlpha,function(v) G.updateBoxEspAlpha(v) end)
+
+addSep(visualsC,770)
+G.tracerUI={}
+G.tracerUI.toggle=makeToggleNoSlider(visualsC,782,"Tracers")
+G.tracerUI.alpha=G.makeVisualAlphaSlider(visualsC,814,"Alpha",G.tracersAlpha,function(v) G.updateTracersAlpha(v) end)
 
 local miscC=Instance.new("Frame")
 miscC.Size=UDim2.new(0,343,0,1000)
@@ -1182,7 +1434,7 @@ local smT=Instance.new("TextLabel")
 smT.Size=UDim2.new(0.5,0,0,22)
 smT.Position=UDim2.new(0,5,0,36)
 smT.BackgroundTransparency=1
-smT.Text="Speed: 0.15"
+smT.Text="Speed: 1.51"
 smT.TextColor3=hudGray06()
 smT.TextSize=16
 smT.Font=Enum.Font.Gotham
@@ -1607,7 +1859,8 @@ do
     s.Position=UDim2.new(0.02,0,0,468)
     s.BackgroundColor3=hudGray03()
     s.BorderSizePixel=0
-    s.Parent=miscC    Instance.new("UICorner",s).CornerRadius=UDim.new(0,3)
+    s.Parent=miscC
+    Instance.new("UICorner",s).CornerRadius=UDim.new(0,3)
     local ss=Instance.new("UIStroke")
     ss.Color=Color3.fromRGB(160,160,160)
     ss.Transparency=1
@@ -1642,7 +1895,7 @@ addSep(miscC,496)
 
 local awLabel=Instance.new("TextLabel")
 awLabel.Size=UDim2.new(0.5,0,0,22)
-awLabel.Position=UDim2.new(0,5,0,508)
+awLabel.Position=UDim2.new(0,5,0,506)
 awLabel.BackgroundTransparency=1
 awLabel.Text="AutoWalk"
 awLabel.TextColor3=hudGray06()
@@ -1770,6 +2023,114 @@ do
     asTr,asK,asCl=t,k,c
 end
 
+addSep(miscC,640)
+
+local tbLabel=Instance.new("TextLabel")
+tbLabel.Size=UDim2.new(0.5,0,0,22)
+tbLabel.Position=UDim2.new(0,5,0,652)
+tbLabel.BackgroundTransparency=1
+tbLabel.Text="Triggerbot"
+tbLabel.TextColor3=hudGray06()
+tbLabel.TextSize=18
+tbLabel.Font=Enum.Font.Gotham
+tbLabel.TextXAlignment=Enum.TextXAlignment.Left
+tbLabel.Parent=miscC
+local tbTr,tbK,tbCl
+do
+    local t=Instance.new("Frame")
+    t.Size=UDim2.new(0,40,0,20)
+    t.Position=UDim2.new(0.76,0,0,653)
+    t.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+    t.BackgroundTransparency=0.04
+    t.BorderSizePixel=0
+    t.Parent=miscC
+    Instance.new("UICorner",t).CornerRadius=UDim.new(1,0)
+    local ts=Instance.new("UIStroke")
+    ts.Color=Color3.fromRGB(160,160,160)
+    ts.Transparency=1
+    ts.Thickness=1.5
+    ts.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+    ts.Parent=t
+    local k=Instance.new("Frame")
+    k.Size=UDim2.new(0,16,0,16)
+    k.Position=UDim2.new(0,2,0.5,-8)
+    k.BackgroundColor3=hudGray06()
+    k.BorderSizePixel=0
+    k.Parent=t
+    Instance.new("UICorner",k).CornerRadius=UDim.new(1,0)
+    local c=Instance.new("TextButton")
+    c.Size=UDim2.new(1,0,1,0)
+    c.BackgroundTransparency=1
+    c.Text=""
+    c.Parent=t
+    hover(c,ts)
+    tbTr,tbK,tbCl=t,k,c
+end
+
+local tbModeT=Instance.new("TextLabel")
+tbModeT.Size=UDim2.new(0.5,0,0,22)
+tbModeT.Position=UDim2.new(0,5,0,716)
+tbModeT.BackgroundTransparency=1
+tbModeT.Text="Mode:"
+tbModeT.TextColor3=hudGray06()
+tbModeT.TextSize=16
+tbModeT.Font=Enum.Font.Gotham
+tbModeT.TextXAlignment=Enum.TextXAlignment.Left
+tbModeT.Parent=miscC
+local tbModeB=Instance.new("TextButton")
+tbModeB.Size=UDim2.new(0.22,0,0,20)
+tbModeB.Position=UDim2.new(0.68,0,0,717)
+tbModeB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+tbModeB.BackgroundTransparency=0.04
+tbModeB.Text="Tap"
+tbModeB.TextColor3=hudGray06()
+tbModeB.TextSize=13
+tbModeB.Font=Enum.Font.Gotham
+tbModeB.AutoButtonColor=false
+tbModeB.Parent=miscC
+Instance.new("UICorner",tbModeB).CornerRadius=UDim.new(0,5)
+
+tbModeB.MouseButton1Click:Connect(function()
+    G.triggerbotMode = G.triggerbotMode=="Tap" and "Hold" or "Tap"
+    tbModeB.Text=G.triggerbotMode
+    themeTween(tbModeB,"TextColor3",G.triggerbotEnabled and hudWhite() or hudGray06(),
+        TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out))
+    task.defer(function()
+        if G.autoSaveReady and not autoConfigLoading then saveAutoConfig() end
+    end)
+end)
+
+local tbTargetT=Instance.new("TextLabel")
+tbTargetT.Size=UDim2.new(0.5,0,0,22)
+tbTargetT.Position=UDim2.new(0,5,0,684)
+tbTargetT.BackgroundTransparency=1
+tbTargetT.Text="Target:"
+tbTargetT.TextColor3=hudGray06()
+tbTargetT.TextSize=16
+tbTargetT.Font=Enum.Font.Gotham
+tbTargetT.TextXAlignment=Enum.TextXAlignment.Left
+tbTargetT.Parent=miscC
+
+local tbTargetB=Instance.new("TextButton")
+tbTargetB.Size=UDim2.new(0.22,0,0,20)
+tbTargetB.Position=UDim2.new(0.68,0,0,685)
+tbTargetB.BackgroundColor3=Color3.new(0.15,0.15,0.15)
+tbTargetB.BackgroundTransparency=0.04
+tbTargetB.Text="All"
+tbTargetB.TextColor3=hudGray06()
+tbTargetB.TextSize=13
+tbTargetB.Font=Enum.Font.Gotham
+tbTargetB.AutoButtonColor=false
+tbTargetB.Parent=miscC
+Instance.new("UICorner",tbTargetB).CornerRadius=UDim.new(0,5)
+local tbTargetSt=Instance.new("UIStroke")
+tbTargetSt.Color=Color3.fromRGB(160,160,160)
+tbTargetSt.Transparency=1
+tbTargetSt.Thickness=1.5
+tbTargetSt.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+tbTargetSt.Parent=tbTargetB
+hover(tbTargetB,tbTargetSt)
+
 local bindC=Instance.new("Frame")
 bindC.Size=UDim2.new(0,343,0,550)
 bindC.Position=UDim2.new(0,0,0,0)
@@ -1870,17 +2231,27 @@ function createKeybindRow(parent,name,y,tf)
         end
         syncKeybindVisualState()
         task.defer(function()
-            if G.autoSaveReady and not autoConfigLoading then saveAutoConfig() end
+            if G.autoSaveReady and not autoConfigLoading then saveAutoConfig(true) end
         end)
     end)
 end
 
 local hudC=Instance.new("Frame")
-hudC.Size=UDim2.new(0,343,0,420)
+hudC.Size=UDim2.new(0,343,0,540)
 hudC.Position=UDim2.new(0,0,0,0)
 hudC.BackgroundTransparency=1
 hudC.Visible=false
 hudC.Parent=cv
+
+G.clientC=Instance.new("Frame")
+G.clientC.Size=UDim2.new(0,343,0,45)
+G.clientC.Position=UDim2.new(0,0,0,0)
+G.clientC.BackgroundTransparency=1
+G.clientC.Visible=false
+G.clientC.Parent=cv
+
+G.clientUI={}
+G.clientUI.toggle=makeToggleNoSlider(G.clientC,2,"AutoLoad")
 
 local colorBox=Instance.new("Frame")
 colorBox.Size=UDim2.new(0,80,0,80)
@@ -1945,6 +2316,13 @@ do
     hover(s,ss)
     hover(h2,hs)
     hueS,hueF,hueH=s,f,h2
+
+    G.hueGradient=Instance.new("UIGradient")
+    G.hueGradient.Rotation=0
+    G.hueGradient.Parent=hueS
+
+    hueF.BackgroundTransparency=1
+    G.hueFillGradient=nil
 end
 
 local satLabel=Instance.new("TextLabel")
@@ -2047,9 +2425,32 @@ do
     brightS,brightF,brightH=s,f,h2
 end
 
-local function rebuildHudColor()
+function getManualHudColor()
     local v=math.clamp(G.brightnessValue,0.1,1)
-    G.hudColor=Color3.fromHSV(G.hueValue,G.saturationValue,v)
+    return Color3.fromHSV(G.hueValue,G.saturationValue,v)
+end
+
+function rebuildHudColor()
+    if G.rgbEnabled then
+        local hue=G.rgbPhase%1
+        local sat=math.clamp(G.rgbBrightness,0,1)
+        G.hudColor=Color3.fromHSV(hue,sat,1)
+    else
+        G.hudColor=getManualHudColor()
+    end
+end
+
+function updateHueSliderGradient()
+    local sat=math.clamp(G.saturationValue,0,1)
+    local val=math.clamp(G.brightnessValue,0.1,1)
+    local points={
+        0,1/6,2/6,3/6,4/6,5/6,1
+    }
+    local keys={}
+    for i,hue in ipairs(points) do
+        keys[i]=ColorSequenceKeypoint.new(hue,Color3.fromHSV(hue%1,sat,val))
+    end
+    G.hueGradient.Color=ColorSequence.new(keys)
 end
 
 local hudAlphaLabel
@@ -2213,6 +2614,186 @@ function updateHudBackgroundBrightness(v)
     updateHudBackground()
 end
 
+-- RGB HUD controls. RGBBrightness is intentionally the RGB saturation amount:
+-- 0 = grayscale/white, 1 = fully saturated RGB.
+G.rgbUI={}
+G.rgbUI.toggle=makeToggleNoSlider(hudC,378,"RGB")
+
+G.rgbSpeedLabel=Instance.new("TextLabel")
+G.rgbSpeedLabel.Size=UDim2.new(0.5,0,0,22)
+G.rgbSpeedLabel.Position=UDim2.new(0,5,0,410)
+G.rgbSpeedLabel.BackgroundTransparency=1
+G.rgbSpeedLabel.Text="RGBSpeed: 1.00"
+G.rgbSpeedLabel.TextColor3=hudGray06()
+G.rgbSpeedLabel.TextSize=16
+G.rgbSpeedLabel.Font=Enum.Font.Gotham
+G.rgbSpeedLabel.TextXAlignment=Enum.TextXAlignment.Left
+G.rgbSpeedLabel.Parent=hudC
+
+do
+    local s=Instance.new("Frame")
+    s.Size=UDim2.new(0.885,0,0,6)
+    s.Position=UDim2.new(0.02,0,0,437)
+    s.BackgroundColor3=hudGray03()
+    s.BorderSizePixel=0
+    s.Parent=hudC
+    Instance.new("UICorner",s).CornerRadius=UDim.new(0,3)
+
+    local f=Instance.new("Frame")
+    f.Size=UDim2.new((G.rgbSpeed-0.05)/(3-0.05),0,1,0)
+    f.BackgroundColor3=hudGray06()
+    f.BorderSizePixel=0
+    f.Parent=s
+    Instance.new("UICorner",f).CornerRadius=UDim.new(0,3)
+
+    local h2=Instance.new("Frame")
+    h2.Size=UDim2.new(0,14,0,14)
+    h2.Position=UDim2.new((G.rgbSpeed-0.05)/(3-0.05),-7,0.5,-7)
+    h2.BackgroundColor3=hudGray06()
+    h2.BorderSizePixel=0
+    h2.Parent=s
+    Instance.new("UICorner",h2).CornerRadius=UDim.new(0,7)
+    local hs=Instance.new("UIStroke")
+    hs.Color=Color3.fromRGB(160,160,160)
+    hs.Transparency=1
+    hs.Thickness=1.5
+    hs.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+    hs.Parent=h2
+    hover(s,hs)
+    hover(h2,hs)
+    G.rgbSpeedS,G.rgbSpeedF,G.rgbSpeedH=s,f,h2
+end
+
+G.rgbBrightnessLabel=Instance.new("TextLabel")
+G.rgbBrightnessLabel.Size=UDim2.new(0.5,0,0,22)
+G.rgbBrightnessLabel.Position=UDim2.new(0,5,0,462)
+G.rgbBrightnessLabel.BackgroundTransparency=1
+G.rgbBrightnessLabel.Text="RGBBrightness: 1.00"
+G.rgbBrightnessLabel.TextColor3=hudGray06()
+G.rgbBrightnessLabel.TextSize=16
+G.rgbBrightnessLabel.Font=Enum.Font.Gotham
+G.rgbBrightnessLabel.TextXAlignment=Enum.TextXAlignment.Left
+G.rgbBrightnessLabel.Parent=hudC
+
+do
+    local s=Instance.new("Frame")
+    s.Size=UDim2.new(0.885,0,0,6)
+    s.Position=UDim2.new(0.02,0,0,488)
+    s.BackgroundColor3=hudGray03()
+    s.BorderSizePixel=0
+    s.Parent=hudC
+    Instance.new("UICorner",s).CornerRadius=UDim.new(0,3)
+
+    local f=Instance.new("Frame")
+    f.Size=UDim2.new(G.rgbBrightness,0,1,0)
+    f.BackgroundColor3=hudGray06()
+    f.BorderSizePixel=0
+    f.Parent=s
+    Instance.new("UICorner",f).CornerRadius=UDim.new(0,3)
+
+    local h2=Instance.new("Frame")
+    h2.Size=UDim2.new(0,14,0,14)
+    h2.Position=UDim2.new(G.rgbBrightness,-7,0.5,-7)
+    h2.BackgroundColor3=hudGray06()
+    h2.BorderSizePixel=0
+    h2.Parent=s
+    Instance.new("UICorner",h2).CornerRadius=UDim.new(0,7)
+    G.rgbBrightnessS,G.rgbBrightnessF,G.rgbBrightnessH=s,f,h2
+end
+
+G.rgbSep=Instance.new("Frame")
+G.rgbSep.Size=UDim2.new(0.905,0,0,1)
+G.rgbSep.Position=UDim2.new(0.01,0,0,366)
+G.rgbSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
+G.rgbSep.BorderSizePixel=0
+G.rgbSep.Parent=hudC
+
+function updateRgbSpeed(v)
+    v=math.clamp(v,0,1)
+    G.rgbSpeed=0.05+(3-0.05)*v
+    G.rgbSpeedLabel.Text="RGBSpeed: "..string.format("%.2f",G.rgbSpeed)
+    updateSlider(G.rgbSpeedF,G.rgbSpeedH,v)
+end
+
+function updateRgbBrightness(v)
+    v=math.clamp(v,0,1)
+    G.rgbBrightness=v
+    G.rgbBrightnessLabel.Text="RGBBrightness: "..string.format("%.2f",G.rgbBrightness)
+    updateSlider(G.rgbBrightnessF,G.rgbBrightnessH,v)
+    rebuildHudColor()
+    colorBox.BackgroundColor3=G.hudColor
+    if G.rgbEnabled then
+        applyHudTheme(true)
+        updateHudBackground()
+    else
+        keepHudPickerBright()
+    end
+end
+
+function setRGBColors(en)
+    local tc=en and hudWhite() or hudGray06()
+    local sc=en and hudGray05() or hudGray03()
+    local fc=en and hudWhite() or hudGray06()
+    local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+    themeTween(G.rgbUI.toggle.l,"TextColor3",tc,inf)
+    themeTween(G.rgbUI.toggle.k,"BackgroundColor3",en and hudWhite() or hudGray06(),inf)
+    themeTween(G.rgbUI.toggle.tr,"BackgroundColor3",en and hudGray05() or Color3.new(0.15,0.15,0.15),inf)
+    themeTween(G.rgbSpeedLabel,"TextColor3",tc,inf)
+    themeTween(G.rgbBrightnessLabel,"TextColor3",tc,inf)
+    themeTween(G.rgbSpeedS,"BackgroundColor3",sc,inf)
+    themeTween(G.rgbBrightnessS,"BackgroundColor3",sc,inf)
+    themeTween(G.rgbSpeedF,"BackgroundColor3",fc,inf)
+    themeTween(G.rgbSpeedH,"BackgroundColor3",fc,inf)
+    themeTween(G.rgbBrightnessF,"BackgroundColor3",fc,inf)
+    themeTween(G.rgbBrightnessH,"BackgroundColor3",fc,inf)
+    G.rgbSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
+end
+
+function toggleRGB()
+    G.rgbEnabled=not G.rgbEnabled
+    setToggle(G.rgbUI.toggle.tr,G.rgbUI.toggle.k,G.rgbEnabled,true)
+    rebuildHudColor()
+    colorBox.BackgroundColor3=G.hudColor
+
+    syncAllModuleVisualState()
+    applyHudTheme(true)
+    setRGBColors(G.rgbEnabled)
+    keepHudPickerBright()
+    updateHudBackground()
+end
+
+G.rgbUI.toggle.cl.MouseButton1Click:Connect(function()
+    toggleRGB()
+    task.defer(function()
+        if G.autoSaveReady and not autoConfigLoading then saveAutoConfig() end
+    end)
+end)
+
+function beginRgbSlider(input,slider,setter,field)
+    if input.UserInputType==Enum.UserInputType.MouseButton1
+    or input.UserInputType==Enum.UserInputType.Touch then
+        G.isSliding=true
+        G[field]=true
+        local size=slider.AbsoluteSize.X
+        if size>0 then
+            setter(math.clamp((input.Position.X-slider.AbsolutePosition.X)/size,0,1))
+        end
+    end
+end
+
+G.rgbSpeedS.InputBegan:Connect(function(i)
+    beginRgbSlider(i,G.rgbSpeedS,updateRgbSpeed,"draggingRgbSpeed")
+end)
+G.rgbSpeedH.InputBegan:Connect(function(i)
+    beginRgbSlider(i,G.rgbSpeedS,updateRgbSpeed,"draggingRgbSpeed")
+end)
+G.rgbBrightnessS.InputBegan:Connect(function(i)
+    beginRgbSlider(i,G.rgbBrightnessS,updateRgbBrightness,"draggingRgbBrightness")
+end)
+G.rgbBrightnessH.InputBegan:Connect(function(i)
+    beginRgbSlider(i,G.rgbBrightnessS,updateRgbBrightness,"draggingRgbBrightness")
+end)
+
 local function keepHudBackgroundControlsBright()
     hudAlphaLabel.TextColor3=hudWhite()
     hudBgBrightnessLabel.TextColor3=hudWhite()
@@ -2230,6 +2811,7 @@ function updateHue(v)
     colorBox.BackgroundColor3=G.hudColor
     hueLabel.Text="Hue: "..string.format("%.2f",G.hueValue)
     updateSlider(hueF,hueH,v)
+    updateHueSliderGradient()
     applyHudTheme(true)
     keepHudPickerBright()
     keepHudBackgroundControlsBright()
@@ -2243,6 +2825,7 @@ function updateSaturation(v)
     colorBox.BackgroundColor3=G.hudColor
     satLabel.Text="Saturation: "..string.format("%.2f",G.saturationValue)
     updateSlider(satF,satH,v)
+    updateHueSliderGradient()
     applyHudTheme(true)
     keepHudPickerBright()
     keepHudBackgroundControlsBright()
@@ -2257,6 +2840,7 @@ function updateBrightness(v)
     brightLabel.Text="Brightness: "..string.format("%.2f",G.brightnessValue)
     local sliderVal=(v-0.1)/(1-0.1)
     updateSlider(brightF,brightH,sliderVal)
+    updateHueSliderGradient()
     applyHudTheme(true)
     keepHudPickerBright()
     keepHudBackgroundControlsBright()
@@ -2266,16 +2850,26 @@ end
 function keepHudPickerBright()
     local bright=hudWhite()
     local track=hudWhite()
+    local manualColor=getManualHudColor()
+
     for obj,prop,value in pairs({
         [hueLabel]="TextColor3", [satLabel]="TextColor3", [brightLabel]="TextColor3",
-        [hueF]="BackgroundColor3", [hueH]="BackgroundColor3",
         [satF]="BackgroundColor3", [satH]="BackgroundColor3",
         [brightF]="BackgroundColor3", [brightH]="BackgroundColor3"
     }) do
         local v=bright
-        if obj==hueF or obj==satF or obj==brightF then v=track end
+        if obj==satF or obj==brightF then v=track end
         themeTween(obj,prop,v,TweenInfo.new(0))
     end
+
+    untrackThemeProperty(hueS,"BackgroundColor3")
+    untrackThemeProperty(hueF,"BackgroundColor3")
+    untrackThemeProperty(hueH,"BackgroundColor3")
+    hueS.BackgroundColor3=Color3.new(1,1,1)
+    hueF.BackgroundTransparency=1
+    hueH.BackgroundColor3=manualColor
+    G.hueGradient.Enabled=true
+    updateHueSliderGradient()
 end
 
 keepHudBackgroundControlsBright()
@@ -2306,7 +2900,8 @@ end
 hueS.InputBegan:Connect(function(i)
     if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
         G.isSliding=true
-        G.draggingHue=true        updateHueFromInput(i)
+        G.draggingHue=true
+        updateHueFromInput(i)
     end
 end)
 hueH.InputBegan:Connect(function(i)
@@ -2345,6 +2940,71 @@ brightH.InputBegan:Connect(function(i)
     end
 end)
 
+local function updateRgbThemeFast()
+    local c=G.hudColor
+    local c1=c
+    local c06=themeScaled(c,0.6)
+    local c05=themeScaled(c,0.5)
+    local c03=themeScaled(c,0.3)
+    local registry=G.hudThemeRegistry
+    for i=#registry,1,-1 do
+        local entry=registry[i]
+        local obj=entry.object
+        if obj and obj.Parent then
+            local scale=entry.currentScale or entry.scale
+            if entry.animStart and entry.animDuration then
+                local t=math.clamp((os.clock()-entry.animStart)/entry.animDuration,0,1)
+                local eased=1-(1-t)*(1-t)
+                scale=entry.animFromScale+(entry.animToScale-entry.animFromScale)*eased
+                entry.currentScale=scale
+                if t>=1 then
+                    entry.currentScale=entry.animToScale
+                    entry.animFromScale=nil
+                    entry.animToScale=nil
+                    entry.animStart=nil
+                    entry.animDuration=nil
+                    scale=entry.currentScale
+                end
+            end
+            if math.abs(scale-1)<0.001 then
+                obj[entry.property]=c1
+            elseif math.abs(scale-0.6)<0.001 then
+                obj[entry.property]=c06
+            elseif math.abs(scale-0.5)<0.001 then
+                obj[entry.property]=c05
+            elseif math.abs(scale-0.3)<0.001 then
+                obj[entry.property]=c03
+            else
+                obj[entry.property]=themeScaled(c,scale)
+            end
+        else
+            table.remove(registry,i)
+        end
+    end
+
+    for stroke in pairs(G.hoveredStrokes or {}) do
+        if stroke and stroke.Parent then
+            stroke.Color=c1
+        else
+            G.hoveredStrokes[stroke]=nil
+        end
+    end
+
+    colorBox.BackgroundColor3=c1
+    updateHudBackground()
+end
+
+local rgbRenderAccumulator=0
+R.RenderStepped:Connect(function(dt)
+    if G.scriptTerminated or not G.rgbEnabled then return end
+    G.rgbPhase=(G.rgbPhase + dt*0.08*G.rgbSpeed)%1
+    rgbRenderAccumulator=rgbRenderAccumulator+dt
+    if rgbRenderAccumulator<0.0333 then return end
+    rgbRenderAccumulator=rgbRenderAccumulator%0.0333
+    rebuildHudColor()
+    updateRgbThemeFast()
+end)
+
 U.InputChanged:Connect(function(i)
     if G.scriptTerminated then return end
     if G.draggingHue and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
@@ -2370,6 +3030,20 @@ U.InputChanged:Connect(function(i)
             updateHudBackgroundBrightness(v)
         end
     end
+    if G.draggingRgbSpeed and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+        local size=G.rgbSpeedS.AbsoluteSize.X
+        if size>0 then
+            local v=math.clamp((i.Position.X-G.rgbSpeedS.AbsolutePosition.X)/size,0,1)
+            updateRgbSpeed(v)
+        end
+    end
+    if G.draggingRgbBrightness and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+        local size=G.rgbBrightnessS.AbsoluteSize.X
+        if size>0 then
+            local v=math.clamp((i.Position.X-G.rgbBrightnessS.AbsolutePosition.X)/size,0,1)
+            updateRgbBrightness(v)
+        end
+    end
 end)
 
 U.InputEnded:Connect(function(i)
@@ -2379,11 +3053,13 @@ U.InputEnded:Connect(function(i)
         G.draggingBrightness=false
         G.draggingHudAlpha=false
         G.draggingHudBackgroundBrightness=false
+        G.draggingRgbSpeed=false
+        G.draggingRgbBrightness=false
     end
 end)
 
 local catBar=Instance.new("Frame")
-catBar.Size=UDim2.new(0,82,0,440)
+catBar.Size=UDim2.new(0,82,0,490)
 catBar.Position=UDim2.new(0,4,0,35)
 catBar.BackgroundTransparency=1
 catBar.Parent=mf
@@ -2483,6 +3159,25 @@ hudL.Font=Enum.Font.GothamBold
 hudL.TextWrapped=true
 hudL.Parent=catBar
 
+G.clientSep=Instance.new("Frame")
+G.clientSep.Size=UDim2.new(0,48,0,1)
+G.clientSep.Position=UDim2.new(0.5,-24,0,262)
+G.clientSep.BackgroundColor3=Color3.new(0.4,0.4,0.4)
+G.clientSep.BorderSizePixel=0
+G.clientSep.Parent=catBar
+
+G.clientL=Instance.new("TextButton")
+G.clientL.Size=UDim2.new(1,0,0,40)
+G.clientL.Position=UDim2.new(0,0,0,268)
+G.clientL.BackgroundTransparency=1
+G.clientL.Text="client"
+G.clientL.TextColor3=hudGray06()
+G.clientL.TextTransparency=0.4
+G.clientL.TextSize=14
+G.clientL.Font=Enum.Font.GothamBold
+G.clientL.TextWrapped=true
+G.clientL.Parent=catBar
+
 local scrollTrack=Instance.new("Frame")
 scrollTrack.Size=UDim2.new(0,6,0,430)
 scrollTrack.Position=UDim2.new(1,-10,0,35)
@@ -2513,6 +3208,8 @@ function ac()
     if G.currentCategory=="visuals" then return visualsC end
     if G.currentCategory=="misc" then return miscC end
     if G.currentCategory=="bind" then return bindC end
+    if G.currentCategory=="hud" then return hudC end
+    if G.currentCategory=="client" then return G.clientC end
     return hudC
 end
 
@@ -2723,6 +3420,7 @@ function setNametagColors(en)
     themeTween(nametagHeightF,"BackgroundColor3",fc,inf)
     themeTween(nametagHeightH,"BackgroundColor3",fc,inf)
     themeTween(nametagUI.alphaLabel,"TextColor3",tc,inf)
+    -- healthToggle удален, поэтому не вызываем
     themeTween(nametagAlphaS,"BackgroundColor3",sc,inf)
     themeTween(nametagAlphaF,"BackgroundColor3",fc,inf)
     themeTween(nametagAlphaH,"BackgroundColor3",fc,inf)
@@ -2745,13 +3443,8 @@ function setAimbotColors(en)
     themeTween(targT,"TextColor3",tc,inf)
     themeTween(sortT,"TextColor3",tc,inf)
     themeTween(modeT,"TextColor3",tc,inf)
-    if G.aimbotEnabled then
-        themeTween(tlT,"TextColor3",hudWhite(),inf)
-        themeTween(wcT,"TextColor3",hudWhite(),inf)
-    else
-        themeTween(tlT,"TextColor3",hudGray06(),inf)
-        themeTween(wcT,"TextColor3",hudGray06(),inf)
-    end
+    themeTween(tlT,"TextColor3",en and G.targetLockEnabled and hudWhite() or hudGray06(),inf)
+    themeTween(wcT,"TextColor3",en and G.wallsCheckEnabled and hudWhite() or hudGray06(),inf)
     
     local targColor=en and hudWhite() or hudGray06()
     themeTween(targB,"TextColor3",targColor,inf)
@@ -2801,6 +3494,16 @@ function setPhaseColors(en)
     themeTween(Tt.phase.l,"TextColor3",tc,inf)
 end
 
+function setTriggerbotColors(en)
+    local tc=en and hudWhite() or hudGray06()
+    local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+    themeTween(tbLabel,"TextColor3",tc,inf)
+    themeTween(tbTargetT,"TextColor3",tc,inf)
+    themeTween(tbTargetB,"TextColor3",en and hudWhite() or hudGray06(),inf)
+    themeTween(tbModeT,"TextColor3",tc,inf)
+    themeTween(tbModeB,"TextColor3",en and hudWhite() or hudGray06(),inf)
+end
+
 function setAutoShootColors(en)
     local tc=en and hudWhite() or hudGray06()
     local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
@@ -2809,11 +3512,8 @@ end
 
 function setNoclipFlightColor()
     local isOn=G.flightEnabled
-    if isOn then
-        T:Create(Tt.noclip.l,TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=hudWhite()}):Play()
-    else
-        T:Create(Tt.noclip.l,TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextColor3=hudGray06()}):Play()
-    end
+    local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+    themeTween(Tt.noclip.l,"TextColor3",isOn and hudWhite() or hudGray06(),inf)
 end
 
 function applySpeed()
@@ -3001,7 +3701,8 @@ function applyTimerSpeedToAll()
 end
 
 function toggleSpeed()
-    G.speedEnabled=not G.speedEnabled    setToggle(Tt.speed.tr,Tt.speed.k,G.speedEnabled,true)
+    G.speedEnabled=not G.speedEnabled
+    setToggle(Tt.speed.tr,Tt.speed.k,G.speedEnabled,true)
     setColors(G.speedEnabled,Tt.speed.l,nil,nil,nil)
     setColors(G.speedEnabled,Tt.speed.vl,Tt.speed.s,Tt.speed.f,Tt.speed.h)
     applySpeed()
@@ -3223,25 +3924,79 @@ function toggleAutoWalk()
     end
 end
 
+G.startAutoJump=function()
+    if G.autojumpConnection then
+        pcall(function() G.autojumpConnection:Disconnect() end)
+        G.autojumpConnection=nil
+    end
+    if not G.autojumpEnabled then return end
+
+    G.autoJumpKeyHeld=false
+    G.lastAutoJumpPress=0
+    G.pressSpace=function()
+        local ok=false
+        pcall(function()
+            game:GetService("VirtualInputManager"):SendKeyEvent(true,Enum.KeyCode.Space,false,game)
+            ok=true
+        end)
+        if not ok and type(keypress)=="function" then
+            ok=pcall(keypress,0x20)
+        end
+        G.autoJumpKeyHeld=ok
+    end
+    G.releaseSpace=function()
+        pcall(function() game:GetService("VirtualInputManager"):SendKeyEvent(false,Enum.KeyCode.Space,false,game) end)
+        if type(keyrelease)=="function" then pcall(keyrelease,0x20) end
+        G.autoJumpKeyHeld=false
+    end
+
+    G.pressSpace()
+
+    -- Some games/executors do not forward a held Space key to the Humanoid.
+    -- In that case, setting Jump while grounded gives the same gameplay
+    -- result without waiting for a key event that may never arrive.
+    G.autojumpConnection=R.Heartbeat:Connect(function()
+        if not G.autojumpEnabled or not h or h.Health<=0 then return end
+        local state=h:GetState()
+        local now=tick()
+
+        if state==Enum.HumanoidStateType.Landed or state==Enum.HumanoidStateType.Running then
+            if now-G.lastAutoJumpPress>=0.08 then
+                h.Jump=true
+                G.lastAutoJumpPress=now
+            end
+        end
+
+        if not G.autoJumpKeyHeld then
+            G.pressSpace()
+        end
+    end)
+end
+
+G.stopAutoJump=function()
+    if G.autojumpConnection then
+        pcall(function() G.autojumpConnection:Disconnect() end)
+        G.autojumpConnection=nil
+    end
+    if G.autoJumpKeyHeld then
+        if G.releaseSpace then
+            G.releaseSpace()
+        else
+            pcall(function() game:GetService("VirtualInputManager"):SendKeyEvent(false,Enum.KeyCode.Space,false,game) end)
+            if type(keyrelease)=="function" then pcall(keyrelease,0x20) end
+            G.autoJumpKeyHeld=false
+        end
+    end
+end
+
 function toggleAutoJump()
     G.autojumpEnabled=not G.autojumpEnabled
     setToggle(ajTr,ajK,G.autojumpEnabled,true)
     setAutoJumpColors(G.autojumpEnabled)
     if G.autojumpEnabled then
-        if not G.autojumpConnection then
-            G.autojumpConnection=R.RenderStepped:Connect(function()
-                if G.autojumpEnabled and h then
-                    if h.FloorMaterial~=Enum.Material.Air then
-                        h:ChangeState(Enum.HumanoidStateType.Jumping)
-                    end
-                end
-            end)
-        end
+        G.startAutoJump()
     else
-        if G.autojumpConnection then
-            G.autojumpConnection:Disconnect()
-            G.autojumpConnection=nil
-        end
+        G.stopAutoJump()
     end
 end
 
@@ -3289,6 +4044,80 @@ function toggleAutoShoot()
         G.autoshootCooldownEnd=0
     end
 end
+
+function cycleTriggerbotTarget()
+    if G.triggerbotTarget=="All" then G.triggerbotTarget="Players"
+    elseif G.triggerbotTarget=="Players" then G.triggerbotTarget="NPC"
+    else G.triggerbotTarget="All" end
+    tbTargetB.Text=G.triggerbotTarget
+    themeTween(tbTargetB,"TextColor3",G.triggerbotEnabled and hudWhite() or hudGray06(),TweenInfo.new(0.2))
+    task.defer(function()
+        if G.autoSaveReady and not autoConfigLoading and tick()>G.saveCooldownUntil then saveAutoConfig() end
+    end)
+end
+
+local function triggerbotGetTarget()
+    local target=m.Target
+    if not target then return nil end
+    local model=target:FindFirstAncestorOfClass("Model")
+    if not model or model==c then return nil end
+    local hum=model:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health<=0 then return nil end
+    local plr=P:GetPlayerFromCharacter(model)
+    local isPlayer=plr~=nil and plr~=p
+    if G.triggerbotTarget=="Players" and not isPlayer then return nil end
+    if G.triggerbotTarget=="NPC" and isPlayer then return nil end
+    local cam=workspace.CurrentCamera
+    if not cam then return nil end
+    local mp=U:GetMouseLocation()
+    local ray=cam:ViewportPointToRay(mp.X,mp.Y)
+    local params=RaycastParams.new()
+    params.FilterType=Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances={c}
+    params.IgnoreWater=true
+    local hit=workspace:Raycast(ray.Origin,ray.Direction*10000,params)
+    if not hit or not hit.Instance then return nil end
+    local hitModel=hit.Instance:FindFirstAncestorOfClass("Model")
+    if hitModel~=model then return nil end
+    return model
+end
+
+function toggleTriggerbot()
+    G.triggerbotEnabled=not G.triggerbotEnabled
+    setToggle(tbTr,tbK,G.triggerbotEnabled,true)
+    setTriggerbotColors(G.triggerbotEnabled)
+    G.triggerbotAccumulator=0
+    task.defer(function()
+        if G.autoSaveReady and not autoConfigLoading and tick()>G.saveCooldownUntil then saveAutoConfig() end
+    end)
+end
+
+-- Keep exactly one permanent RenderStepped worker.
+-- It is intentionally NOT created/destroyed by toggle or CharacterAdded, so a
+-- death/respawn cannot leave Triggerbot without its worker. The current
+-- character reference `c` is refreshed by CharacterAdded below.
+if G.triggerbotConnection then
+    pcall(function() G.triggerbotConnection:Disconnect() end)
+end
+G.triggerbotConnection=R.RenderStepped:Connect(function(dt)
+    if G.scriptTerminated or not G.triggerbotEnabled then return end
+    local valid = triggerbotGetTarget()~=nil
+    if G.triggerbotMode=="Hold" then
+        if valid and not G.triggerbotHolding then
+            G.triggerbotHolding=true
+            pcall(mouse1press)
+        elseif not valid and G.triggerbotHolding then
+            G.triggerbotHolding=false
+            pcall(mouse1release)
+        end
+        return
+    end
+    if not valid then return end
+    G.triggerbotAccumulator=G.triggerbotAccumulator+math.min(dt,0.1)
+    if G.triggerbotAccumulator<0.025 then return end
+    G.triggerbotAccumulator=G.triggerbotAccumulator-0.025
+    pcall(mouse1click)
+end)
 
 function cycleTarget()
     if G.aimTarget=="Head" then
@@ -3341,63 +4170,110 @@ function cycleMode()
     end
 end
 
-function clearESP()
-    for plr,conn in pairs(G.espConnections) do
-        if conn then
-            pcall(function() conn:Disconnect() end)
+G.espSuppressedHighlights={}
+G.espForeignConnections={}
+G.espTrackedModels={}
+
+if G.espSuppressConnection then
+    pcall(function() G.espSuppressConnection:Disconnect() end)
+    G.espSuppressConnection=nil
+end
+
+G.restoreForeignHighlights=function()
+    for obj,enabled in pairs(G.espSuppressedHighlights) do
+        if obj and obj.Parent then
+            pcall(function() obj.Enabled=enabled end)
         end
-        G.espConnections[plr]=nil
+    end
+    for obj,conn in pairs(G.espForeignConnections) do
+        if conn then pcall(function() conn:Disconnect() end) end
+    end
+    G.espSuppressedHighlights={}
+    G.espForeignConnections={}
+end
+
+local function trackForeignHighlight(obj)
+    if not obj or not obj:IsA("Highlight") or not G.espEnabled then return end
+    if G.espForeignConnections[obj] then return end
+    local model=obj:FindFirstAncestorOfClass("Model")
+    if not model or model==c then return end
+    local own=model:FindFirstChild("Totally NOT Esp")
+    if own==obj then return end
+
+    if G.espSuppressedHighlights[obj]==nil then
+        G.espSuppressedHighlights[obj]=obj.Enabled
+    end
+    pcall(function() obj.Enabled=false end)
+
+    G.espForeignConnections[obj]=obj:GetPropertyChangedSignal("Enabled"):Connect(function()
+        if G.espEnabled and obj.Parent then
+            pcall(function() obj.Enabled=false end)
+        end
+    end)
+
+    obj.AncestryChanged:Connect(function(_,parent)
+        if parent then return end
+        local conn=G.espForeignConnections[obj]
+        if conn then pcall(function() conn:Disconnect() end) end
+        G.espForeignConnections[obj]=nil
+        G.espSuppressedHighlights[obj]=nil
+    end)
+end
+
+G.suppressForeignHighlights=function(model,own)
+    if not G.espEnabled or not model or not model.Parent then return end
+    for _,obj in ipairs(model:GetDescendants()) do
+        if obj:IsA("Highlight") and obj~=own then
+            trackForeignHighlight(obj)
+        end
+    end
+end
+
+function clearESP()
+    G.restoreForeignHighlights()
+    for model,conn in pairs(G.espTrackedModels) do
+        if conn then pcall(function() conn:Disconnect() end) end
+        G.espTrackedModels[model]=nil
     end
     for _,plr in ipairs(P:GetPlayers()) do
         if plr~=p then
             local char=plr.Character
             if char then
                 local esp=char:FindFirstChild("Totally NOT Esp")
-                if esp and esp:IsA("Highlight") then
-                    esp:Destroy()
-                end
+                if esp and esp:IsA("Highlight") then esp:Destroy() end
             end
         end
     end
     for _,model in ipairs(WS:GetChildren()) do
-        if model:IsA("Model") and model~=c and model:FindFirstChildOfClass("Humanoid") then
+        if model:IsA("Model") and model~=c then
             local esp=model:FindFirstChild("Totally NOT Esp")
-            if esp and esp:IsA("Highlight") then
-                esp:Destroy()
-            end
+            if esp and esp:IsA("Highlight") then esp:Destroy() end
         end
     end
 end
 
-function applyESPToPlayer(plr)
-    if not G.espEnabled or plr==p then return end
-    local char=plr.Character
-    if not char then return end
-
-    local esp=char:FindFirstChild("Totally NOT Esp")
-    if not esp or not esp:IsA("Highlight") then
-        esp=Instance.new("Highlight")
-        esp.Name="Totally NOT Esp"
-        esp.Adornee=char
-        esp.Archivable=true
-        esp.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-        esp.FillColor=hudWhite()
-        esp.OutlineColor=hudWhite()
-        esp.Parent=char
-        registerHudThemeObject(esp)
-    end
-
-    esp.Enabled=true
-    esp.FillTransparency=1-math.clamp(G.espFillTransparency,0,1)
-    esp.OutlineTransparency=1-math.clamp(G.espOutlineTransparency,0,1)
+function shouldESPApply(model)
+    if not G.espEnabled or model==c then return false end
+    if G.espNPCMode=="All" then return true end
+    local plr=P:GetPlayerFromCharacter(model)
+    if G.espNPCMode=="Players" then return plr~=nil and plr~=p end
+    if G.espNPCMode=="NPC" then return plr==nil end
+    return true
 end
 
 function applyESPToModel(model)
-    if not G.espEnabled or model==c then return end
-    if not model:IsA("Model") then return end
+    if not G.espEnabled or model==c or not model:IsA("Model") then return end
     local hum=model:FindFirstChildOfClass("Humanoid")
-    if not hum or hum.Health<=0 then return end
-    
+    if not hum or hum.Health<=0 or not shouldESPApply(model) then return end
+
+    G.espTrackedModels[model]=G.espTrackedModels[model] or model.AncestryChanged:Connect(function(_,parent)
+        if not parent then
+            local conn=G.espTrackedModels[model]
+            if conn then pcall(function() conn:Disconnect() end) end
+            G.espTrackedModels[model]=nil
+        end
+    end)
+
     local esp=model:FindFirstChild("Totally NOT Esp")
     if not esp or not esp:IsA("Highlight") then
         esp=Instance.new("Highlight")
@@ -3405,72 +4281,262 @@ function applyESPToModel(model)
         esp.Adornee=model
         esp.Archivable=true
         esp.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
-        esp.FillColor=hudWhite()
-        esp.OutlineColor=hudWhite()
         esp.Parent=model
         registerHudThemeObject(esp)
     end
 
+    G.suppressForeignHighlights(model,esp)
     esp.Enabled=true
+    esp.FillColor=hudWhite()
+    esp.OutlineColor=hudWhite()
+    esp.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
     esp.FillTransparency=1-math.clamp(G.espFillTransparency,0,1)
     esp.OutlineTransparency=1-math.clamp(G.espOutlineTransparency,0,1)
 end
 
 function refreshESP()
-    if not G.espEnabled then
-        clearESP()
-        return
-    end
+    if not G.espEnabled then clearESP(); return end
+
+    -- Player characters are the common ESP target. Handle them directly so
+    -- refreshes do not have to walk unrelated Workspace objects.
     for _,plr in ipairs(P:GetPlayers()) do
-        if plr~=p then
-            applyESPToPlayer(plr)
+        if plr~=p and plr.Character then
+            applyESPToModel(plr.Character)
         end
     end
-    for _,model in ipairs(WS:GetChildren()) do
-        if model:IsA("Model") and model~=c then
-            applyESPToModel(model)
+
+    -- Keep NPC support, but only inspect top-level models (the old behavior).
+    if G.espNPCMode~="Players" then
+        for _,model in ipairs(WS:GetChildren()) do
+            if model:IsA("Model") and model~=c and P:GetPlayerFromCharacter(model)==nil then
+                applyESPToModel(model)
+            end
         end
     end
 end
 
-function hookESPPlayer(plr)
-    if plr==p then return end
-    if G.espConnections[plr] then
-        pcall(function() G.espConnections[plr]:Disconnect() end)
-    end
-    G.espConnections[plr]=plr.CharacterAdded:Connect(function()
-        task.wait()
-        if G.espEnabled then
-            applyESPToPlayer(plr)
-        end
+WS.ChildAdded:Connect(function(model)
+    if not model:IsA("Model") or model==c then return end
+    task.defer(function()
+        if G.espEnabled then applyESPToModel(model) end
     end)
-    if G.espEnabled then
-        applyESPToPlayer(plr)
+end)
+
+WS.DescendantAdded:Connect(function(obj)
+    if not G.espEnabled then return end
+    if obj:IsA("Highlight") then
+        local model=obj:FindFirstAncestorOfClass("Model")
+        if model and model~=c then
+            trackForeignHighlight(obj)
+            task.defer(function()
+                if G.espEnabled then applyESPToModel(model) end
+            end)
+        end
+    elseif obj:IsA("Humanoid") then
+        local model=obj.Parent
+        if model and model:IsA("Model") and model~=c then
+            task.defer(function()
+                if G.espEnabled then applyESPToModel(model) end
+            end)
+        end
+    end
+end)
+
+G.hookESPPlayer=function(plr)
+    if plr==p then return end
+
+    plr.CharacterAdded:Connect(function(char)
+        -- Apply as soon as the Humanoid exists, then retry after appearance
+        -- loading. This fixes games that assemble characters in several steps.
+        task.spawn(function()
+            local hum=char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid",5)
+            if hum and G.espEnabled then applyESPToModel(char) end
+        end)
+
+        pcall(function()
+            plr.CharacterAppearanceLoaded:Connect(function(loadedChar)
+                if G.espEnabled and loadedChar==plr.Character then
+                    applyESPToModel(loadedChar)
+                end
+            end)
+        end)
+    end)
+
+    if plr.Character then
+        task.defer(function()
+            if G.espEnabled then applyESPToModel(plr.Character) end
+        end)
     end
 end
 
 for _,plr in ipairs(P:GetPlayers()) do
-    hookESPPlayer(plr)
+    G.hookESPPlayer(plr)
 end
 
-P.PlayerAdded:Connect(function(plr)
-    hookESPPlayer(plr)
+P.PlayerAdded:Connect(G.hookESPPlayer)
+
+G.updateBoxEspAlpha=function(v)
+    G.boxEspAlpha=math.clamp(tonumber(v) or 0,0,1)
+    if G.boxUI and G.boxUI.alpha then G.boxUI.alpha.set(G.boxEspAlpha) end
+end
+
+G.updateTracersAlpha=function(v)
+    G.tracersAlpha=math.clamp(tonumber(v) or 0,0,1)
+    if G.tracerUI and G.tracerUI.alpha then G.tracerUI.alpha.set(G.tracersAlpha) end
+end
+
+G.clearVisualEspDrawings=function()
+    for plr,obj in pairs(G.boxEspDrawings) do
+        if obj then pcall(function() obj:Remove() end) end
+        G.boxEspDrawings[plr]=nil
+    end
+    for plr,obj in pairs(G.tracerDrawings) do
+        if obj then pcall(function() obj:Remove() end) end
+        G.tracerDrawings[plr]=nil
+    end
+end
+
+G.getVisualEspDrawing=function(plr,kind)
+    local cache=(kind=="box" and G.boxEspDrawings or G.tracerDrawings)
+    if cache[plr] then return cache[plr] end
+    if not Drawing or type(Drawing.new)~="function" then return nil end
+    local ok,obj=pcall(function()
+        return Drawing.new(kind=="box" and "Square" or "Line")
+    end)
+    if not ok or not obj then return nil end
+    pcall(function() obj.Visible=false end)
+    pcall(function() obj.Color=hudWhite() end)
+    pcall(function() obj.Transparency=1 end)
+    pcall(function() obj.Thickness=1.5 end)
+    if kind=="box" then pcall(function() obj.Filled=false end) end
+    cache[plr]=obj
+    return obj
+end
+
+G.hideVisualEspDrawings=function()
+    for _,obj in pairs(G.boxEspDrawings) do if obj then pcall(function() obj.Visible=false end) end end
+    for _,obj in pairs(G.tracerDrawings) do if obj then pcall(function() obj.Visible=false end) end end
+end
+
+G.updateVisualEsp=function()
+    local boxOn=G.boxEspEnabled
+    local tracerOn=G.tracersEnabled
+    if not boxOn and not tracerOn then
+        G.hideVisualEspDrawings()
+        return
+    end
+
+    local cam=WS.CurrentCamera
+    if not cam then
+        G.hideVisualEspDrawings()
+        return
+    end
+
+    local center=cam.ViewportSize/2
+    local col=hudWhite()
+    local seen={}
+
+    for _,plr in ipairs(P:GetPlayers()) do
+        if plr~=p then
+            seen[plr]=true
+            local bx=G.boxEspDrawings[plr]
+            local tr=G.tracerDrawings[plr]
+
+            if not boxOn and bx then pcall(function() bx.Visible=false end) end
+            if not tracerOn and tr then pcall(function() tr.Visible=false end) end
+
+            local char=plr.Character
+            local hum=char and char:FindFirstChildOfClass("Humanoid")
+            local root=char and char:FindFirstChild("HumanoidRootPart")
+            local head=char and char:FindFirstChild("Head")
+
+            local valid=hum and hum.Health>0 and root and head and char.Parent
+            if valid then
+                -- A little padding keeps the whole avatar inside the rectangle.
+                local topWorld=head.Position+Vector3.new(0,0.65,0)
+                local bottomWorld=root.Position-Vector3.new(0,hum.HipHeight+2.35,0)
+                local hp,onHead=cam:WorldToViewportPoint(topWorld)
+                local fp,onFeet=cam:WorldToViewportPoint(bottomWorld)
+                local onScreen=hp.Z>0 and fp.Z>0 and (onHead or onFeet)
+
+                if onScreen then
+                    local topY=math.min(hp.Y,fp.Y)
+                    local bottomY=math.max(hp.Y,fp.Y)
+                    local bh=math.max(12,(bottomY-topY)*1.08)
+                    local bw=math.max(8,bh*0.52)
+                    local cx=(hp.X+fp.X)/2
+                    local left=cx-bw/2
+                    topY=topY-bh*0.04
+
+                    if boxOn then
+                        bx=bx or G.getVisualEspDrawing(plr,"box")
+                        if bx then
+                            pcall(function()
+                                bx.Position=Vector2.new(left,topY)
+                                bx.Size=Vector2.new(bw,bh)
+                                bx.Color=col
+                                bx.Transparency=G.boxEspAlpha
+                                bx.Visible=true
+                                bx.ZIndex=5
+                            end)
+                        end
+                    end
+
+                    if tracerOn then
+                        tr=tr or G.getVisualEspDrawing(plr,"tracer")
+                        if tr then
+                            pcall(function()
+                                tr.From=center
+                                tr.To=Vector2.new(cx,topY+bh/2)
+                                tr.Color=col
+                                tr.Transparency=G.tracersAlpha
+                                tr.Visible=true
+                                tr.ZIndex=5
+                            end)
+                        end
+                    end
+                else
+                    if bx then pcall(function() bx.Visible=false end) end
+                    if tr then pcall(function() tr.Visible=false end) end
+                end
+            else
+                if bx then pcall(function() bx.Visible=false end) end
+                if tr then pcall(function() tr.Visible=false end) end
+            end
+        end
+    end
+
+    -- Hide anything belonging to a player that is no longer in Players.
+    for plr,obj in pairs(G.boxEspDrawings) do
+        if not seen[plr] then
+            pcall(function() obj.Visible=false end)
+        end
+    end
+    for plr,obj in pairs(G.tracerDrawings) do
+        if not seen[plr] then
+            pcall(function() obj.Visible=false end)
+        end
+    end
+end
+
+-- Drawing overlays follow the camera every rendered frame for smooth motion.
+if G.visualEspConnection then
+    pcall(function() G.visualEspConnection:Disconnect() end)
+end
+G.visualEspConnection=R.RenderStepped:Connect(function()
+    if G.scriptTerminated then return end
+    if G.boxEspEnabled or G.tracersEnabled then
+        G.updateVisualEsp()
+    end
 end)
 
 P.PlayerRemoving:Connect(function(plr)
-    if G.espConnections[plr] then
-        pcall(function() G.espConnections[plr]:Disconnect() end)
-        G.espConnections[plr]=nil
-    end
-end)
-
-WS.ChildAdded:Connect(function(model)
-    if model:IsA("Model") and model~=c and model:FindFirstChildOfClass("Humanoid") then
-        task.wait(0.5)
-        if G.espEnabled then
-            applyESPToModel(model)
-        end
-    end
+    local bx=G.boxEspDrawings[plr]
+    if bx then pcall(function() bx.Visible=false; bx:Remove() end) end
+    G.boxEspDrawings[plr]=nil
+    local tr=G.tracerDrawings[plr]
+    if tr then pcall(function() tr.Visible=false; tr:Remove() end) end
+    G.tracerDrawings[plr]=nil
 end)
 
 function setESPColors(en)
@@ -3487,6 +4553,9 @@ function setESPColors(en)
     themeTween(espOutlineS,"BackgroundColor3",sc,inf)
     themeTween(espOutlineF,"BackgroundColor3",fc,inf)
     themeTween(espOutlineH,"BackgroundColor3",fc,inf)
+    themeTween(espUI.npc.label,"TextColor3",tc,inf)
+    local btnColor=en and hudWhite() or hudGray06()
+    themeTween(espUI.npc.button,"TextColor3",btnColor,inf)
 end
 
 function toggleESP()
@@ -3558,7 +4627,11 @@ function applyNametagToPlayer(plr)
     end
 
     hum.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None
-    hum.DisplayName=""
+    hum:GetPropertyChangedSignal("DisplayName"):Connect(function()
+        if G.nametagEnabled then
+            hum.DisplayName=""
+        end
+    end)
 
     local tag=head:FindFirstChild("CustomNametag")
     if not tag or not tag:IsA("BillboardGui") then
@@ -3569,12 +4642,14 @@ function applyNametagToPlayer(plr)
         tag.AlwaysOnTop=true
         tag.LightInfluence=0
         tag.MaxDistance=1000
-        tag.Size=UDim2.fromOffset(220,50)
+        tag.Size=UDim2.fromOffset(220,58)
         tag.Parent=head
-
+        
+        -- Health удален полностью, создаем только Label
         local label=Instance.new("TextLabel")
         label.Name="Label"
-        label.Size=UDim2.fromScale(1,1)
+        label.Size=UDim2.new(1,0,0,45)
+        label.Position=UDim2.fromOffset(0,0)
         label.BackgroundTransparency=1
         label.TextColor3=hudWhite()
         label.TextStrokeColor3=Color3.new(0,0,0)
@@ -3583,9 +4658,10 @@ function applyNametagToPlayer(plr)
         label.TextScaled=false
         label.TextXAlignment=Enum.TextXAlignment.Center
         label.TextYAlignment=Enum.TextYAlignment.Center
+        label.ZIndex=2
         label.Parent=tag
         registerHudThemeObject(label)
-
+        
         local scale=Instance.new("UIScale")
         scale.Name="DistanceScale"
         scale.Scale=1
@@ -3607,6 +4683,7 @@ function applyNametagToPlayer(plr)
         label.TextSize=G.nametagSize
         label.TextTransparency=1-math.clamp(G.nametagAlpha,0,1)
         label.TextStrokeTransparency=0.35
+        label.ZIndex=2
     end
 end
 
@@ -3635,15 +4712,68 @@ function hookNametagPlayer(plr)
     if plr==p then return end
 
     if G.nametagConnections[plr] then
-        pcall(function() G.nametagConnections[plr]:Disconnect() end)
+        pcall(function()
+            G.nametagConnections[plr]:Disconnect()
+        end)
     end
 
     G.nametagConnections[plr]=plr.CharacterAdded:Connect(function()
-        task.wait()
-        if G.nametagEnabled then
-            applyNametagToPlayer(plr)
-        end
+        task.defer(function()
+            for i=1,20 do
+                if not G.nametagEnabled then break end
+
+                if plr.Character 
+                and plr.Character:FindFirstChildOfClass("Humanoid") 
+                and (plr.Character:FindFirstChild("Head") 
+                or plr.Character:FindFirstChild("HumanoidRootPart")) then
+                    
+                    applyNametagToPlayer(plr)
+                end
+
+                task.wait(0.15)
+            end
+        end)
     end)
+
+    if plr.CharacterAppearanceLoaded then
+        pcall(function()
+            G.nametagConnections[plr.."_appearance"]=plr.CharacterAppearanceLoaded:Connect(function()
+                if G.nametagEnabled then
+                    task.defer(function()
+                        applyNametagToPlayer(plr)
+                    end)
+                end
+            end)
+        end)
+    end
+
+    if plr.Character then
+        pcall(function()
+            G.nametagConnections[plr.."_desc"] =
+            plr.Character.DescendantAdded:Connect(function(obj)
+                if not G.nametagEnabled then
+                    return
+                end
+
+                if obj:IsA("Humanoid")
+                or obj.Name=="Head"
+                or obj:IsA("BillboardGui") then
+                    task.defer(function()
+                        local char=plr.Character
+                        if char then
+                            for _,v in ipairs(char:GetDescendants()) do
+                                if v:IsA("BillboardGui")
+                                and v.Name~="CustomNametag" then
+                                    v.Enabled=false
+                                end
+                            end
+                        end
+                        applyNametagToPlayer(plr)
+                    end)
+                end
+            end)
+        end)
+    end
 
     if G.nametagEnabled then
         applyNametagToPlayer(plr)
@@ -3659,9 +4789,11 @@ P.PlayerAdded:Connect(function(plr)
 end)
 
 P.PlayerRemoving:Connect(function(plr)
-    if G.nametagConnections[plr] then
-        pcall(function() G.nametagConnections[plr]:Disconnect() end)
-        G.nametagConnections[plr]=nil
+    for _,key in ipairs({plr,plr.."_appearance",plr.."_desc"}) do
+        if G.nametagConnections[key] then
+            pcall(function() G.nametagConnections[key]:Disconnect() end)
+            G.nametagConnections[key]=nil
+        end
     end
     G.nametagHumanoids[plr]=nil
     local arrow=G.crosshairArrowLabels[plr]
@@ -3682,6 +4814,8 @@ function toggleNametags()
         clearNametags()
     end
 end
+
+-- УДАЛЕНА toggleNametagHealth
 
 function updateNametagSize(v)
     G.nametagSize=math.floor(10+(28-10)*math.clamp(v,0,1)+0.5)
@@ -4004,6 +5138,7 @@ createKeybindRow(bindC,"Autoclicker",322,toggleAutoclicker)
 createKeybindRow(bindC,"AutoWalk",354,toggleAutoWalk)
 createKeybindRow(bindC,"AutoJump",386,toggleAutoJump)
 createKeybindRow(bindC,"AutoShoot",418,toggleAutoShoot)
+createKeybindRow(bindC,"Triggerbot",450,toggleTriggerbot)
 
 U.InputBegan:Connect(function(i,p2)
     if p2 then return end
@@ -4040,7 +5175,42 @@ U.InputBegan:Connect(function(i,p2)
 end)
 
 espUI.toggle.cl.MouseButton1Click:Connect(toggleESP)
+
+G.boxUI.toggle.cl.MouseButton1Click:Connect(function()
+    G.boxEspEnabled=not G.boxEspEnabled
+    setToggle(G.boxUI.toggle.tr,G.boxUI.toggle.k,G.boxEspEnabled,true)
+    setColorsNoSlider(G.boxEspEnabled,G.boxUI.toggle.l)
+    if G.boxUI.alpha then G.boxUI.alpha.setActive(G.boxEspEnabled,true) end
+    if G.boxEspEnabled then G.updateVisualEsp() else
+        for _,obj in pairs(G.boxEspDrawings) do pcall(function() obj.Visible=false end) end
+    end
+    if G.autoSaveReady and not autoConfigLoading then saveAutoConfig() end
+end)
+G.tracerUI.toggle.cl.MouseButton1Click:Connect(function()
+    G.tracersEnabled=not G.tracersEnabled
+    setToggle(G.tracerUI.toggle.tr,G.tracerUI.toggle.k,G.tracersEnabled,true)
+    setColorsNoSlider(G.tracersEnabled,G.tracerUI.toggle.l)
+    if G.tracerUI.alpha then G.tracerUI.alpha.setActive(G.tracersEnabled,true) end
+    if G.tracersEnabled then G.updateVisualEsp() else
+        for _,obj in pairs(G.tracerDrawings) do pcall(function() obj.Visible=false end) end
+    end
+    if G.autoSaveReady and not autoConfigLoading then saveAutoConfig() end
+end)
+
+G.clientUI.toggle.cl.MouseButton1Click:Connect(function()
+    G.autoLoadEnabled=not G.autoLoadEnabled
+    setToggle(G.clientUI.toggle.tr,G.clientUI.toggle.k,G.autoLoadEnabled,true)
+    setColorsNoSlider(G.autoLoadEnabled,G.clientUI.toggle.l)
+    if G.autoSaveReady and not autoConfigLoading then
+        saveAutoConfig()
+    end
+    if G.autoLoadEnabled then
+        task.defer(queueAutoLoad)
+    end
+end)
+
 nametagUI.toggle.cl.MouseButton1Click:Connect(toggleNametags)
+-- nametagUI.healthToggle.cl удален
 crosshairUI.toggle.cl.MouseButton1Click:Connect(toggleCrosshairArrows)
 fullbrightUI.toggle.cl.MouseButton1Click:Connect(toggleFullbright)
 Tt.speed.cl.MouseButton1Click:Connect(toggleSpeed)
@@ -4060,6 +5230,8 @@ acCl.MouseButton1Click:Connect(toggleAutoclicker)
 awCl.MouseButton1Click:Connect(toggleAutoWalk)
 ajCl.MouseButton1Click:Connect(toggleAutoJump)
 asCl.MouseButton1Click:Connect(toggleAutoShoot)
+tbCl.MouseButton1Click:Connect(toggleTriggerbot)
+tbTargetB.MouseButton1Click:Connect(cycleTriggerbotTarget)
 targB.MouseButton1Click:Connect(cycleTarget)
 sortB.MouseButton1Click:Connect(cycleSort)
 modeB.MouseButton1Click:Connect(cycleMode)
@@ -4072,9 +5244,15 @@ R.RenderStepped:Connect(function()
     end
 end)
 
+local nametagVisualAccumulator=0
 G.crosshairArrowsConnection=R.RenderStepped:Connect(function(dt)
     if G.scriptTerminated then return end
-    if G.nametagEnabled then updateNametagDistanceScale(dt) end
+    nametagVisualAccumulator=nametagVisualAccumulator+dt
+    if nametagVisualAccumulator >= (1/60) then
+        nametagVisualAccumulator=nametagVisualAccumulator%(1/60)
+        if G.nametagEnabled then updateNametagDistanceScale(1/60) end
+        -- Health удален, поэтому не проверяем
+    end
     if G.crosshairArrowsEnabled then
         refreshCrosshairArrows(dt)
     end
@@ -4106,104 +5284,44 @@ U.InputEnded:Connect(function(i)
     if i.KeyCode==Enum.KeyCode.Space then G.lastSpace=false end
 end)
 
-function switchCat(cat)
-    if G.currentCategory==cat then return end
-    G.currentCategory=cat
-    scrollTarget=0
-    scrollCurrent=0
-    cv.CanvasPosition=Vector2.new(0,0)
-    scrollTrack.Visible=false
-    scrollThumb.Visible=false
-    
-    local positions={
-        movement=8,
-        visuals=60,
-        misc=112,
-        bind=164,
-        hud=216
-    }
-    local targetY=positions[cat] or 8
-    
-    T:Create(catIndicator,TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.new(0,0,0,targetY)}):Play()
-    
-    local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-    if cat=="movement" then
-        T:Create(movL,inf,{TextTransparency=0,TextColor3=hudWhite()}):Play()
-        T:Create(visualsL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(miscL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(bindL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(hudL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        miscC.Visible=false
-        visualsC.Visible=false
-        mc.Visible=true
-        bindC.Visible=false
-        hudC.Visible=false
-    elseif cat=="visuals" then
-        T:Create(movL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(visualsL,inf,{TextTransparency=0,TextColor3=hudWhite()}):Play()
-        T:Create(miscL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(bindL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(hudL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        mc.Visible=false
-        visualsC.Visible=true
-        miscC.Visible=false
-        bindC.Visible=false
-        hudC.Visible=false
-    elseif cat=="misc" then
-        T:Create(movL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(visualsL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(miscL,inf,{TextTransparency=0,TextColor3=hudWhite()}):Play()
-        T:Create(bindL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(hudL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        mc.Visible=false
-        visualsC.Visible=false
-        miscC.Visible=true
-        bindC.Visible=false
-        hudC.Visible=false
-    elseif cat=="bind" then
-        T:Create(movL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(visualsL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(miscL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(bindL,inf,{TextTransparency=0,TextColor3=hudWhite()}):Play()
-        T:Create(hudL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        mc.Visible=false
-        visualsC.Visible=false
-        miscC.Visible=false
-        bindC.Visible=true
-        hudC.Visible=false
-    else
-        T:Create(movL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(visualsL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(miscL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(bindL,inf,{TextTransparency=0.4,TextColor3=hudGray06()}):Play()
-        T:Create(hudL,inf,{TextTransparency=0,TextColor3=hudWhite()}):Play()
-        mc.Visible=false
-        visualsC.Visible=false
-        miscC.Visible=false
-        bindC.Visible=false
-        hudC.Visible=true
-    end
-    task.defer(function()task.wait()rs(true)end)
-end
-
-movL.MouseButton1Click:Connect(function()switchCat("movement")end)
-visualsL.MouseButton1Click:Connect(function()switchCat("visuals")end)
-miscL.MouseButton1Click:Connect(function()switchCat("misc")end)
-bindL.MouseButton1Click:Connect(function()switchCat("bind")end)
-hudL.MouseButton1Click:Connect(function()switchCat("hud")end)
-
 mf.InputBegan:Connect(function(i)
     if G.isSliding then return end
-    if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-        G.isDragging=true
-        G.dragStart=i.Position
-        G.startPos=mf.Position
-        G.targetPos=mf.Position
+    if i.UserInputType~=Enum.UserInputType.MouseButton1 and i.UserInputType~=Enum.UserInputType.Touch then return end
+
+    local pos=i.Position
+    local function inside(gui)
+        if not gui or not gui.Parent then return false end
+        local ap,as=gui.AbsolutePosition,gui.AbsoluteSize
+        return pos.X>=ap.X and pos.X<=ap.X+as.X and pos.Y>=ap.Y and pos.Y<=ap.Y+as.Y
     end
-end)
+
+    -- Slider input must never fall through to the window drag handler.
+    local sliders={
+        espFillS,espFillH,espOutlineS,espOutlineH,
+        nametagSizeS,nametagSizeH,nametagHeightS,nametagHeightH,
+        nametagAlphaS,nametagAlphaH,crosshairRadiusS,crosshairRadiusH,
+        crosshairSizeS,crosshairSizeH,crosshairAlphaS,crosshairAlphaH,
+        fullbrightBrightnessS,fullbrightBrightnessH,
+        vtMiscS,vtMiscH,acS,acH
+    }
+    if G.boxUI and G.boxUI.alpha then table.insert(sliders,G.boxUI.alpha.s); table.insert(sliders,G.boxUI.alpha.h) end
+    if G.tracerUI and G.tracerUI.alpha then table.insert(sliders,G.tracerUI.alpha.s); table.insert(sliders,G.tracerUI.alpha.h) end
+    for _,slider in ipairs(sliders) do
+        if inside(slider) then
+            G.isSliding=true
+            return
+        end
+    end
+
+    G.isDragging=true
+    G.dragStart=i.Position
+    G.startPos=mf.Position
+    G.targetPos=mf.Position
+end
 
 U.InputChanged:Connect(function(i)
-    if G.isDragging and not G.isSliding and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+    if G.isDragging and not G.isSliding
+    and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
         local d=i.Position-G.dragStart
         G.targetPos=UDim2.new(G.startPos.X.Scale,G.startPos.X.Offset+d.X,G.startPos.Y.Scale,G.startPos.Y.Offset+d.Y)
     end
@@ -4230,7 +5348,7 @@ end)
 
 R.Heartbeat:Connect(function()
     if G.scriptTerminated then return end
-    
+
     if G.speedEnabled and G.currentSpeed>0 and r and h and not G.flying then
         local vel=r.AssemblyLinearVelocity
         local moveDir=h.MoveDirection
@@ -4249,14 +5367,18 @@ R.Heartbeat:Connect(function()
             end
         end
     end
-    
+
     if G.strafeEnabled and G.currentStrafe>0 and r and h and not G.flying then
         local md=h.MoveDirection
         local sp=h.WalkSpeed
         local des=md*sp
         local vel=r.AssemblyLinearVelocity
         local st=G.currentStrafe/100
-        r.AssemblyLinearVelocity=Vector3.new(vel.X+(des.X-vel.X)*st,vel.Y,vel.Z+(des.Z-vel.Z)*st)
+        r.AssemblyLinearVelocity=Vector3.new(
+            vel.X+(des.X-vel.X)*st,
+            vel.Y,
+            vel.Z+(des.Z-vel.Z)*st
+        )
     end
 
     if G.airwalkEnabled and G.airwalkPlatform and r then
@@ -4264,8 +5386,9 @@ R.Heartbeat:Connect(function()
     end
 end)
 
-R.RenderStepped:Connect(function()
+R.RenderStepped:Connect(function(dt)
     if G.scriptTerminated then return end
+
     if G.flying and G.bodyVelocity and G.bodyGyro and r then
         local cam=workspace.CurrentCamera
         local move=Vector3.zero
@@ -4282,102 +5405,103 @@ R.RenderStepped:Connect(function()
 
     if G.aimbotEnabled then
         local targets={}
-        
         for _,plr in ipairs(P:GetPlayers()) do
-            if plr~=p and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                local ph=plr.Character:FindFirstChildOfClass("Humanoid")
-                if ph and ph.Health>0 then 
-                    table.insert(targets,{type="player",plr=plr,char=plr.Character})
+            if plr~=p and plr.Character then
+                local hum=plr.Character:FindFirstChildOfClass("Humanoid")
+                local root=plr.Character:FindFirstChild("HumanoidRootPart")
+                if hum and hum.Health>0 and root then
+                    table.insert(targets,{type="player",plr=plr,char=plr.Character,root=root,hum=hum})
                 end
             end
         end
-        
+
         for _,model in ipairs(WS:GetChildren()) do
-            if model:IsA("Model") and model~=c and model:FindFirstChildOfClass("Humanoid") then
+            if model:IsA("Model") and model~=c then
                 local hum=model:FindFirstChildOfClass("Humanoid")
                 local root=model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
-                if hum and hum.Health>0 and root then
-                    local isPlayer=false
-                    for _,plr in ipairs(P:GetPlayers()) do
-                        if plr.Character==model then isPlayer=true break end
-                    end
-                    if not isPlayer then
-                        table.insert(targets,{type="npc",model=model,hum=hum,root=root})
-                    end
+                if hum and hum.Health>0 and root and not P:GetPlayerFromCharacter(model) then
+                    table.insert(targets,{type="npc",model=model,hum=hum,root=root})
                 end
             end
         end
 
+        local cam=workspace.CurrentCamera
         local target=nil
-        if G.targetLockEnabled and G.lockedTarget then
-            if G.lockedTarget.type=="player" and G.lockedTarget.plr.Character and G.lockedTarget.plr.Character:FindFirstChild("Head") then
-                local d=(G.lockedTarget.plr.Character.Head.Position-r.Position).Magnitude
-                if d<=G.currentRange then target=G.lockedTarget else G.lockedTarget=nil end
-            elseif G.lockedTarget.type=="npc" and G.lockedTarget.model and G.lockedTarget.root then
-                local d=(G.lockedTarget.root.Position-r.Position).Magnitude
-                if d<=G.currentRange then target=G.lockedTarget else G.lockedTarget=nil end
-            else
-                G.lockedTarget=nil
+        if cam then
+            if G.targetLockEnabled and G.lockedTarget then
+                local lt=G.lockedTarget
+                local valid=(lt.type=="player" and lt.plr and lt.plr.Character==lt.char)
+                    or (lt.type=="npc" and lt.model and lt.model.Parent)
+                if valid and lt.root and (lt.root.Position-r.Position).Magnitude<=G.currentRange then
+                    target=lt
+                else
+                    G.lockedTarget=nil
+                end
             end
-        end
 
-        if not target and #targets>0 then
-            if G.sortMode=="Distance" then
-                table.sort(targets,function(a,b)
-                    local posA = a.type=="player" and a.char.HumanoidRootPart.Position or a.root.Position
-                    local posB = b.type=="player" and b.char.HumanoidRootPart.Position or b.root.Position
-                    local da=(posA-r.Position).Magnitude
-                    local db=(posB-r.Position).Magnitude
-                    return da<db
-                end)
-            else
-                local mp=U:GetMouseLocation()
-                table.sort(targets,function(a,b)
-                    local headA = a.type=="player" and a.char:FindFirstChild("Head") or a.root
-                    local headB = b.type=="player" and b.char:FindFirstChild("Head") or b.root
-                    if not headA or not headB then return false end
-                    local pa,oa=workspace.CurrentCamera:WorldToViewportPoint(headA.Position)
-                    local pb,ob=workspace.CurrentCamera:WorldToViewportPoint(headB.Position)
-                    if not oa then return false end
-                    if not ob then return true end
-                    return (Vector2.new(pa.X,pa.Y)-mp).Magnitude < (Vector2.new(pb.X,pb.Y)-mp).Magnitude
-                end)
+            if not target and #targets>0 then
+                if G.sortMode=="Distance" then
+                    table.sort(targets,function(a,b)
+                        return (a.root.Position-r.Position).Magnitude < (b.root.Position-r.Position).Magnitude
+                    end)
+                else
+                    local mp=U:GetMouseLocation()
+                    table.sort(targets,function(a,b)
+                        local paPart=(a.char and a.char:FindFirstChild("Head"))
+                            or (a.model and a.model:FindFirstChild("Head")) or a.root
+                        local pbPart=(b.char and b.char:FindFirstChild("Head"))
+                            or (b.model and b.model:FindFirstChild("Head")) or b.root
+                        local pa,oa=cam:WorldToViewportPoint(paPart.Position)
+                        local pb,ob=cam:WorldToViewportPoint(pbPart.Position)
+                        if not oa then return false end
+                        if not ob then return true end
+                        local mpv=Vector2.new(mp.X,mp.Y)
+                        return (Vector2.new(pa.X,pa.Y)-mpv).Magnitude
+                            < (Vector2.new(pb.X,pb.Y)-mpv).Magnitude
+                    end)
+                end
+                target=targets[1]
+                if G.targetLockEnabled then G.lockedTarget=target end
             end
-            target=targets[1]
-            if G.targetLockEnabled then G.lockedTarget=target end
-        end
 
-        if target then
-            local aimPart = nil
-            if target.type=="player" then
-                aimPart = (G.aimTarget=="Head" and target.char:FindFirstChild("Head")) or target.char:FindFirstChild("HumanoidRootPart")
-            else
-                aimPart = (G.aimTarget=="Head" and target.model:FindFirstChild("Head")) or target.root
-            end
-            
-            if aimPart then
-                local d=(aimPart.Position-r.Position).Magnitude
-                if d<=G.currentRange then
+            if target then
+                local aimPart
+                if G.aimTarget=="Head" then
+                    aimPart=(target.char and target.char:FindFirstChild("Head"))
+                        or (target.model and target.model:FindFirstChild("Head"))
+                else
+                    aimPart=target.root
+                end
+
+                if aimPart and (aimPart.Position-r.Position).Magnitude<=G.currentRange then
                     local visible=true
                     if G.wallsCheckEnabled then
-                        local origin=workspace.CurrentCamera.CFrame.Position
-                        local hit=workspace:Raycast(origin,aimPart.Position-origin)
-                        if hit and hit.Instance then
-                            local hitChar=hit.Instance:FindFirstAncestorOfClass("Model")
-                            visible=hitChar and hitChar:FindFirstChildOfClass("Humanoid")~=nil
-                        end
+                        local params=RaycastParams.new()
+                        params.FilterType=Enum.RaycastFilterType.Exclude
+                        params.FilterDescendantsInstances={c}
+                        params.IgnoreWater=true
+                        local origin=cam.CFrame.Position
+                        local hit=workspace:Raycast(origin,aimPart.Position-origin,params)
+                        visible=hit and hit.Instance and hit.Instance:IsDescendantOf(aimPart.Parent) or false
                     end
+
                     if visible then
-                        local cam=workspace.CurrentCamera
-                        if G.aimMode=="Center" then
-                            local goal=CFrame.new(cam.CFrame.Position,aimPart.Position)
-                            cam.CFrame=cam.CFrame:Lerp(goal,G.currentSmoothness)
-                        else
+                        local alpha=math.clamp(G.currentSmoothness,0.01,1)
+                        if G.aimMode=="Cursor" then
                             local pos,on=cam:WorldToViewportPoint(aimPart.Position)
-                            if on and mousemoverel then
+                            if on then
                                 local mp=U:GetMouseLocation()
-                                mousemoverel((pos.X-mp.X)*G.currentSmoothness,(pos.Y-mp.Y)*G.currentSmoothness)
+                                local dx=pos.X-mp.X
+                                local dy=pos.Y-mp.Y
+                                if math.abs(dx)>0.35 or math.abs(dy)>0.35 then
+                                    pcall(function() mousemoverel(dx*alpha,dy*alpha) end)
+                                end
                             end
+                        else
+                            cam.CFrame=cam.CFrame:Lerp(
+                                CFrame.new(cam.CFrame.Position,aimPart.Position),
+                                alpha
+                            )
                         end
                     end
                 end
@@ -4386,7 +5510,56 @@ R.RenderStepped:Connect(function()
     end
 end)
 
-local AUTO_CONFIG_DIR="evscript"
+-- Category navigation
+local categoryButtons={
+    {button=movL, category="movement"},
+    {button=visualsL, category="visuals"},
+    {button=miscL, category="misc"},
+    {button=bindL, category="bind"},
+    {button=hudL, category="hud"},
+    {button=G.clientL, category="client"},
+}
+for _,item in ipairs(categoryButtons) do
+    item.button.AutoButtonColor=false
+    item.button.Active=true
+    item.button.MouseButton1Click:Connect(function()
+        switchCat(item.category)
+    end)
+end
+
+function switchCat(cat)
+    if G.currentCategory==cat then return end
+    G.currentCategory=cat
+    scrollTarget=0
+    scrollCurrent=0
+    cv.CanvasPosition=Vector2.new(0,0)
+    scrollTrack.Visible=false
+    scrollThumb.Visible=false
+
+    local positions={movement=8,visuals=60,misc=112,bind=164,hud=216,client=268}
+    local targetY=positions[cat] or 8
+    T:Create(catIndicator,TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{
+        Position=UDim2.new(0,0,0,targetY)
+    }):Play()
+
+    local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+    local labels={movL,visualsL,miscL,bindL,hudL,G.clientL}
+    local active=({movement=movL,visuals=visualsL,misc=miscL,bind=bindL,hud=hudL,client=G.clientL})[cat]
+    for _,label in ipairs(labels) do
+        local isActive=(label==active)
+        themeTween(label,"TextColor3",isActive and hudWhite() or hudGray06(),inf)
+        T:Create(label,inf,{TextTransparency=isActive and 0 or 0.4}):Play()
+    end
+
+    mc.Visible=cat=="movement"
+    visualsC.Visible=cat=="visuals"
+    miscC.Visible=cat=="misc"
+    bindC.Visible=cat=="bind"
+    hudC.Visible=cat=="hud"
+    G.clientC.Visible=cat=="client"
+end
+
+local AUTO_CONFIG_DIR="inclusive"
 local AUTO_CONFIG_FILE=AUTO_CONFIG_DIR.."/AutoSave.txt"
 local AUTO_CONFIG_INTERVAL=180
 local autoConfigLoading=false
@@ -4400,13 +5573,13 @@ function autoConfigSet(name,value)
     return name.."="..tostring(value)
 end
 
-function saveAutoConfig()
+function saveAutoConfig(force)
     if not G.autoSaveReady or G.scriptTerminated then return false end
-    if tick()<G.saveCooldownUntil then return false end
+    if not force and tick()<G.saveCooldownUntil then return false end
     if type(writefile)~="function" then return false end
 
     local lines={
-        "[AutoSave]", "version=2",
+        "[AutoSave]", "version=4",
         autoConfigSet("speedEnabled",G.speedEnabled),
         autoConfigSet("jumpEnabled",G.jumpEnabled),
         autoConfigSet("flightEnabled",G.flightEnabled),
@@ -4429,15 +5602,24 @@ function saveAutoConfig()
         autoConfigSet("autojumpEnabled",G.autojumpEnabled),
         autoConfigSet("phaseEnabled",G.phaseEnabled),
         autoConfigSet("autoshootEnabled",G.autoshootEnabled),
+        autoConfigSet("triggerbotEnabled",G.triggerbotEnabled),
+        autoConfigSet("triggerbotTarget",G.triggerbotTarget),
+        autoConfigSet("triggerbotMode",G.triggerbotMode),
         autoConfigSet("espEnabled",G.espEnabled),
         autoConfigSet("espFillTransparency",G.espFillTransparency),
         autoConfigSet("espOutlineTransparency",G.espOutlineTransparency),
+        autoConfigSet("boxEspEnabled",G.boxEspEnabled),
+        autoConfigSet("boxEspAlpha",G.boxEspAlpha),
+        autoConfigSet("tracersEnabled",G.tracersEnabled),
+        autoConfigSet("tracersAlpha",G.tracersAlpha),
+        autoConfigSet("espNPCMode",G.espNPCMode),
         autoConfigSet("fullbrightEnabled",G.fullbrightEnabled),
         autoConfigSet("fullbrightBrightness",G.fullbrightBrightness),
         autoConfigSet("nametagEnabled",G.nametagEnabled),
         autoConfigSet("nametagSize",G.nametagSize),
         autoConfigSet("nametagHeight",G.nametagHeight),
         autoConfigSet("nametagAlpha",G.nametagAlpha),
+        -- nametagHealthEnabled удален из сохранения
         autoConfigSet("crosshairArrowsEnabled",G.crosshairArrowsEnabled),
         autoConfigSet("crosshairArrowsRadius",G.crosshairArrowsRadius),
         autoConfigSet("crosshairArrowsSize",G.crosshairArrowsSize),
@@ -4451,8 +5633,12 @@ function saveAutoConfig()
         autoConfigSet("hueValue",G.hueValue),
         autoConfigSet("saturationValue",G.saturationValue),
         autoConfigSet("brightnessValue",G.brightnessValue),
+        autoConfigSet("rgbEnabled",G.rgbEnabled),
+        autoConfigSet("rgbSpeed",G.rgbSpeed),
+        autoConfigSet("rgbBrightness",G.rgbBrightness),
         autoConfigSet("hudAlpha",G.hudAlpha),
         autoConfigSet("hudBackgroundBrightness",G.hudBackgroundBrightness),
+        autoConfigSet("autoLoadEnabled",G.autoLoadEnabled),
         "[Binds]"
     }
     for name,key in pairs(binds) do
@@ -4487,7 +5673,7 @@ local function getKeybindEnabled(name)
         Strafe="strafeEnabled", Airwalk="airwalkEnabled", ClickTP="clickTpEnabled",
         AirJump="airJumpEnabled", Phase="phaseEnabled", Aimbot="aimbotEnabled",
         VisualTimer="visualTimerEnabled", Autoclicker="autoclickerEnabled",
-        AutoWalk="autowalkEnabled", AutoJump="autojumpEnabled", AutoShoot="autoshootEnabled"
+        AutoWalk="autowalkEnabled", AutoJump="autojumpEnabled", AutoShoot="autoshootEnabled", Triggerbot="triggerbotEnabled"
     }
     local key=map[name]
     return key and G[key] or false
@@ -4497,14 +5683,15 @@ local function syncKeybindVisualState()
     for name,row in pairs(bindRows) do
         local enabled=getKeybindEnabled(name)
         local bound=binds[name]~=nil
-        local active=bound
         local color=bound and hudWhite() or hudGray06()
 
         themeTween(row.label,"TextColor3",color,TweenInfo.new(0))
         themeTween(row.bind,"TextColor3",color,TweenInfo.new(0))
         if row.stroke then
             row.stroke.Color=color
-            row.stroke.Transparency=active and 0.5 or 1
+            if not G.hoveredStrokes[row.stroke] then
+                row.stroke.Transparency=1
+            end
         end
     end
 end
@@ -4550,10 +5737,10 @@ function syncAllModuleVisualState()
     setAimbotColors(G.aimbotEnabled)
 
     setToggle(tlTr,tlK,G.targetLockEnabled,false)
-    setColorsNoSlider(G.targetLockEnabled,tlT)
+    setColorsNoSlider(G.aimbotEnabled and G.targetLockEnabled,tlT)
 
     setToggle(wcTr,wcK,G.wallsCheckEnabled,false)
-    setColorsNoSlider(G.wallsCheckEnabled,wcT)
+    setColorsNoSlider(G.aimbotEnabled and G.wallsCheckEnabled,wcT)
 
     setToggle(acTr,acK,G.autoclickerEnabled,false)
     setAutoclickerColors(G.autoclickerEnabled)
@@ -4569,8 +5756,19 @@ function syncAllModuleVisualState()
 
     setToggle(espUI.toggle.tr,espUI.toggle.k,G.espEnabled,false)
     setESPColors(G.espEnabled)
+    if G.boxUI and G.boxUI.toggle then
+        setToggle(G.boxUI.toggle.tr,G.boxUI.toggle.k,G.boxEspEnabled,false)
+        setColorsNoSlider(G.boxEspEnabled,G.boxUI.toggle.l)
+        if G.boxUI.alpha then G.boxUI.alpha.setActive(G.boxEspEnabled,false) end
+    end
+    if G.tracerUI and G.tracerUI.toggle then
+        setToggle(G.tracerUI.toggle.tr,G.tracerUI.toggle.k,G.tracersEnabled,false)
+        setColorsNoSlider(G.tracersEnabled,G.tracerUI.toggle.l)
+        if G.tracerUI.alpha then G.tracerUI.alpha.setActive(G.tracersEnabled,false) end
+    end
 
     setToggle(nametagUI.toggle.tr,nametagUI.toggle.k,G.nametagEnabled,false)
+    -- setToggle для healthToggle удален
     setNametagColors(G.nametagEnabled)
 
     setToggle(crosshairUI.toggle.tr,crosshairUI.toggle.k,G.crosshairArrowsEnabled,false)
@@ -4589,6 +5787,16 @@ function syncAllModuleVisualState()
     end
 
     syncKeybindVisualState()
+
+    if G.rgbUI and G.rgbUI.toggle then
+        setToggle(G.rgbUI.toggle.tr,G.rgbUI.toggle.k,G.rgbEnabled,false)
+        setRGBColors(G.rgbEnabled)
+    end
+
+    if G.clientUI and G.clientUI.toggle then
+        setToggle(G.clientUI.toggle.tr,G.clientUI.toggle.k,G.autoLoadEnabled,false)
+        setColorsNoSlider(G.autoLoadEnabled,G.clientUI.toggle.l)
+    end
 end
 
 function loadAutoConfig()
@@ -4628,6 +5836,12 @@ function loadAutoConfig()
     updateAutoclickerCPS((num("autoclickerCPS",G.autoclickerCPS)-G.minCPS)/(G.maxCPS-G.minCPS))
     updateESPFill(num("espFillTransparency",G.espFillTransparency))
     updateESPOutline(num("espOutlineTransparency",G.espOutlineTransparency))
+    G.boxEspAlpha=num("boxEspAlpha",G.boxEspAlpha)
+    G.tracersAlpha=num("tracersAlpha",G.tracersAlpha)
+    G.updateBoxEspAlpha(G.boxEspAlpha)
+    G.updateTracersAlpha(G.tracersAlpha)
+    if G.boxUI and G.boxUI.alpha then G.boxUI.alpha.setActive(G.boxEspEnabled,false) end
+    if G.tracerUI and G.tracerUI.alpha then G.tracerUI.alpha.setActive(G.tracersEnabled,false) end
     updateNametagSize((num("nametagSize",G.nametagSize)-10)/(28-10))
     updateNametagHeight((num("nametagHeight",G.nametagHeight)+2)/10)
     updateNametagAlpha(num("nametagAlpha",G.nametagAlpha))
@@ -4641,14 +5855,36 @@ function loadAutoConfig()
     G.aimTarget=values["[AutoSave]aimTarget"] or G.aimTarget
     G.aimMode=values["[AutoSave]aimMode"] or G.aimMode
     G.sortMode=values["[AutoSave]sortMode"] or G.sortMode
+    G.triggerbotEnabled=bool("triggerbotEnabled",G.triggerbotEnabled)
+    G.triggerbotTarget=values["[AutoSave]triggerbotTarget"] or G.triggerbotTarget
+    G.triggerbotMode=values["[AutoSave]triggerbotMode"] or G.triggerbotMode
+    if tbModeB then tbModeB.Text=G.triggerbotMode end
+    G.espNPCMode=values["[AutoSave]espNPCMode"] or G.espNPCMode
+    G.autoLoadEnabled=bool("autoLoadEnabled",G.autoLoadEnabled)
+    -- nametagHealthEnabled не загружаем
 
     targB.Text=G.aimTarget
     sortB.Text=G.sortMode
     modeB.Text=G.aimMode
+    tbTargetB.Text=G.triggerbotTarget
+    
+    local npcOptions={"All","Players","NPC"}
+    for i,v in ipairs(npcOptions) do
+        if v==G.espNPCMode then
+            espUI.npc.setIndex(i)
+            break
+        end
+    end
 
+    local savedRgbEnabled=bool("rgbEnabled",G.rgbEnabled)
     updateHue(num("hueValue",G.hueValue))
     updateSaturation(num("saturationValue",G.saturationValue))
     updateBrightness(num("brightnessValue",G.brightnessValue))
+    updateRgbSpeed((num("rgbSpeed",G.rgbSpeed)-0.05)/(3-0.05))
+    updateRgbBrightness(num("rgbBrightness",G.rgbBrightness))
+    if savedRgbEnabled~=G.rgbEnabled then
+        toggleRGB()
+    end
     updateHudAlpha((num("hudAlpha",G.hudAlpha)-0.2)/(1-0.2))
     updateHudBackgroundBrightness(num("hudBackgroundBrightness",G.hudBackgroundBrightness)/0.5)
 
@@ -4659,9 +5895,11 @@ function loadAutoConfig()
         targetLockEnabled=toggleTargetLock,wallsCheckEnabled=toggleWallsCheck,
         visualTimerEnabled=toggleVisualTimer,autoclickerEnabled=toggleAutoclicker,
         autowalkEnabled=toggleAutoWalk,autojumpEnabled=toggleAutoJump,
-        phaseEnabled=togglePhase,autoshootEnabled=toggleAutoShoot,
-        espEnabled=toggleESP,fullbrightEnabled=toggleFullbright,
-        nametagEnabled=toggleNametags,crosshairArrowsEnabled=toggleCrosshairArrows
+        phaseEnabled=togglePhase,autoshootEnabled=toggleAutoShoot,triggerbotEnabled=toggleTriggerbot,
+        espEnabled=toggleESP,boxEspEnabled=function() G.boxEspEnabled=not G.boxEspEnabled end,
+        tracersEnabled=function() G.tracersEnabled=not G.tracersEnabled end,fullbrightEnabled=toggleFullbright,
+        nametagEnabled=toggleNametags, -- healthToggle удален
+        crosshairArrowsEnabled=toggleCrosshairArrows
     }
     for key,fn in pairs(toggleMap) do
         if bool(key,false) then
@@ -4695,9 +5933,62 @@ function loadAutoConfig()
     autoConfigLoading=false
 end
 
+function getQueueOnTeleport()
+    if type(queueteleport)=="function" then return queueteleport end
+    if type(queue_on_teleport)=="function" then return queue_on_teleport end
+    if type(syn)=="table" and type(syn.queue_on_teleport)=="function" then return syn.queue_on_teleport end
+    if type(fluxus)=="table" and type(fluxus.queue_on_teleport)=="function" then return fluxus.queue_on_teleport end
+    return nil
+end
+
+function queueAutoLoad()
+    if not G.autoLoadEnabled or G.scriptTerminated then return false end
+    local q=getQueueOnTeleport()
+    if not q then return false end
+
+    local url=tostring(G.autoLoadURL or "")
+    if url=="" then return false end
+
+    -- The queued source is deliberately small: after the new Place loads,
+    -- fetch the current GitHub Raw script and execute it. The freshly
+    -- executed copy installs the queue again, so the chain survives
+    -- subsequent PlaceId changes as long as the executor remains attached.
+    local queued='task.spawn(function() if not game:IsLoaded() then game.Loaded:Wait() end; task.wait(0.35); local ok,src=pcall(function() return game:HttpGet('
+        ..string.format('%q',url)
+        ..') end); if ok and type(src)=="string" and #src>0 then local fn=loadstring(src); if type(fn)=="function" then pcall(fn) end end end)'
+
+    local ok=false
+    local ok2,res=pcall(q,"s",queued)
+    if ok2 and res~=false then
+        ok=true
+    else
+        local ok3,res3=pcall(q,queued)
+        ok=ok3 and res3~=false
+    end
+    G.autoLoadQueued=ok
+    return ok
+end
+
+p.OnTeleport:Connect(function(state)
+    if not G.autoLoadEnabled or G.scriptTerminated then return end
+    if state==Enum.TeleportState.Started then
+        queueAutoLoad()
+    end
+end)
+
+pcall(function()
+    game:GetService("TeleportService").TeleportInitFailed:Connect(function()
+        if G.autoLoadEnabled and not G.scriptTerminated then
+            task.defer(queueAutoLoad)
+        end
+    end)
+end)
+
 function startAutoConfig()
     G.saveCooldownUntil=tick()+3
     loadAutoConfig()
+    setToggle(G.clientUI.toggle.tr,G.clientUI.toggle.k,G.autoLoadEnabled,false)
+    task.defer(queueAutoLoad)
 
     G.autoSaveReady=true
 
@@ -4721,6 +6012,7 @@ function setVisible(s)
     miscC.Visible=s and G.currentCategory=="misc"
     bindC.Visible=s and G.currentCategory=="bind"
     hudC.Visible=s and G.currentCategory=="hud"
+    G.clientC.Visible=s and G.currentCategory=="client"
     catBar.Visible=s
     scrollTrack.Visible=false
     scrollThumb.Visible=false
@@ -4745,95 +6037,157 @@ end
 
 function setMinimized(s)
     if G.isAnimating then return end
+    if s==G.isHidden then return end
+
     G.isAnimating=true
     G.isHidden=s
+    G.isDragging=false
+    G.isSliding=false
     scrollTrack.Visible=false
     scrollThumb.Visible=false
     cv.ScrollingEnabled=false
-    local ts=s and UDim2.new(0,435,0,30) or UDim2.new(0,435,0,500)
-    local tw=T:Create(mf,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=ts})
+
+    hideBtn.Active=false
+    closeBtn.Active=false
+    hideBtn.Selectable=false
+    closeBtn.Selectable=false
+
+    local inf=TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+    local FULL_W=435
+    local MINI_W=235
+    local FULL_H=500
+    local MINI_H=30
+
     if s then
         setVisible(false)
         startFps()
-        T:Create(fpsLabel,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextTransparency=0}):Play()
-        T:Create(versionLabel,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextTransparency=1}):Play()
+        T:Create(fpsLabel,inf,{TextTransparency=0}):Play()
+        T:Create(versionLabel,inf,{TextTransparency=1}):Play()
+
+        local shrinkHeight=T:Create(mf,inf,{Size=UDim2.new(0,FULL_W,0,MINI_H)})
+        shrinkHeight:Play()
+        shrinkHeight.Completed:Wait()
+
+        local shrinkWidth=T:Create(mf,inf,{Size=UDim2.new(0,MINI_W,0,MINI_H)})
+        shrinkWidth:Play()
+        shrinkWidth.Completed:Wait()
     else
-        T:Create(fpsLabel,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextTransparency=1}):Play()
-        T:Create(versionLabel,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{TextTransparency=0}):Play()
+        local expandWidth=T:Create(mf,inf,{Size=UDim2.new(0,FULL_W,0,MINI_H)})
+        expandWidth:Play()
+        expandWidth.Completed:Wait()
+
+        T:Create(fpsLabel,inf,{TextTransparency=1}):Play()
+        T:Create(versionLabel,inf,{TextTransparency=0}):Play()
+
+        local expandHeight=T:Create(mf,inf,{Size=UDim2.new(0,FULL_W,0,FULL_H)})
+        expandHeight:Play()
+        expandHeight.Completed:Wait()
+
+        setVisible(true)
+        rs(true)
     end
-    tw:Play()
-    tw.Completed:Connect(function()
-        if not s then
-            setVisible(true)
-            rs(true)
-        else
-            scrollTrack.Visible=false
-            scrollThumb.Visible=false
-        end
-        G.isAnimating=false
-    end)
+
+    G.isAnimating=false
+    hideBtn.Active=true
+    closeBtn.Active=true
+    hideBtn.Selectable=true
+    closeBtn.Selectable=true
 end
 
 hideBtn.MouseButton1Click:Connect(function()setMinimized(not G.isHidden)end)
 
 closeBtn.MouseButton1Click:Connect(function()
+    if G.isAnimating then return end
+
+    pcall(function() saveAutoConfig(true) end)
+    G.autoSaveReady=false
     G.scriptTerminated=true
-    
-    pcall(saveAutoConfig)
-    
+
+    G.speedEnabled=false
+    G.jumpEnabled=false
+    G.flightEnabled=false
+    G.noclipEnabled=false
+    G.strafeEnabled=false
+    G.airwalkEnabled=false
+    G.clickTpEnabled=false
+    G.airJumpEnabled=false
+    G.aimbotEnabled=false
+    G.targetLockEnabled=false
+    G.wallsCheckEnabled=false
+    G.visualTimerEnabled=false
+    G.timerIsEnabled=false
+    G.autoclickerEnabled=false
+    G.autowalkEnabled=false
+    G.autojumpEnabled=false
+    G.phaseEnabled=false
+    G.autoshootEnabled=false
+    G.triggerbotEnabled=false
+    G.triggerbotHolding=false
+    G.espEnabled=false
+    G.nametagEnabled=false
+    -- G.nametagHealthEnabled удален
+    G.crosshairArrowsEnabled=false
+    G.fullbrightEnabled=false
+    G.rgbEnabled=false
+
+    if G.bodyVelocity then pcall(function() G.bodyVelocity:Destroy() end) G.bodyVelocity=nil end
+    if G.bodyGyro then pcall(function() G.bodyGyro:Destroy() end) G.bodyGyro=nil end
+    G.flying=false
+    if h then h.PlatformStand=false end
+    if G.noclipConnection then pcall(function() G.noclipConnection:Disconnect() end) G.noclipConnection=nil end
+    if G.phaseConnection then pcall(function() G.phaseConnection:Disconnect() end) G.phaseConnection=nil end
+    if G.airwalkPlatform then pcall(function() G.airwalkPlatform:Destroy() end) G.airwalkPlatform=nil end
+    if G.visualTimerConnection then pcall(function() G.visualTimerConnection:Disconnect() end) G.visualTimerConnection=nil end
+    if G.autowalkConnection then pcall(function() G.autowalkConnection:Disconnect() end) G.autowalkConnection=nil end
+    if G.autojumpConnection then pcall(function() G.autojumpConnection:Disconnect() end) G.autojumpConnection=nil end
+    if G.autoshootConnection then pcall(function() G.autoshootConnection:Disconnect() end) G.autoshootConnection=nil end
+    if G.autoclickerConnection then pcall(function() task.cancel(G.autoclickerConnection) end) G.autoclickerConnection=nil end
+    if G.triggerbotHolding then pcall(mouse1release) G.triggerbotHolding=false end
+    if G.triggerbotConnection then pcall(function() G.triggerbotConnection:Disconnect() end) G.triggerbotConnection=nil end
+    if G.fpsConnection then pcall(function() G.fpsConnection:Disconnect() end) G.fpsConnection=nil end
+    if G.clickTpCircle then pcall(function() G.clickTpCircle:Destroy() end) G.clickTpCircle=nil end
+    m.Icon=""
+
+    if h then
+        h.WalkSpeed=16
+        h.JumpPower=50
+        h.PlatformStand=false
+    end
+    setNoclip(false)
+    if G.fullbrightSaved then
+        pcall(restoreFullbrightLighting)
+    end
+
     clearESP()
     clearNametags()
     clearCrosshairArrows()
-    
+    if G.autojumpEnabled then
+        task.defer(toggleAutoJump)
+        task.defer(toggleAutoJump)
+    end
     if G.nametagConnections then
         for plr,conn in pairs(G.nametagConnections) do
             if conn then pcall(function() conn:Disconnect() end) end
             G.nametagConnections[plr]=nil
         end
     end
-    
     if G.crosshairArrowsConnection then
-        G.crosshairArrowsConnection:Disconnect()
+        pcall(function() G.crosshairArrowsConnection:Disconnect() end)
         G.crosshairArrowsConnection=nil
     end
     if G.crosshairArrowsGui then
-        G.crosshairArrowsGui:Destroy()
+        pcall(function() G.crosshairArrowsGui:Destroy() end)
         G.crosshairArrowsGui=nil
     end
-    
-    G.flying=false
-    if G.bodyVelocity then G.bodyVelocity:Destroy() G.bodyVelocity=nil end
-    if G.bodyGyro then G.bodyGyro:Destroy() G.bodyGyro=nil end
-    if h then h.PlatformStand=false end
-    if G.noclipConnection then G.noclipConnection:Disconnect() G.noclipConnection=nil end
-    if G.airwalkPlatform then G.airwalkPlatform:Destroy() G.airwalkPlatform=nil end
-    setNoclip(false)
-    
-    if G.fpsConnection then G.fpsConnection:Disconnect() end
-    if G.visualTimerConnection then G.visualTimerConnection:Disconnect() end
-    if G.visualTimerLabel then G.visualTimerLabel:Destroy() end
-    if G.autoclickerConnection then task.cancel(G.autoclickerConnection) end
-    if G.autowalkConnection then G.autowalkConnection:Disconnect() end
-    if G.autojumpConnection then G.autojumpConnection:Disconnect() end
-    if G.phaseConnection then G.phaseConnection:Disconnect() end
-    if G.autoshootConnection then G.autoshootConnection:Disconnect() end
-    if G.clickTpCircle then G.clickTpCircle:Destroy() end
-    m.Icon=""
-    
-    for k in pairs(binds) do binds[k]=nil end
-    for k in pairs(bindRows) do bindRows[k]=nil end
-    bindListening=nil
-    
-    for k in pairs(G) do
-        if type(G[k]) ~= "function" then
-            G[k]=nil
-        end
+    if G.visualTimerLabel then
+        pcall(function() G.visualTimerLabel:Destroy() end)
+        G.visualTimerLabel=nil
     end
-    
-    sg:Destroy()
-    
-    collectgarbage()
-    error("Script terminated")
+
+    for k in pairs(binds) do binds[k]=nil end
+    bindListening=nil
+
+    pcall(function() sg:Destroy() end)
 end)
 
 function updateSpeedFromInput(i)
@@ -5139,10 +6493,7 @@ p.CharacterAdded:Connect(function(c2)
         G.autowalkConnection:Disconnect()
         G.autowalkConnection=nil
     end
-    if G.autojumpConnection then
-        G.autojumpConnection:Disconnect()
-        G.autojumpConnection=nil
-    end
+    G.stopAutoJump()
     if G.phaseConnection then
         G.phaseConnection:Disconnect()
         G.phaseConnection=nil
@@ -5151,6 +6502,7 @@ p.CharacterAdded:Connect(function(c2)
         G.autoshootConnection:Disconnect()
         G.autoshootConnection=nil
     end
+    G.triggerbotAccumulator=0
     if G.clickTpCircle then
         G.clickTpCircle:Destroy()
         G.clickTpCircle=nil
@@ -5170,50 +6522,57 @@ p.CharacterAdded:Connect(function(c2)
     applySpeed()
     applyJump()
     applyTimerSpeedToAll()
+    if G.autojumpEnabled then
+        task.defer(G.startAutoJump)
+    end
 end)
 
 registerAllCurrentHudThemeObjects()
 G.hudThemeLastColor=G.hudColor
 applyHudTheme(true)
 keepHudPickerBright()
+setToggle(G.rgbUI.toggle.tr,G.rgbUI.toggle.k,G.rgbEnabled,false)
+setRGBColors(G.rgbEnabled)
 
 local hasSavedAutoConfig=autoConfigRead(AUTO_CONFIG_FILE)~=nil
 
 if not hasSavedAutoConfig then
-updateSlider(espFillF,espFillH,G.espFillTransparency)
-updateSlider(espOutlineF,espOutlineH,G.espOutlineTransparency)
-updateSlider(nametagSizeF,nametagSizeH,(G.nametagSize-10)/(28-10))
-updateSlider(nametagHeightF,nametagHeightH,(G.nametagHeight+2)/10)
-updateSlider(nametagAlphaF,nametagAlphaH,G.nametagAlpha)
-updateSlider(crosshairRadiusF,crosshairRadiusH,(G.crosshairArrowsRadius-20)/(300-20))
-updateSlider(crosshairSizeF,crosshairSizeH,(G.crosshairArrowsSize-25)/(100-25))
-updateSlider(crosshairAlphaF,crosshairAlphaH,G.crosshairArrowsAlpha)
-updateSlider(Tt.speed.f,Tt.speed.h,0.032)
-updateSlider(Tt.jump.f,Tt.jump.h,0.1)
-updateSlider(Tt.flight.f,Tt.flight.h,0.1)
-updateSlider(Tt.strafe.f,Tt.strafe.h,0)
-vtMiscF.Size=UDim2.new(0.04,0,1,0)
-vtMiscH.Position=UDim2.new(0.04,-7,0.5,-7)
-updateSlider(acF,acH,0.045)
-updateSlider(smF,smH,0.3)
-updateSlider(rF,rH,0.5)
-updateSpeed(0.032)
-updateJump(0.1)
-updateFlight(0.1)
-updateStrafe(0)
-updateVisualTimer(0.04)
-updateAutoclickerCPS(0.045)
-updateSmooth(0.3)
-updateRange(0.5)
-updateCrosshairRadius((G.crosshairArrowsRadius-20)/(300-20))
-updateCrosshairSize((G.crosshairArrowsSize-25)/(100-25))
-updateCrosshairAlpha(G.crosshairArrowsAlpha)
-updateFullbrightBrightness(G.fullbrightBrightness)
-updateHue(0.5)
-updateSaturation(0)
-updateBrightness(1)
-updateHudAlpha(0.95)
-updateHudBackgroundBrightness(0.5)
+    updateSlider(espFillF,espFillH,G.espFillTransparency)
+    updateSlider(espOutlineF,espOutlineH,G.espOutlineTransparency)
+    updateSlider(nametagSizeF,nametagSizeH,(G.nametagSize-10)/(28-10))
+    updateSlider(nametagHeightF,nametagHeightH,(G.nametagHeight+2)/10)
+    updateSlider(nametagAlphaF,nametagAlphaH,G.nametagAlpha)
+    updateSlider(crosshairRadiusF,crosshairRadiusH,(G.crosshairArrowsRadius-20)/(300-20))
+    updateSlider(crosshairSizeF,crosshairSizeH,(G.crosshairArrowsSize-25)/(100-25))
+    updateSlider(crosshairAlphaF,crosshairAlphaH,G.crosshairArrowsAlpha)
+    updateSlider(Tt.speed.f,Tt.speed.h,0.032)
+    updateSlider(Tt.jump.f,Tt.jump.h,0.1)
+    updateSlider(Tt.flight.f,Tt.flight.h,0.1)
+    updateSlider(Tt.strafe.f,Tt.strafe.h,0)
+    vtMiscF.Size=UDim2.new(0.04,0,1,0)
+    vtMiscH.Position=UDim2.new(0.04,-7,0.5,-7)
+    updateSlider(acF,acH,0.045)
+    updateSlider(smF,smH,0.3)
+    updateSlider(rF,rH,0.5)
+    updateSpeed(0.032)
+    updateJump(0.1)
+    updateFlight(0.1)
+    updateStrafe(0)
+    updateVisualTimer(0.04)
+    updateAutoclickerCPS(0.045)
+    updateSmooth(0.3)
+    updateRange(0.5)
+    updateCrosshairRadius((G.crosshairArrowsRadius-20)/(300-20))
+    updateCrosshairSize((G.crosshairArrowsSize-25)/(100-25))
+    updateCrosshairAlpha(G.crosshairArrowsAlpha)
+    updateFullbrightBrightness(G.fullbrightBrightness)
+    updateHue(0.5)
+    updateSaturation(0)
+    updateBrightness(1)
+    updateRgbSpeed((G.rgbSpeed-0.05)/(3-0.05))
+    updateRgbBrightness(G.rgbBrightness)
+    updateHudAlpha(0.95)
+    updateHudBackgroundBrightness(0.5)
 end
 
 startAutoConfig()
