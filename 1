@@ -361,6 +361,35 @@ function applyHudTheme(force)
     if syncKeybindVisualState then
         syncKeybindVisualState()
     end
+    
+    -- Обновляем цвета ESP
+    if G.espEnabled then
+        local col=hudWhite()
+        local fillTrans=1-math.clamp(G.espFillTransparency,0,1)
+        local outlineTrans=1-math.clamp(G.espOutlineTransparency,0,1)
+        for _,plr in ipairs(P:GetPlayers()) do
+            if plr~=p and plr.Character then
+                local esp=plr.Character:FindFirstChild("Totally NOT Esp")
+                if esp and esp:IsA("Highlight") then
+                    esp.FillColor=col
+                    esp.OutlineColor=col
+                    esp.FillTransparency=fillTrans
+                    esp.OutlineTransparency=outlineTrans
+                end
+            end
+        end
+        for _,model in ipairs(WS:GetChildren()) do
+            if model:IsA("Model") and model~=c then
+                local esp=model:FindFirstChild("Totally NOT Esp")
+                if esp and esp:IsA("Highlight") then
+                    esp.FillColor=col
+                    esp.OutlineColor=col
+                    esp.FillTransparency=fillTrans
+                    esp.OutlineTransparency=outlineTrans
+                end
+            end
+        end
+    end
 end
 
 local function themeScaleForColor(c)
@@ -4282,12 +4311,10 @@ function applyESPToModel(model)
 
     G.suppressForeignHighlights(model,esp)
     
-    local fillColor=hudWhite()
-    local outlineColor=hudWhite()
-    
+    local col=hudWhite()
     esp.Enabled=true
-    esp.FillColor=fillColor
-    esp.OutlineColor=outlineColor
+    esp.FillColor=col
+    esp.OutlineColor=col
     esp.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
     esp.FillTransparency=1-math.clamp(G.espFillTransparency,0,1)
     esp.OutlineTransparency=1-math.clamp(G.espOutlineTransparency,0,1)
