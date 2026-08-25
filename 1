@@ -139,7 +139,7 @@ G.scriptTerminated=false
 G.saveCooldownUntil=0
 
 -- Re-execute after TeleportService moves to another PlaceId in the same experience.
-G.autoLoadEnabled=true
+G.autoLoadEnabled=false
 G.autoLoadURL="https://raw.githubusercontent.com/qwmemories/htjtyu556hrtyhrthreth456h4r6hthrthrt/refs/heads/main/1"
 G.autoLoadQueued=false
 
@@ -4474,30 +4474,16 @@ G.updateVisualEsp=function()
                             local cy=(hp.Y+fp.Y)/2
                             tracerTo=Vector2.new(cx,cy)
                         else
-                            local camCF=cam.CFrame
-                            local relative=camCF:PointToObjectSpace(head.Position)
-                            local x=relative.X
-                            local y=relative.Y
-                            local z=-relative.Z
+                            local rel=cam.CFrame:PointToObjectSpace(head.Position)
+                            local yaw=math.atan2(rel.X,-rel.Z)
+                            local pitch=math.atan2(rel.Y,Vector2.new(rel.X,rel.Z).Magnitude)
 
-                            if z < 0 then
-                                x=-x
-                                y=-y
-                            end
-
-                            local dir=Vector2.new(x,y)
-
+                            local dir=Vector2.new(math.sin(yaw),-math.sin(pitch))
                             if dir.Magnitude>0 then
                                 dir=dir.Unit
-
-                                local maxX=(vp.X*0.5)-10
-                                local maxY=(vp.Y*0.5)-10
-
-                                local scaleX=maxX/math.max(math.abs(dir.X),0.001)
-                                local scaleY=maxY/math.max(math.abs(dir.Y),0.001)
-                                local scale=math.min(scaleX,scaleY)
-
-                                tracerTo=center+(dir*scale)
+                                local rx=(vp.X*0.5-10)/math.max(math.abs(dir.X),0.001)
+                                local ry=(vp.Y*0.5-10)/math.max(math.abs(dir.Y),0.001)
+                                tracerTo=center+dir*math.min(rx,ry)
                             end
                         end
 
@@ -5219,6 +5205,8 @@ G.clientUI.toggle.cl.MouseButton1Click:Connect(function()
     end
     if G.autoLoadEnabled then
         task.defer(queueAutoLoad)
+    else
+        G.autoLoadQueued=false
     end
 end)
 
@@ -5987,10 +5975,14 @@ function queueAutoLoad()
     return ok
 end
 
-p.OnTeleport:Connect(function(state)
+local autoTeleportConnection
+if autoTeleportConnection then
+    pcall(function() autoTeleportConnection:Disconnect() end)
+end
+autoTeleportConnection=p.OnTeleport:Connect(function(state)
     if not G.autoLoadEnabled or G.scriptTerminated then return end
     if state==Enum.TeleportState.Started then
-        queueAutoLoad()
+        task.defer(queueAutoLoad)
     end
 end)
 
@@ -6006,7 +5998,9 @@ function startAutoConfig()
     G.saveCooldownUntil=tick()+3
     loadAutoConfig()
     setToggle(G.clientUI.toggle.tr,G.clientUI.toggle.k,G.autoLoadEnabled,false)
-    task.defer(queueAutoLoad)
+    if G.autoLoadEnabled then
+        task.defer(queueAutoLoad)
+    end
 
     G.autoSaveReady=true
 
